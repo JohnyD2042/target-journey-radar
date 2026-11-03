@@ -55,10 +55,9 @@ function Index() {
   const byPeriod = IDEAS.filter((i) => inPeriod(i, period));
   const byAnalyst = byPeriod.filter((i) => !analyst || i.analyst === analyst);
   const shown = useMemo(
-    () => byAnalyst.filter((i) => inBook(i, book)),
-    [period, book, analyst],
+    () => byAnalyst.filter((i) => inBook(i, book) && (!zone || (zone === "notarget" ? i.target == null : zoneOf(i) === zone))),
+    [period, book, analyst, zone],
   );
-  const rows = shown.filter((i) => !zone || (zone === "notarget" ? i.target == null : zoneOf(i) === zone));
 
   const periodCounts = Object.fromEntries(PERIODS.map(([p]) => [p, IDEAS.filter((i) => inPeriod(i, p) && inBook(i, book) && (!analyst || i.analyst === analyst)).length])) as Record<Period, number>;
   const bookCounts = Object.fromEntries(BOOKS.map(([b]) => [b, byAnalyst.filter((i) => inBook(i, b)).length])) as Record<Book, number>;
@@ -123,9 +122,9 @@ function Index() {
             onClick={() => setZone(zone === z ? null : z)}
             className={`border-r px-2 py-3 text-left last:border-r-0 transition-colors md:px-6 md:py-4 ${zone === z ? "bg-accent" : "hover:bg-card"}`}
           >
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider md:text-xs" style={{ color: `var(--z${z})` }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: `var(--z${z})` }} />
-              <span className="truncate">{ZONES[z].name}</span>
+            <div className="flex items-start gap-1.5 text-[10px] uppercase leading-tight tracking-wider md:text-xs" style={{ color: `var(--z${z})` }}>
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: `var(--z${z})` }} />
+              <span>{ZONES[z].name}</span>
             </div>
             <div className="mt-1 font-mono text-2xl font-semibold md:text-4xl">{zoneCounts[idx]}</div>
           </button>
@@ -133,7 +132,7 @@ function Index() {
       </div>
 
       {/* Scene */}
-      <div className="flex flex-col lg:flex-row">
+      <div className="flex flex-col pb-8 lg:flex-row">
         <div className="relative mb-4 h-[480px] p-2 lg:flex-1 md:h-[680px] md:p-4">
           <FlightChart ideas={shown} onSelect={setSel} selectedId={sel?.id} />
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
@@ -144,55 +143,10 @@ function Index() {
         {sel && <Card idea={sel} onClose={() => setSel(null)} />}
       </div>
 
-      {/* Table */}
-      <section className="px-4 pb-10 md:px-6">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <h2 className="mr-2 text-sm font-semibold uppercase tracking-wider">Борты</h2>
-          <Pill on={!zone} onClick={() => setZone(null)}>Все · {shown.length}</Pill>
-          {([1, 2, 3, 4, 5] as Zone[]).map((z, i) => (
-            <Pill key={z} on={zone === z} onClick={() => setZone(z)} color={`var(--z${z})`}>{ZONES[z].name} · {zoneCounts[i]}</Pill>
-          ))}
-          <Pill on={zone === "notarget"} onClick={() => setZone("notarget")}>Без цели · {shown.filter((i) => i.target == null).length}</Pill>
-        </div>
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead className="bg-card text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-              <tr>{["Стадия", "Тикер", "Идея", "Аналитик", "Старт", "Тек./закр.", "Цель", "Доходн.", "Апсайд", "Пройдено"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr>
-            </thead>
-            <tbody className="font-mono text-[13px]">
-              {rows.map((i) => {
-                const z = zoneOf(i), r = ret(i), u = upside(i);
-                return (
-                  <tr key={i.id} onClick={() => setSel(i)} className={`cursor-pointer border-t hover:bg-card ${sel?.id === i.id ? "bg-accent" : ""}`}>
-                    <td className="px-3 py-2"><span className="flex items-center gap-1.5 font-sans text-xs" style={{ color: `var(--z${z})` }}><span className="h-1.5 w-1.5 rounded-full" style={{ background: `var(--z${z})` }} />{ZONES[z].name}</span></td>
-                    <td className="px-3 py-2 font-semibold">{i.ticker}{i.side === "short" && <span className="ml-1.5 rounded bg-short/20 px-1 text-[10px] text-short">шорт</span>}</td>
-                    <td className="px-3 py-2 font-sans">{i.name}<div className="font-mono text-[11px] text-muted-foreground">{date(i.openDate)}{i.status === "closed" && " · закрыта"}</div></td>
-                    <td className="px-3 py-2 font-sans text-muted-foreground">{i.analyst}</td>
-                    <td className="px-3 py-2">{money(i.openPrice)}</td>
-                    <td className="px-3 py-2">{money(i.price)}</td>
-                    <td className="px-3 py-2">{i.target != null ? money(i.target) : "—"}</td>
-                    <td className={`px-3 py-2 ${r >= 0 ? "text-long" : "text-short"}`}>{pct(r)}</td>
-                    <td className="px-3 py-2">{i.status === "active" && u != null ? pct(u) : "—"}</td>
-                    <td className="px-3 py-2">{i.target != null ? `${Math.max(0, progress(i)).toFixed(2)}x` : "—"}</td>
-                  </tr>
-                );
-              })}
-              {!rows.length && <tr><td colSpan={10} className="px-3 py-8 text-center font-sans text-muted-foreground">В этом срезе бортов нет</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </section>
     </div>
   );
 }
 
-function Pill({ on, onClick, color, children }: { on: boolean; onClick: () => void; color?: string; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} className={`rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-primary bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground"}`} style={on && color ? { borderColor: color } : undefined}>
-      {children}
-    </button>
-  );
-}
 
 function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
   const z = zoneOf(i), r = ret(i), u = upside(i);
