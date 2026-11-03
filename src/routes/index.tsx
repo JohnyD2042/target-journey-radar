@@ -122,9 +122,9 @@ function Index() {
             onClick={() => setZone(zone === z ? null : z)}
             className={`border-r px-2 py-3 text-left last:border-r-0 transition-colors md:px-6 md:py-4 ${zone === z ? "bg-accent" : "hover:bg-card"}`}
           >
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider md:text-xs" style={{ color: `var(--z${z})` }}>
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: `var(--z${z})` }} />
-              <span className="truncate">{ZONES[z].name}</span>
+            <div className="flex items-start gap-1.5 text-[10px] uppercase leading-tight tracking-wider md:text-xs" style={{ color: `var(--z${z})` }}>
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: `var(--z${z})` }} />
+              <span>{ZONES[z].name}</span>
             </div>
             <div className="mt-1 font-mono text-2xl font-semibold md:text-4xl">{zoneCounts[idx]}</div>
           </button>
