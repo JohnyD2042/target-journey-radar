@@ -147,13 +147,6 @@ function Index() {
   );
 }
 
-function Pill({ on, onClick, color, children }: { on: boolean; onClick: () => void; color?: string; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} className={`rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-primary bg-primary/15 text-foreground" : "text-muted-foreground hover:text-foreground"}`} style={on && color ? { borderColor: color } : undefined}>
-      {children}
-    </button>
-  );
-}
 
 function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
   const z = zoneOf(i), r = ret(i), u = upside(i);
