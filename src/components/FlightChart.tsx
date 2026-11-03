@@ -13,16 +13,44 @@ const TICKS_X: [number, string][] = [[0, "0"], [0.2, "0,2x"], [0.5, "0,5x"], [0.
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const fmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
+const hash = (s: string) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-function Plane({ color }: { color: string }) {
+/** Flightradar-style top-down airliner, nose pointing +x */
+function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   return (
-    <path
-      d="M7 0 L1.5 -1.2 L-2 -6 L-3.4 -6 L-1.6 -1.2 L-5 -1 L-6.4 -3 L-7.4 -3 L-6.4 0 L-7.4 3 L-6.4 3 L-5 1 L-1.6 1.2 L-3.4 6 L-2 6 L1.5 1.2 Z"
-      fill={color}
-      stroke="var(--background)"
-      strokeWidth={0.8}
-    />
+    <g transform={`scale(${scale})`}>
+      <path
+        d="M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z"
+        fill={color}
+        stroke="oklch(0.12 0.02 250)"
+        strokeWidth={0.9}
+        strokeLinejoin="round"
+      />
+    </g>
   );
+}
+
+/** deterministic "terrain" contour lines for the map backdrop */
+function useTerrain(w: number, h: number) {
+  return useMemo(() => {
+    const lines: string[] = [];
+    for (let n = 0; n < 14; n++) {
+      const y0 = (h / 14) * n + 10;
+      let d = `M -20 ${y0}`;
+      for (let x = 0; x <= w + 40; x += 40) {
+        const y = y0 + Math.sin(x / 140 + n * 1.7) * 18 + Math.sin(x / 53 + n) * 6;
+        d += ` L ${x} ${y.toFixed(1)}`;
+      }
+      lines.push(d);
+    }
+    const roads: string[] = [];
+    for (let n = 0; n < 6; n++) {
+      const x0 = ((n * 0.19 + 0.05) % 1) * w;
+      roads.push(`M ${x0} -10 C ${x0 + 120} ${h * 0.3}, ${x0 - 90} ${h * 0.6}, ${x0 + 60} ${h + 10}`);
+    }
+    return { lines, roads };
+  }, [w, h]);
 }
 
 export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string | undefined }) {
@@ -30,8 +58,18 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
   const [size, setSize] = useState({ w: 900, h: 480 });
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
   const [hover, setHover] = useState<{ idea: Idea; x: number; y: number } | null>(null);
+  const [now, setNow] = useState(0);
+  const [launch, setLaunch] = useState(0);
   const viewRef = useRef(view);
   viewRef.current = view;
+
+  // animation clock
+  useEffect(() => {
+    let raf = 0;
+    const tick = (t: number) => { setNow(t); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   useEffect(() => {
     const el = wrap.current!;
@@ -42,6 +80,7 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
 
   const pw = size.w - PAD.l - PAD.r;
   const ph = size.h - PAD.t - PAD.b;
+  const terrain = useTerrain(size.w, size.h);
 
   const constrain = (v: { k: number; x: number; y: number }) => ({
     k: v.k,
@@ -68,8 +107,8 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
     return () => el.removeEventListener("wheel", onWheel);
   });
 
-  // reset zoom when dataset changes
-  useEffect(() => setView({ k: 1, x: 0, y: 0 }), [ideas]);
+  // reset zoom & replay take-off when dataset changes
+  useEffect(() => { setView({ k: 1, x: 0, y: 0 }); setLaunch(performance.now()); }, [ideas]);
 
   const { yMin, yMax, minR } = useMemo(() => {
     const rs = ideas.map(ret);
@@ -91,7 +130,6 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
   const sx = (bx: number) => bx * view.k + view.x;
   const sy = (by: number) => by * view.k + view.y;
 
-  // y ticks
   const yTicks = useMemo(() => {
     const visLo = yMax - ((ph - view.y) / view.k / ph) * (yMax - yMin);
     const visHi = yMax - ((-view.y) / view.k / ph) * (yMax - yMin);
@@ -105,11 +143,42 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
 
   const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
 
+  // airports
+  const depX = sx(0.13 * pw), depY = sy(baseY(0));
+  const arrX = sx(0.935 * pw), arrY = sy(baseY(yMax * 0.55));
+  const sweep = ((now / 4000) % 1) * 360;
+
+  // per-plane animated state
+  const planes = ideas.map((i) => {
+    const h = hash(i.id);
+    const z = zoneOf(i);
+    const tx = sx(baseX(i)), ty = sy(baseY(ret(i)));
+    const delay = (h % 600);
+    const t = easeOut(clamp((now - launch - delay) / 1400, 0, 1));
+    // fly-in from departure runway (zone 1 taxi in from runway too)
+    let x = depX + (tx - depX) * t;
+    let y = depY + (ty - depY) * t;
+    // heading: toward target airport for flying, flat on ground, parked at gate
+    let ang = Math.atan2(arrY - ty, arrX - tx) * 0.55;
+    if (z === 1) ang = Math.PI * (h % 2 ? 0.02 : -0.02) + (ret(i) < -5 ? 0.25 : 0);
+    if (z === 5) ang = -Math.PI / 2;
+    if (t < 1) ang = Math.atan2(ty - depY, tx - depX || 1);
+    // cruising wobble along heading (not on ground / gate)
+    const moving = z !== 5 && i.status === "active";
+    const ph2 = (h % 1000) / 1000 * Math.PI * 2;
+    const amp = z === 1 ? 1.2 : 3;
+    const wob = moving && t >= 1 ? Math.sin(now / 900 + ph2) * amp : 0;
+    x += Math.cos(ang) * wob;
+    y += Math.sin(ang) * wob + (moving && t >= 1 && z !== 1 ? Math.cos(now / 1300 + ph2) * 1.2 : 0);
+    const trail = z === 1 ? 10 : z === 5 ? 0 : 18 + (z - 2) * 8;
+    return { i, z, x, y, ang, trail, moving };
+  });
+
   return (
     <div className="relative h-full w-full select-none">
       <div
         ref={wrap}
-        className="radar-bg absolute inset-0 overflow-hidden rounded-lg border touch-none"
+        className="map-bg absolute inset-0 overflow-hidden rounded-xl border touch-none"
         style={{ cursor: view.k > 1 ? "grab" : "default" }}
         onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false }; }}
         onPointerMove={(e) => {
@@ -124,32 +193,73 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
         <svg width={size.w} height={size.h} className="block">
           <defs>
             <clipPath id="plot"><rect x={0} y={0} width={pw} height={ph} /></clipPath>
+            <radialGradient id="sweep" cx="0" cy="0" r="1">
+              <stop offset="0" stopColor="var(--primary)" stopOpacity="0.18" />
+              <stop offset="1" stopColor="var(--primary)" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="trail-long" x1="1" x2="0"><stop offset="0" stopColor="var(--long)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--long)" stopOpacity="0" /></linearGradient>
+            <linearGradient id="trail-short" x1="1" x2="0"><stop offset="0" stopColor="var(--short)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--short)" stopOpacity="0" /></linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="2.2" /></filter>
           </defs>
+
+          {/* terrain */}
+          <g transform={`translate(${view.x * 0.3},${view.y * 0.3})`}>
+            {terrain.lines.map((d, n) => <path key={n} d={d} fill="none" stroke="var(--terrain)" strokeWidth={1} />)}
+            {terrain.roads.map((d, n) => <path key={`r${n}`} d={d} fill="none" stroke="var(--road)" strokeWidth={1.4} strokeDasharray="1 0" />)}
+          </g>
+
           <g transform={`translate(${PAD.l},${PAD.t})`}>
             <g clipPath="url(#plot)">
               {BANDS.map((b) => (
                 <g key={b.z}>
                   <rect
                     x={sx(b.from * pw)} y={0} width={(b.to - b.from) * pw * view.k} height={ph}
-                    fill={`var(--z${b.z})`} opacity={b.z === 1 || b.z === 5 ? 0.1 : 0.04}
+                    fill={`var(--z${b.z})`} opacity={b.z === 1 || b.z === 5 ? 0.09 : 0.03}
                   />
-                  <line x1={sx(b.to * pw)} x2={sx(b.to * pw)} y1={0} y2={ph} stroke={`var(--z${b.z})`} strokeOpacity={0.35} strokeDasharray={b.z === 4 ? "0" : "3 4"} strokeWidth={b.z === 4 ? 2 : 1} />
+                  <line x1={sx(b.to * pw)} x2={sx(b.to * pw)} y1={0} y2={ph} stroke={`var(--z${b.z})`} strokeOpacity={0.35} strokeDasharray={b.z === 4 ? "0" : "3 5"} strokeWidth={b.z === 4 ? 2 : 1} />
                 </g>
               ))}
               {yTicks.map((t) => (
                 <line key={t} x1={0} x2={pw} y1={sy(baseY(t))} y2={sy(baseY(t))} stroke="var(--grid)" strokeWidth={t === 0 ? 0 : 1} />
               ))}
-              {/* zero runway */}
-              <line x1={0} x2={pw} y1={sy(baseY(0))} y2={sy(baseY(0))} stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="10 6" opacity={0.8} />
-              {/* flight path hint */}
+
+              {/* radar sweep from departure airport */}
+              <g transform={`translate(${depX},${depY}) rotate(${sweep})`}>
+                <path d={`M0 0 L${pw * 1.4} 0 A${pw * 1.4} ${pw * 1.4} 0 0 0 ${pw * 1.4 * Math.cos(-0.5)} ${pw * 1.4 * Math.sin(-0.5)} Z`} fill="url(#sweep)" />
+              </g>
+              {[60, 140, 240, 360].map((r) => (
+                <circle key={r} cx={depX} cy={depY} r={r * view.k} fill="none" stroke="var(--primary)" strokeOpacity={0.08} />
+              ))}
+
+              {/* runway on zero */}
+              <line x1={0} x2={pw} y1={depY} y2={depY} stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="10 6" opacity={0.7} className="runway-dash" />
+
+              {/* main airway: departure → destination */}
               <path
-                d={`M ${sx(0.13 * pw)} ${sy(baseY(0))} Q ${sx(0.5 * pw)} ${sy(baseY(0))} ${sx(0.87 * pw)} ${sy(baseY(yMax * 0.6))}`}
-                fill="none" stroke="var(--foreground)" strokeOpacity={0.12} strokeWidth={1}
+                d={`M ${depX} ${depY} Q ${sx(0.5 * pw)} ${depY} ${arrX} ${arrY}`}
+                fill="none" stroke="var(--foreground)" strokeOpacity={0.25} strokeWidth={1.2} strokeDasharray="2 7" className="airway"
               />
-              {ideas.map((i) => {
-                const x = sx(baseX(i)), y = sy(baseY(ret(i)));
+
+              {/* airports */}
+              <Airport x={depX} y={depY} label="СТАРТ" />
+              <Airport x={arrX} y={arrY} label="ЦЕЛЬ" accent />
+
+              {/* trails */}
+              {planes.map(({ i, x, y, ang, trail }) => trail > 0 && (
+                <line
+                  key={`t${i.id}`}
+                  x1={x - Math.cos(ang) * trail} y1={y - Math.sin(ang) * trail}
+                  x2={x - Math.cos(ang) * 6} y2={y - Math.sin(ang) * 6}
+                  stroke={`url(#trail-${i.side})`} strokeWidth={2} strokeLinecap="round"
+                  gradientUnits="userSpaceOnUse"
+                />
+              ))}
+
+              {/* planes */}
+              {planes.map(({ i, z, x, y, ang }) => {
                 const col = i.side === "long" ? "var(--long)" : "var(--short)";
                 const sel = i.id === selectedId;
+                const hov = hover?.idea.id === i.id;
                 return (
                   <g
                     key={i.id}
@@ -159,15 +269,22 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
                     onMouseLeave={() => setHover(null)}
                     onClick={() => !drag.current?.moved && onSelect(i)}
                   >
-                    <circle r={11} fill="transparent" />
-                    {sel && <circle r={12} fill="none" stroke="var(--primary)" strokeWidth={1.5} />}
-                    <circle r={9.5} fill={`var(--z${zoneOf(i)})`} opacity={0.18} />
-                    <g opacity={i.status === "closed" ? 0.6 : 1}><Plane color={col} /></g>
+                    <circle r={14} fill="transparent" />
+                    <circle r={11} fill={`var(--z${z})`} opacity={0.22} filter="url(#glow)" />
+                    {sel && (
+                      <>
+                        <circle r={15} fill="none" stroke="var(--primary)" strokeWidth={1.5} />
+                        <circle r={15} fill="none" stroke="var(--primary)" strokeWidth={1} className="ping" />
+                      </>
+                    )}
+                    <g transform={`rotate(${(ang * 180) / Math.PI})`} opacity={i.status === "closed" ? 0.55 : 1}>
+                      <Plane color={col} scale={sel || hov ? 1.25 : 1} />
+                    </g>
                   </g>
                 );
               })}
             </g>
-            {/* zone headers */}
+
             {BANDS.map((b) => {
               const cx = sx(((b.from + b.to) / 2) * pw);
               if (cx < 0 || cx > pw) return null;
@@ -198,19 +315,21 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
         </svg>
       </div>
 
-      <div className="absolute bottom-10 right-3 flex flex-col overflow-hidden rounded-md border bg-popover/90 font-mono text-sm backdrop-blur">
-        <button className="h-8 w-8 hover:bg-accent" aria-label="Приблизить" onClick={() => zoomAt(pw / 2, ph / 2, view.k * 1.6)}>+</button>
-        <button className="h-8 w-8 border-t hover:bg-accent" aria-label="Отдалить" onClick={() => zoomAt(pw / 2, ph / 2, view.k / 1.6)}>−</button>
-        <button className="h-8 w-8 border-t text-[10px] hover:bg-accent disabled:opacity-40" aria-label="Сбросить" disabled={view.k === 1} onClick={() => setView({ k: 1, x: 0, y: 0 })}>1:1</button>
+      <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-col gap-2">
+        <button className="map-btn" aria-label="Приблизить" onClick={() => zoomAt(pw / 2, ph / 2, view.k * 1.6)}>+</button>
+        <button className="map-btn" aria-label="Отдалить" onClick={() => zoomAt(pw / 2, ph / 2, view.k / 1.6)}>−</button>
+        <button className="map-btn text-[10px] disabled:opacity-40" aria-label="Сбросить" disabled={view.k === 1} onClick={() => setView({ k: 1, x: 0, y: 0 })}>1:1</button>
       </div>
-      {view.k > 1 && (
-        <div className="absolute left-14 top-10 rounded bg-popover/90 px-2 py-0.5 font-mono text-[10px] text-primary">×{view.k.toFixed(1)}</div>
-      )}
+      <div className="pointer-events-none absolute left-14 top-10 flex items-center gap-2 rounded bg-popover/80 px-2 py-0.5 font-mono text-[10px] backdrop-blur">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-short" />
+        <span className="text-primary">LIVE</span>
+        <span className="text-muted-foreground">{ideas.length} в воздухе · ×{view.k.toFixed(1)}</span>
+      </div>
 
       {hover && (
         <div
           className="pointer-events-none absolute z-10 w-56 rounded-md border bg-popover p-3 text-xs shadow-xl"
-          style={{ left: clamp(hover.x + 14, 4, size.w - 230), top: clamp(hover.y - 20, 4, size.h - 140) }}
+          style={{ left: clamp(hover.x + 16, 4, size.w - 230), top: clamp(hover.y - 20, 4, size.h - 140) }}
         >
           <div className="flex items-center justify-between">
             <span className="font-mono text-sm font-semibold">{hover.idea.ticker}</span>
@@ -232,5 +351,17 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
         </div>
       )}
     </div>
+  );
+}
+
+function Airport({ x, y, label, accent }: { x: number; y: number; label: string; accent?: boolean }) {
+  const c = accent ? "var(--primary)" : "var(--z2)";
+  return (
+    <g transform={`translate(${x},${y})`} pointerEvents="none">
+      <circle r={16} fill={c} opacity={0.12} className="ping-slow" />
+      <circle r={7} fill="oklch(0.15 0.025 250)" stroke={c} strokeWidth={1.5} />
+      <circle r={2.5} fill={c} />
+      <text y={-12} textAnchor="middle" className="font-mono text-[9px] font-semibold tracking-widest" fill={c}>{label}</text>
+    </g>
   );
 }
