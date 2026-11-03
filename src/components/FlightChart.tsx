@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Idea, type Zone, ZONES, ret, progress, upside, zoneOf } from "@/lib/ideas";
 
-const PAD = { l: 48, r: 12, t: 34, b: 30 };
+const PAD = { l: 48, r: 12, t: 46, b: 40 };
 const BANDS: { z: Zone; from: number; to: number }[] = [
   { z: 1, from: 0, to: 0.13 },
   { z: 2, from: 0.13, to: 0.13 + 0.2 * 0.74 },
@@ -17,6 +17,16 @@ const hash = (s: string) => { let h = 7; for (const c of s) h = (h * 31 + c.char
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
 /** Flightradar-style top-down airliner, nose pointing +x */
+const PLANE_D = "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
+/** infographic glyph per zone: on ground / climbing / cruising / descending / parked */
+const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean }> = {
+  1: { rot: 0, ground: true },
+  2: { rot: -30 },
+  3: { rot: 0 },
+  4: { rot: 22 },
+  5: { rot: -90, ground: true },
+};
+
 function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   return (
     <g transform={`scale(${scale})`}>
@@ -90,7 +100,6 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
 
   const pw = size.w - PAD.l - PAD.r;
   const ph = size.h - PAD.t - PAD.b;
-  const terrain = useTerrain(size.w, size.h);
 
   const constrain = (v: { k: number; x: number; y: number }) => ({
     k: v.k,
@@ -156,7 +165,6 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
   // airports
   const depX = sx(0.13 * pw), depY = sy(baseY(0));
   const arrX = sx(0.935 * pw), arrY = sy(baseY(yMax * 0.55));
-  const sweep = ((now / 4000) % 1) * 360;
 
   // per-plane animated state
   const planes = ideas.map((i) => {
@@ -212,19 +220,13 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
             <filter id="glow"><feGaussianBlur stdDeviation="2.2" /></filter>
           </defs>
 
-          {/* terrain */}
-          <g transform={`translate(${view.x * 0.3},${view.y * 0.3})`}>
-            {terrain.lines.map((d, n) => <path key={n} d={d} fill="none" stroke="var(--terrain)" strokeWidth={1} />)}
-            {terrain.roads.map((d, n) => <path key={`r${n}`} d={d} fill="none" stroke="var(--road)" strokeWidth={1.4} strokeDasharray="1 0" />)}
-          </g>
-
           <g transform={`translate(${PAD.l},${PAD.t})`}>
             <g clipPath="url(#plot)">
               {BANDS.map((b) => (
                 <g key={b.z}>
                   <rect
                     x={sx(b.from * pw)} y={0} width={(b.to - b.from) * pw * view.k} height={ph}
-                    fill={`var(--z${b.z})`} opacity={b.z === 1 || b.z === 5 ? 0.09 : 0.03}
+                    fill={`var(--z${b.z})`} opacity={b.z === 3 ? 0.07 : b.z === 5 ? 0.1 : 0.16}
                   />
                   <line x1={sx(b.to * pw)} x2={sx(b.to * pw)} y1={0} y2={ph} stroke={`var(--z${b.z})`} strokeOpacity={0.35} strokeDasharray={b.z === 4 ? "0" : "3 5"} strokeWidth={b.z === 4 ? 2 : 1} />
                 </g>
@@ -233,26 +235,10 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
                 <line key={t} x1={0} x2={pw} y1={sy(baseY(t))} y2={sy(baseY(t))} stroke="var(--grid)" strokeWidth={t === 0 ? 0 : 1} />
               ))}
 
-              {/* radar sweep from departure airport */}
-              <g transform={`translate(${depX},${depY}) rotate(${sweep})`}>
-                <path d={`M0 0 L${pw * 1.4} 0 A${pw * 1.4} ${pw * 1.4} 0 0 0 ${pw * 1.4 * Math.cos(-0.5)} ${pw * 1.4 * Math.sin(-0.5)} Z`} fill="url(#sweep)" />
-              </g>
-              {[60, 140, 240, 360].map((r) => (
-                <circle key={r} cx={depX} cy={depY} r={r * view.k} fill="none" stroke="var(--primary)" strokeOpacity={0.08} />
-              ))}
-
               {/* runway on zero */}
-              <line x1={0} x2={pw} y1={depY} y2={depY} stroke="var(--primary)" strokeWidth={1.5} strokeDasharray="10 6" opacity={0.7} className="runway-dash" />
+              <line x1={0} x2={pw} y1={depY} y2={depY} stroke="var(--primary)" strokeWidth={1.5} opacity={0.9} />
 
-              {/* main airway: departure → destination */}
-              <path
-                d={`M ${depX} ${depY} Q ${sx(0.5 * pw)} ${depY} ${arrX} ${arrY}`}
-                fill="none" stroke="var(--foreground)" strokeOpacity={0.25} strokeWidth={1.2} strokeDasharray="2 7" className="airway"
-              />
-
-              {/* airports */}
               <Airport x={depX} y={depY} label="СТАРТ" />
-              <Airport x={arrX} y={arrY} label="ЦЕЛЬ" accent />
 
               {/* trails */}
               {planes.map(({ i, x, y, ang, trail }) => trail > 0 && (
@@ -298,10 +284,17 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
             {BANDS.map((b) => {
               const cx = sx(((b.from + b.to) / 2) * pw);
               if (cx < 0 || cx > pw) return null;
+              const icon = ZONE_ICON[b.z];
               return (
-                <text key={b.z} x={cx} y={-14} textAnchor="middle" className="font-mono text-[10px] uppercase tracking-wider" fill={`var(--z${b.z})`}>
-                  {size.w < 640 ? b.z : ZONES[b.z].name}
-                </text>
+                <g key={b.z} transform={`translate(${cx},-24)`}>
+                  <g transform={`translate(0,-4) rotate(${icon.rot})`} opacity={0.95}>
+                    <path d={PLANE_D} fill="none" stroke={`var(--z${b.z})`} strokeWidth={1.1} transform="scale(0.8)" />
+                  </g>
+                  {icon.ground && <line x1={-10} x2={10} y1={5} y2={5} stroke={`var(--z${b.z})`} strokeWidth={1} />}
+                  <text y={20} textAnchor="middle" className="font-mono text-[10px] font-semibold uppercase tracking-wider" fill={`var(--z${b.z})`}>
+                    {size.w < 640 ? b.z : ZONES[b.z].name}
+                  </text>
+                </g>
               );
             })}
             {yTicks.map((t) => {
@@ -316,10 +309,11 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
             {TICKS_X.map(([p, l]) => {
               const x = sx((0.13 + p * 0.74) * pw);
               if (x < 0 || x > pw) return null;
-              return <text key={l} x={x} y={ph + 18} textAnchor="middle" className="font-mono text-[10px]" fill="var(--muted-foreground)">{l}</text>;
+              return <text key={l} x={x} y={ph + 22} textAnchor="middle" className="font-mono text-[10px]" fill="var(--muted-foreground)">{l}</text>;
             })}
+            {sx(0.87 * pw) <= pw && <Airport x={sx(0.87 * pw)} y={ph} label="" accent />}
             {sx(0.87 * pw) <= pw && (
-              <text x={sx(0.87 * pw)} y={ph + 18} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill="var(--primary)">1X ЦЕЛЬ</text>
+              <text x={sx(0.87 * pw)} y={ph + 30} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill="var(--primary)">1X ЦЕЛЬ</text>
             )}
           </g>
         </svg>
