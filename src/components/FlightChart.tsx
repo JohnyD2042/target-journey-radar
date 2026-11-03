@@ -16,11 +16,9 @@ const fmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 const hash = (s: string) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/** side-view passenger airliner, nose +x: wing ABOVE the fuselage */
+/** zone icon: top-down passenger airliner (Flightradar-style), nose +x */
 const PLANE_D =
-  "M12 0.3 C12 -0.9 10.9 -1.6 9.3 -1.7 L-3.8 -1.9 L-7.8 -7.4 L-10 -7.4 L-9.4 -1.3 L-11.6 1.2 L-9.2 2.1 L-3.8 2.1 L7.6 2.1 C10.7 2.1 12 1.3 12 0.3 Z"
-  + " M3.4 -1.5 L-2.2 -6.3 L-4.6 -6.3 L-1 -1.5 Z"
-  + " M-7.4 -1.7 L-9.8 -4.1 L-11 -4.1 L-9.2 -1.6 Z";
+  "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
 /** infographic glyph per zone: on ground / climbing / cruising / descending / parked */
 const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean }> = {
   1: { rot: 0, ground: true },
@@ -264,8 +262,15 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
               const icon = ZONE_ICON[b.z];
               return (
                 <g key={b.z} transform={`translate(${cx},-24)`}>
-                  <g transform={`translate(0,-4) rotate(${icon.rot})`} opacity={0.95}>
-                    <path d={PLANE_D} fill={`var(--z${b.z})`} transform="scale(0.95)" />
+                  <g transform={`translate(0,-2) rotate(${icon.rot})`} opacity={0.95}>
+                    <path
+                      d={PLANE_D}
+                      fill={`var(--z${b.z})`}
+                      stroke="oklch(0.12 0.02 250)"
+                      strokeWidth={1}
+                      strokeLinejoin="round"
+                      transform="scale(0.72)"
+                    />
                   </g>
                   {icon.ground && <line x1={-10} x2={10} y1={2} y2={2} stroke={`var(--z${b.z})`} strokeWidth={1} />}
                   <text y={20} textAnchor="middle" className="font-mono text-[10px] font-semibold uppercase tracking-wider" fill={`var(--z${b.z})`}>
