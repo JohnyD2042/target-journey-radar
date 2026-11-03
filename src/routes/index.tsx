@@ -134,7 +134,7 @@ function Index() {
 
       {/* Scene */}
       <div className="flex flex-col lg:flex-row">
-        <div className="relative mb-4 h-[420px] flex-1 p-2 md:h-[560px] md:p-4">
+        <div className="relative mb-4 h-[480px] flex-1 p-2 md:h-[680px] md:p-4">
           <FlightChart ideas={shown} onSelect={setSel} selectedId={sel?.id} />
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
             <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span><span>бледный — закрыта</span>
