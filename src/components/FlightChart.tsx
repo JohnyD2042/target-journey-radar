@@ -16,9 +16,9 @@ const fmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 const hash = (s: string) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/** Flightradar-style top-down airliner, nose pointing +x */
-/** side-view airliner silhouette, nose +x */
-const PLANE_D = "M-11 -1 L-9.5 -7 L-7.5 -7 L-5 -2 L7 -2 C10.5 -2 12 -0.5 11 0.6 C10.5 1.2 9.5 1.4 8 1.4 L-9 1.4 Z M-1.5 0.4 L3.5 0.4 L-0.5 5.5 L-2.8 5.5 Z";
+/** zone icon: top-down passenger airliner (Flightradar-style), nose +x */
+const PLANE_D =
+  "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
 /** infographic glyph per zone: on ground / climbing / cruising / descending / parked */
 const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean }> = {
   1: { rot: 0, ground: true },
@@ -210,8 +210,8 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
                 <line key={t} x1={0} x2={pw} y1={sy(baseY(t))} y2={sy(baseY(t))} stroke="var(--grid)" strokeWidth={t === 0 ? 0 : 1} />
               ))}
 
-              {/* runway on zero */}
-              <line x1={0} x2={pw} y1={depY} y2={depY} stroke="var(--primary)" strokeWidth={1.5} opacity={0.9} />
+              {/* zero axis: same color as other axes, just thicker */}
+              <line x1={0} x2={pw} y1={depY} y2={depY} stroke="var(--grid)" strokeWidth={2.5} opacity={1} />
 
               <Airport x={depX} y={depY} label="СТАРТ" />
 
@@ -262,10 +262,17 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
               const icon = ZONE_ICON[b.z];
               return (
                 <g key={b.z} transform={`translate(${cx},-24)`}>
-                  <g transform={`translate(0,-4) rotate(${icon.rot})`} opacity={0.95}>
-                    <path d={PLANE_D} fill={`var(--z${b.z})`} transform="scale(0.95)" />
+                  <g transform={`translate(0,-2) rotate(${icon.rot})`} opacity={0.95}>
+                    <path
+                      d={PLANE_D}
+                      fill={`var(--z${b.z})`}
+                      stroke="oklch(0.12 0.02 250)"
+                      strokeWidth={1}
+                      strokeLinejoin="round"
+                      transform="scale(0.72)"
+                    />
                   </g>
-                  {icon.ground && <line x1={-10} x2={10} y1={2} y2={2} stroke={`var(--z${b.z})`} strokeWidth={1} />}
+                  {icon.ground && <line x1={-11} x2={11} y1={9} y2={9} stroke={`var(--z${b.z})`} strokeWidth={1} />}
                   <text y={20} textAnchor="middle" className="font-mono text-[10px] font-semibold uppercase tracking-wider" fill={`var(--z${b.z})`}>
                     {size.w < 640 ? b.z : ZONES[b.z].name}
                   </text>
@@ -276,7 +283,7 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
               const y = sy(baseY(t));
               if (y < 0 || y > ph) return null;
               return (
-                <text key={t} x={-8} y={y + 3} textAnchor="end" className="font-mono text-[10px]" fill={t === 0 ? "var(--primary)" : "var(--muted-foreground)"}>
+                <text key={t} x={-8} y={y + 3} textAnchor="end" className="font-mono text-[10px]" fill="var(--muted-foreground)">
                   {t > 0 ? "+" : ""}{t}%
                 </text>
               );
