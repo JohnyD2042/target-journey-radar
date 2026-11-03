@@ -25,7 +25,7 @@ function Plane({ color }: { color: string }) {
   );
 }
 
-export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string }) {
+export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string | undefined }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 900, h: 480 });
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
@@ -35,7 +35,7 @@ export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; on
 
   useEffect(() => {
     const el = wrap.current!;
-    const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }));
+    const ro = new ResizeObserver(([e]) => e && setSize({ w: e.contentRect.width, h: e.contentRect.height }));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
