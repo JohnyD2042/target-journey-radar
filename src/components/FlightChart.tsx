@@ -17,14 +17,15 @@ const hash = (s: string) => { let h = 7; for (const c of s) h = (h * 31 + c.char
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
 /** Flightradar-style top-down airliner, nose pointing +x */
-const PLANE_D = "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
+/** side-view airliner silhouette, nose +x */
+const PLANE_D = "M-11 -1 L-9.5 -7 L-7.5 -7 L-5 -2 L7 -2 C10.5 -2 12 -0.5 11 0.6 C10.5 1.2 9.5 1.4 8 1.4 L-9 1.4 Z M-1.5 0.4 L3.5 0.4 L-0.5 5.5 L-2.8 5.5 Z";
 /** infographic glyph per zone: on ground / climbing / cruising / descending / parked */
 const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean }> = {
   1: { rot: 0, ground: true },
   2: { rot: -30 },
   3: { rot: 0 },
   4: { rot: 22 },
-  5: { rot: -90, ground: true },
+  5: { rot: 0, ground: true },
 };
 
 function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
@@ -39,28 +40,6 @@ function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
       />
     </g>
   );
-}
-
-/** deterministic "terrain" contour lines for the map backdrop */
-function useTerrain(w: number, h: number) {
-  return useMemo(() => {
-    const lines: string[] = [];
-    for (let n = 0; n < 14; n++) {
-      const y0 = (h / 14) * n + 10;
-      let d = `M -20 ${y0}`;
-      for (let x = 0; x <= w + 40; x += 40) {
-        const y = y0 + Math.sin(x / 140 + n * 1.7) * 18 + Math.sin(x / 53 + n) * 6;
-        d += ` L ${x} ${y.toFixed(1)}`;
-      }
-      lines.push(d);
-    }
-    const roads: string[] = [];
-    for (let n = 0; n < 6; n++) {
-      const x0 = ((n * 0.19 + 0.05) % 1) * w;
-      roads.push(`M ${x0} -10 C ${x0 + 120} ${h * 0.3}, ${x0 - 90} ${h * 0.6}, ${x0 + 60} ${h + 10}`);
-    }
-    return { lines, roads };
-  }, [w, h]);
 }
 
 type Props = { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string | undefined };
@@ -211,10 +190,6 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
         <svg width={size.w} height={size.h} className="block">
           <defs>
             <clipPath id="plot"><rect x={0} y={0} width={pw} height={ph} /></clipPath>
-            <radialGradient id="sweep" cx="0" cy="0" r="1">
-              <stop offset="0" stopColor="var(--primary)" stopOpacity="0.18" />
-              <stop offset="1" stopColor="var(--primary)" stopOpacity="0" />
-            </radialGradient>
             <linearGradient id="trail-long" x1="1" x2="0"><stop offset="0" stopColor="var(--long)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--long)" stopOpacity="0" /></linearGradient>
             <linearGradient id="trail-short" x1="1" x2="0"><stop offset="0" stopColor="var(--short)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--short)" stopOpacity="0" /></linearGradient>
             <filter id="glow"><feGaussianBlur stdDeviation="2.2" /></filter>
@@ -288,9 +263,9 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
               return (
                 <g key={b.z} transform={`translate(${cx},-24)`}>
                   <g transform={`translate(0,-4) rotate(${icon.rot})`} opacity={0.95}>
-                    <path d={PLANE_D} fill="none" stroke={`var(--z${b.z})`} strokeWidth={1.1} transform="scale(0.8)" />
+                    <path d={PLANE_D} fill={`var(--z${b.z})`} transform="scale(0.95)" />
                   </g>
-                  {icon.ground && <line x1={-10} x2={10} y1={5} y2={5} stroke={`var(--z${b.z})`} strokeWidth={1} />}
+                  {icon.ground && <line x1={-10} x2={10} y1={2} y2={2} stroke={`var(--z${b.z})`} strokeWidth={1} />}
                   <text y={20} textAnchor="middle" className="font-mono text-[10px] font-semibold uppercase tracking-wider" fill={`var(--z${b.z})`}>
                     {size.w < 640 ? b.z : ZONES[b.z].name}
                   </text>
