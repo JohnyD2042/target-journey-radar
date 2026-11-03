@@ -76,7 +76,7 @@ export const IDEAS: Idea[] = (() => {
   const out: Idea[] = [];
   const span = TODAY.getTime() - START.getTime();
   for (let n = 0; n < 84; n++) {
-    const [ticker, name] = TICKERS[Math.floor(r() * TICKERS.length)];
+    const [ticker, name] = TICKERS[Math.floor(r() * TICKERS.length)]!;
     const side: Side = r() < 0.78 ? "long" : "short";
     const openPrice = Math.round((50 + r() * 4000) * 10) / 10;
     const hasTarget = r() > 0.12;
@@ -96,7 +96,7 @@ export const IDEAS: Idea[] = (() => {
     out.push({
       id: `II-${1000 + n}`,
       ticker, name, side,
-      analyst: ANALYSTS[Math.floor(r() * ANALYSTS.length)],
+      analyst: ANALYSTS[Math.floor(r() * ANALYSTS.length)]!,
       status: closed ? "closed" : "active",
       openDate: openDate.toISOString(),
       openPrice, price, target,
