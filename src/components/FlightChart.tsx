@@ -272,7 +272,7 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
                       transform="scale(0.72)"
                     />
                   </g>
-                  {icon.ground && <line x1={-10} x2={10} y1={2} y2={2} stroke={`var(--z${b.z})`} strokeWidth={1} />}
+                  {icon.ground && <line x1={-11} x2={11} y1={9} y2={9} stroke={`var(--z${b.z})`} strokeWidth={1} />}
                   <text y={20} textAnchor="middle" className="font-mono text-[10px] font-semibold uppercase tracking-wider" fill={`var(--z${b.z})`}>
                     {size.w < 640 ? b.z : ZONES[b.z].name}
                   </text>
