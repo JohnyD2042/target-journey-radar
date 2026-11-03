@@ -53,7 +53,17 @@ function useTerrain(w: number, h: number) {
   }, [w, h]);
 }
 
-export function FlightChart({ ideas, onSelect, selectedId }: { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string | undefined }) {
+type Props = { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string | undefined };
+
+export function FlightChart(props: Props) {
+  // animated map is client-only: avoids SSR/hydration mismatch of per-frame values
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div className="map-bg h-full w-full rounded-xl border" />;
+  return <FlightMap {...props} />;
+}
+
+function FlightMap({ ideas, onSelect, selectedId }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 900, h: 480 });
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
