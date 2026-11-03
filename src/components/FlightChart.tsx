@@ -299,7 +299,7 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
         <button className="map-btn" aria-label="Отдалить" onClick={() => zoomAt(pw / 2, ph / 2, view.k / 1.6)}>−</button>
         <button className="map-btn text-[10px] disabled:opacity-40" aria-label="Сбросить" disabled={view.k === 1} onClick={() => setView({ k: 1, x: 0, y: 0 })}>1:1</button>
       </div>
-      <div className="pointer-events-none absolute left-14 top-10 flex items-center gap-2 rounded bg-popover/80 px-2 py-0.5 font-mono text-[10px] backdrop-blur">
+      <div className="pointer-events-none absolute bottom-14 left-14 flex items-center gap-2 rounded bg-popover/80 px-2 py-0.5 font-mono text-[10px] backdrop-blur">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-short" />
         <span className="text-primary">LIVE</span>
         <span className="text-muted-foreground">{ideas.length} в воздухе · ×{view.k.toFixed(1)}</span>
