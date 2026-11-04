@@ -304,13 +304,15 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
           const icon = ZONE_ICON[z];
           const colorClass = { 1: "text-z1", 2: "text-z2", 3: "text-z3", 4: "text-z4", 5: "text-z5" }[z];
           return (
-            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} className={`h-[84px] min-w-0 flex-col gap-0.5 rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
+            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} className={`group h-[84px] min-w-0 flex-col gap-2 rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
               <svg viewBox="-14 -14 28 28" className="!h-5 !w-5" aria-hidden="true">
                 <path d={PLANE_D} transform={`rotate(${icon.rot})`} fill="currentColor" />
                 {icon.ground && <line x1={-11} x2={11} y1={11} y2={11} stroke="currentColor" />}
               </svg>
-              <span className="flex min-h-7 items-center whitespace-normal text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>
-              <span className="font-mono text-lg leading-none">{ideas.filter((i) => zoneOf(i) === z).length}</span>
+              <span className="flex min-h-10 max-w-full flex-wrap items-center justify-center gap-x-1.5 gap-y-1 min-[640px]:min-h-8">
+                <span className="whitespace-normal text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>
+                <span className="inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1.5 font-mono text-[10px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground">{ideas.filter((i) => zoneOf(i) === z).length}</span>
+              </span>
             </Button>
           );
         })}
