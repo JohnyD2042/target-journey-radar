@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { constrainMapView, initialMapView, wheelMapView, zoomMapView } from "@/lib/map-view";
 
 describe("flight map navigation", () => {
-  it("allows horizontal and vertical pan even at 1:1", () => {
-    expect(constrainMapView({ k: 1, x: 100, y: -80 }, 800, 500)).toEqual({ k: 1, x: 100, y: -80 });
+  it("allows horizontal pan at 1:1 but keeps the Y scale hugging the data", () => {
+    expect(constrainMapView({ k: 1, x: 100, y: -80 }, 800, 500)).toEqual({ k: 1, x: 100, y: -25 });
   });
   it("two-finger scrolling pans both axes without changing zoom", () => {
     expect(wheelMapView(initialMapView(), { x: 42, y: -28, mode: 0, pinch: false }, 400, 250)).toEqual({ k: 1, x: -42, y: 28 });
