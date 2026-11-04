@@ -46,7 +46,7 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
       {/* what you can see through the glass */}
       <g clipPath="url(#wm-glass)">
         <rect x="5.4" y="4.4" width="21.2" height="31.2" fill="url(#wm-sky)" />
-        <circle cx="21.5" cy="30.5" r="7" fill="url(#wm-sun)" />
+        <circle cx="21.5" cy="28" r="6" fill="url(#wm-sun)" />
         <g fill="var(--cloud)" opacity="0.8">
           <ellipse cx="10" cy="32.6" rx="6" ry="2.3" />
           <ellipse cx="14.6" cy="31.2" rx="3.6" ry="1.9" />
