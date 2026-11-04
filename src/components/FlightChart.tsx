@@ -211,7 +211,7 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
                 <g key={b.z}>
                   <rect
                     x={sx(b.from * pw)} y={0} width={(b.to - b.from) * pw * view.k} height={ph}
-                    fill={`color-mix(in oklab, var(--z${b.z}) ${BAND_MIX[b.z]}%, oklch(0.16 0.03 235))`}
+                    fill={`url(#band-${b.z})`}
                   />
                   {/* each zone is opened by a line in its own colour */}
                   {b.from > 0 && (
