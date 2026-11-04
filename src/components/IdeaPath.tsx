@@ -45,3 +45,12 @@ export function SideTag({ idea: i }: { idea: Idea }) {
     </span>
   );
 }
+
+/** quiet caption next to a portfolio idea's tickers: several papers, one bet */
+export function BasketTag() {
+  return (
+    <span className="rounded border border-dashed px-1 font-mono text-[9px] font-medium leading-4 text-muted-foreground">
+      портфель
+    </span>
+  );
+}
