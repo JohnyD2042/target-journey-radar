@@ -23,18 +23,39 @@ const PLANE_D =
   "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
 /** infographic glyph per zone: on ground / climbing / cruising / descending / parked */
 const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean }> = {
-  1: { rot: 0, ground: true },
-  2: { rot: -30 },
+  1: { rot: 6, ground: true },
+  2: { rot: -32 },
   3: { rot: 0 },
-  4: { rot: 22 },
+  4: { rot: 18 },
   5: { rot: 0, ground: true },
 };
+
+/**
+ * Header glyph: side-view outline airliner, one swept wing + one fin, nose +x.
+ * Deliberately different from the filled top-down markers used on the map.
+ */
+const SIDE_FUSELAGE = "M6 17 L23 17 Q27 17 27 19 Q27 21 23 21 L6 21 Q2 21 2 19 Q2 17 6 17 Z";
+const SIDE_WING = "M19 17 L12 4 L9 4 L13 17";
+const SIDE_FIN = "M8 17 L4 9 L2 9 L4 17";
+
+function ZoneGlyph({ rot, ground }: { rot: number; ground?: boolean | undefined }) {
+  return (
+    <svg viewBox="-3 0 33 26" className="!h-6 !w-6" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <g transform={`rotate(${rot} 15 19)`}>
+        <path d={SIDE_FUSELAGE} />
+        <path d={SIDE_WING} />
+        <path d={SIDE_FIN} />
+      </g>
+      {ground && <line x1={1} x2={28} y1={23.5} y2={23.5} />}
+    </svg>
+  );
+}
 
 function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   return (
     <g transform={`scale(${scale})`}>
       <path
-        d="M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z"
+        d={PLANE_D}
         fill={color}
         stroke="oklch(0.12 0.02 250)"
         strokeWidth={0.9}
@@ -305,10 +326,7 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
           const colorClass = { 1: "text-z1", 2: "text-z2", 3: "text-z3", 4: "text-z4", 5: "text-z5" }[z];
           return (
             <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} className={`group h-[84px] min-w-0 flex-col gap-2 rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
-              <svg viewBox="-14 -14 28 28" className="!h-5 !w-5" aria-hidden="true">
-                <path d={PLANE_D} transform={`rotate(${icon.rot})`} fill="currentColor" />
-                {icon.ground && <line x1={-11} x2={11} y1={11} y2={11} stroke="currentColor" />}
-              </svg>
+              <ZoneGlyph rot={icon.rot} ground={icon.ground} />
               <span className="flex min-h-10 max-w-full flex-col items-center justify-center gap-x-1.5 gap-y-1 min-[1024px]:min-h-8 min-[1024px]:flex-row">
                 <span className="flex min-h-6 items-center whitespace-normal text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>
                 <span className="inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1.5 font-mono text-[10px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground">{ideas.filter((i) => zoneOf(i) === z).length}</span>
