@@ -47,10 +47,10 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
       <g clipPath="url(#wm-glass)">
         <rect x={GLASS.x} y={GLASS.y} width={GLASS.w} height={GLASS.h} fill="url(#wm-sky)" />
 
-        {/* schematic cloud bands, low in the frame */}
-        <g fill="var(--cloud)">
-          <rect x="7.6" y="31" width="11.6" height="2.4" rx="1.2" opacity="0.5" />
-          <rect x="12.4" y="34.4" width="7.2" height="1.9" rx="0.95" opacity="0.3" />
+        {/* one schematic cloud puff, low in the frame */}
+        <g fill="var(--cloud)" opacity="0.45">
+          <ellipse cx="12" cy="32.6" rx="5.4" ry="2.1" />
+          <ellipse cx="14.9" cy="31.1" rx="3.1" ry="1.7" />
         </g>
 
         <g className="mark-plane">
