@@ -163,7 +163,6 @@ function Index() {
 function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
   const z = zoneOf(i);
   const r = ret(i);
-  const u = upside(i);
   const Col = ({ k, v, sub, align }: { k: string; v: string; sub: React.ReactNode; align: string }) => (
     <div className={`flex min-w-0 flex-col ${align}`}>
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{k}</span>
