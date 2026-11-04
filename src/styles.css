@@ -81,6 +81,7 @@
 
 @layer base {
   * { border-color: var(--color-border); }
+  button:not(:disabled), [role="button"]:not(:disabled), a[href] { cursor: pointer; }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
