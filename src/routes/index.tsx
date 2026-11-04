@@ -144,7 +144,7 @@ function Index() {
                 setTFocus(false);
               }}
               onFocus={() => setTFocus(true)}
-              onBlur={() => setTimeout(() => { setTFocus(false); const hit = exactHit(tq); if (hit) commitTicker(hit); }, 150)}
+              onBlur={() => setTimeout(() => setTFocus(false), 150)}
               placeholder="Тикер или название…"
               className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
             />
