@@ -203,9 +203,9 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
                 <g key={b.z}>
                   <rect
                     x={sx(b.from * pw)} y={0} width={(b.to - b.from) * pw * view.k} height={ph}
-                    fill={`var(--z${b.z})`} opacity={b.z === 3 ? 0.07 : b.z === 5 ? 0.1 : 0.16}
+                    fill={`color-mix(in oklab, var(--z${b.z}) ${BAND_MIX[b.z]}, oklch(0.16 0.03 235))`}
                   />
-                  <line x1={sx(b.to * pw)} x2={sx(b.to * pw)} y1={0} y2={ph} stroke={`var(--z${b.z})`} strokeOpacity={0.35} strokeDasharray={b.z === 4 ? "0" : "3 5"} strokeWidth={b.z === 4 ? 2 : 1} />
+                  <line x1={sx(b.to * pw)} x2={sx(b.to * pw)} y1={0} y2={ph} stroke={`var(--z${b.z})`} strokeOpacity={0.55} strokeDasharray={b.z === 4 ? "0" : "3 5"} strokeWidth={b.z === 4 ? 2 : 1} />
                 </g>
               ))}
               {yTicks.map((t) => (
