@@ -23,10 +23,10 @@ const PLANE_D =
   "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
 /** infographic glyph per zone: sank / climbing / cruising / descending / on target */
 const ZONE_ICON: Record<Zone, { rot: number }> = {
-  1: { rot: 30 },
-  2: { rot: -28 },
+  1: { rot: 34 },
+  2: { rot: -30 },
   3: { rot: -10 },
-  4: { rot: 18 },
+  4: { rot: 22 },
   5: { rot: -2 },
 };
 
