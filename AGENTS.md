@@ -11,4 +11,4 @@
 
 - Keep flight-map viewport math in the browser-safe map-view module with unit tests; this separates navigation from animated rendering.
 - Render zone labels and counts inside the map, outside its pan/zoom transform; navigation and reset must not remove the overview.
-- Flight data comes only from the external /flight API (src/lib/ideas.ts); never compute yield, zones or Y scale locally — the API owns these metrics.
+- Flight data is fetched once in full from the external /flight API (src/lib/ideas.ts, refresh ≤ every 15 min); filters and counters are applied locally via applyFilters, but yield, zones (stage) and Y scale always come from the API — never compute them locally.
