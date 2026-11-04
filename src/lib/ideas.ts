@@ -16,9 +16,9 @@ export interface Idea {
 
 export const ZONES: Record<Zone, { name: string; short: string; hint: string }> = {
   1: { name: "Не завелись", short: "На земле", hint: "доходность ниже нуля" },
-  2: { name: "Взлетает", short: "0 → 0,2x", hint: "до 20% пути" },
-  3: { name: "В полёте", short: "0,2x → 0,8x", hint: "20–80% пути" },
-  4: { name: "Финишная прямая", short: "0,8x → 1x", hint: "больше 80%" },
+  2: { name: "Взлет", short: "0 → 0,2x", hint: "до 20% пути" },
+  3: { name: "В полете", short: "0,2x → 0,8x", hint: "20–80% пути" },
+  4: { name: "Посадка", short: "0,8x → 1x", hint: "больше 80%" },
   5: { name: "Достигли цели", short: "1X Цель", hint: "закрыты по цели" },
 };
 
@@ -76,7 +76,9 @@ export const IDEAS: Idea[] = (() => {
   const out: Idea[] = [];
   const span = TODAY.getTime() - START.getTime();
   for (let n = 0; n < 84; n++) {
-    const [ticker, name] = TICKERS[Math.floor(r() * TICKERS.length)]!;
+    const entry = TICKERS[Math.floor(r() * TICKERS.length)];
+    if (!entry) continue;
+    const [ticker, name] = entry;
     const side: Side = r() < 0.78 ? "long" : "short";
     const openPrice = Math.round((50 + r() * 4000) * 10) / 10;
     const hasTarget = r() > 0.12;
@@ -96,7 +98,7 @@ export const IDEAS: Idea[] = (() => {
     out.push({
       id: `II-${1000 + n}`,
       ticker, name, side,
-      analyst: ANALYSTS[Math.floor(r() * ANALYSTS.length)]!,
+      analyst: ANALYSTS[Math.floor(r() * ANALYSTS.length)] ?? "",
       status: closed ? "closed" : "active",
       openDate: openDate.toISOString(),
       openPrice, price, target,
