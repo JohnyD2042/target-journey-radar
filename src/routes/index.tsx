@@ -91,14 +91,14 @@ function Index() {
       {/* Filters */}
       <div className="flex flex-col gap-3 px-4 py-3 md:px-6">
        <div className="flex flex-col gap-3 md:flex-row md:items-end">
-        <label className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Дата старта идей</span>
           <Seg items={PERIODS} value={period} onChange={setPeriod} counts={periodCounts} />
-        </label>
-        <label className="flex flex-col gap-1">
+        </div>
+        <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Статус</span>
           <Seg items={BOOKS} value={book} onChange={setBook} counts={bookCounts} />
-        </label>
+        </div>
        </div>
        <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <div className="flex flex-col gap-1 md:w-80">
