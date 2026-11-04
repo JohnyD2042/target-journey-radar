@@ -20,3 +20,9 @@ describe("flight map navigation", () => {
     expect(initialMapView()).toEqual({ k: 1, x: 0, y: 0 });
   });
 });
+import { bandLabelSlot } from "@/lib/map-view";
+describe("bandLabelSlot", () => {
+  it("keeps the label inside its band at 1:1", () => expect(bandLabelSlot(0.6, 0.87, 1000, { k: 1, x: 0 })).toEqual({ left: 600, width: 270 }));
+  it("clips to the visible part when zoomed", () => expect(bandLabelSlot(0.6, 0.87, 1000, { k: 2, x: -1000 })).toEqual({ left: 200, width: 540 }));
+  it("off-screen band gets zero width", () => expect(bandLabelSlot(0, 0.13, 1000, { k: 4, x: -2000 }).width).toBe(0));
+});
