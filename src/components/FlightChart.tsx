@@ -390,10 +390,10 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
             <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[62px] min-w-0 flex-col items-center justify-between gap-1 overflow-visible rounded-sm px-px min-[640px]:h-[76px] min-[1024px]:h-[84px] ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
               <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} small={tight} />
               <span className={tight
-                ? "block w-full whitespace-normal break-words text-center text-[8px] font-semibold uppercase leading-[1.25] tracking-[-0.02em] min-[640px]:text-[9px]"
+                ? "flex w-full flex-col items-center justify-end gap-0.5 whitespace-normal text-center text-[8px] font-semibold uppercase leading-[1.15] tracking-[-0.02em] min-[640px]:text-[9px]"
                 : "flex min-h-8 w-full flex-row items-center justify-center gap-1.5 whitespace-normal text-center text-[10px] font-semibold uppercase leading-tight"}>
-                {ZONES[z].name}
-                <span className="mx-0.5 inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1 align-middle font-mono text-[9px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground min-[640px]:h-5 min-[640px]:min-w-6 min-[640px]:px-1.5 min-[640px]:text-[10px]">{zoneCounts[ZONE_STAGE[z]] ?? 0}</span>
+                <span className="block max-w-full">{ZONES[z].name}</span>
+                <span className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1 font-mono text-[9px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground min-[640px]:h-5 min-[640px]:min-w-6 min-[640px]:px-1.5 min-[640px]:text-[10px]">{zoneCounts[ZONE_STAGE[z]] ?? 0}</span>
               </span>
             </Button>
           );
