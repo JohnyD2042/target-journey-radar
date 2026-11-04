@@ -6,7 +6,7 @@ export function constrainMapView(view: MapView, width: number, height: number): 
   return {
     k: view.k,
     x: clamp(view.x, width * (1 - view.k) - width * 0.65, width * 0.65),
-    y: clamp(view.y, height * (1 - view.k) - height * 0.65, height * 0.65),
+    y: clamp(view.y, height * (1 - view.k) - height * 0.05, height * 0.05),
   };
 }
 
