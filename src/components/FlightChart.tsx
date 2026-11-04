@@ -38,7 +38,7 @@ const SIDE_FUSELAGE = "M6 17 L23 17 Q27 17 27 19 Q27 21 23 21 L6 21 Q2 21 2 19 Q
 const SIDE_WING = "M19 17 L12 4 L9 4 L13 17";
 const SIDE_FIN = "M8 17 L4 9 L2 9 L4 17";
 
-function ZoneGlyph({ rot, ground }: { rot: number; ground?: boolean }) {
+function ZoneGlyph({ rot, ground }: { rot: number; ground?: boolean | undefined }) {
   return (
     <svg viewBox="-3 0 33 26" className="!h-6 !w-6" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <g transform={`rotate(${rot} 15 19)`}>
