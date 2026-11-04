@@ -75,7 +75,7 @@
   --sky-3: oklch(0.86 0.09 200);
   --cloud: oklch(0.97 0.01 240);
   --shade-1: oklch(0.87 0.02 240);
-  --shade-2: oklch(0.66 0.03 240);
+  --shade-2: oklch(0.6 0.03 240);
   --frame: oklch(0.78 0.025 240);
 }
 

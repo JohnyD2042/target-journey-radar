@@ -46,15 +46,15 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
       {/* what you can see through the glass */}
       <g clipPath="url(#wm-glass)">
         <rect x="5.4" y="4.4" width="21.2" height="31.2" fill="url(#wm-sky)" />
-        <circle cx="21" cy="29" r="7" fill="url(#wm-sun)" />
+        <circle cx="21.5" cy="30.5" r="7" fill="url(#wm-sun)" />
         <g fill="var(--cloud)" opacity="0.8">
           <ellipse cx="10" cy="32.6" rx="6" ry="2.3" />
           <ellipse cx="14.6" cy="31.2" rx="3.6" ry="1.9" />
           <ellipse cx="23" cy="34.4" rx="5" ry="1.8" />
         </g>
         <g className="mark-plane">
-          <line x1="-19" y1="0" x2="-6.5" y2="0" stroke="var(--foreground)" strokeOpacity="0.4" strokeWidth="1" strokeDasharray="3 2.2" strokeLinecap="round" />
-          <g transform="scale(0.3)">
+          <line x1="-20" y1="0" x2="-6" y2="0" stroke="var(--foreground)" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" />
+          <g transform="scale(0.46)">
             <path d={DART} fill="var(--foreground)" />
           </g>
         </g>
@@ -64,6 +64,7 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
         <rect x="4" y={SHADE_BOTTOM - 1.1} width="24" height="2.6" rx="1.3" fill="var(--shade-2)" />
         <rect x="4" y={SHADE_BOTTOM - 0.8} width="24" height="0.8" rx="0.4" fill="var(--shade-1)" opacity="0.45" />
         <rect x="13.9" y={SHADE_BOTTOM - 0.5} width="4.2" height="1.4" rx="0.7" fill="var(--sky-1)" opacity="0.5" />
+        <rect x="4" y={SHADE_BOTTOM + 1.3} width="24" height="0.8" fill="var(--background)" opacity="0.4" />
         <rect x="5.4" y={SHADE_BOTTOM + 1.5} width="21.2" height="5" fill="url(#wm-drop)" />
 
         {/* reflection on the glass, above everything behind it */}
