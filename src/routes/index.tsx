@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { FlightChart } from "@/components/FlightChart";
-import { IDEAS, TODAY, ZONES, type Idea, type Zone, ret, upside, progress, zoneOf } from "@/lib/ideas";
+import { IDEAS, TODAY, ZONES, type Idea, type Zone, ret, upside, zoneOf } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -10,6 +10,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Визуальный радар инвестиционных идей аналитиков: доходность и пройденный путь до целевой цены." },
       { property: "og:title", content: "Монитор полётов — инвестидеи на пути к цели" },
       { property: "og:description", content: "Радар инвестидей аналитиков: каждая идея — самолёт на маршруте к цели." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,
@@ -61,7 +63,6 @@ function Index() {
 
   const periodCounts = Object.fromEntries(PERIODS.map(([p]) => [p, IDEAS.filter((i) => inPeriod(i, p) && inBook(i, book) && (!analyst || i.analyst === analyst)).length])) as Record<Period, number>;
   const bookCounts = Object.fromEntries(BOOKS.map(([b]) => [b, byAnalyst.filter((i) => inBook(i, b)).length])) as Record<Book, number>;
-  const zoneCounts = ([1, 2, 3, 4, 5] as Zone[]).map((z) => shown.filter((i) => zoneOf(i) === z).length);
 
   const analysts = useMemo(() => {
     const m = new Map<string, number>();
@@ -114,30 +115,12 @@ function Index() {
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-5 border-y">
-        {([1, 2, 3, 4, 5] as Zone[]).map((z, idx) => (
-          <button
-            key={z}
-            onClick={() => setZone(zone === z ? null : z)}
-            className={`border-r px-2 py-3 text-left last:border-r-0 transition-colors md:px-6 md:py-4 ${zone === z ? "bg-accent" : "hover:bg-card"}`}
-          >
-            <div className="flex items-start gap-1.5 text-[10px] uppercase leading-tight tracking-wider md:text-xs" style={{ color: `var(--z${z})` }}>
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: `var(--z${z})` }} />
-              <span>{ZONES[z].name}</span>
-            </div>
-            <div className="mt-1 font-mono text-2xl font-semibold md:text-4xl">{zoneCounts[idx]}</div>
-          </button>
-        ))}
-      </div>
-
       {/* Scene */}
       <div className="flex flex-col pb-8 lg:flex-row">
         <div className="relative mb-4 h-[480px] p-2 lg:flex-1 md:h-[680px] md:p-4">
-          <FlightChart ideas={shown} onSelect={setSel} selectedId={sel?.id} />
+          <FlightChart ideas={shown} onSelect={setSel} selectedId={sel?.id} activeZone={zone} onZoneChange={(z) => setZone(zone === z ? null : z)} />
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
             <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span><span>бледный — закрыта</span>
-            <span className="hidden md:inline">колесо / +− — масштаб</span>
           </div>
         </div>
         {sel && <Card idea={sel} onClose={() => setSel(null)} />}

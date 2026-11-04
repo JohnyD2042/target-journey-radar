@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep flight-map viewport math in the browser-safe map-view module with unit tests; this separates navigation from animated rendering.
+- Render zone labels and counts inside the map, outside its pan/zoom transform; navigation and reset must not remove the overview.
