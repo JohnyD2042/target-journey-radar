@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart } from "@/components/FlightChart";
 import { SideTag, IdeaPath } from "@/components/IdeaPath";
 import { WindowMark } from "@/components/WindowMark";
-import { IDEAS, TODAY, ZONES, type Idea, type Zone, ret, upside, zoneOf } from "@/lib/ideas";
+import { ZONES, fetchFlight, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -19,19 +20,13 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Period = "all" | "month" | "week";
-type Book = "active" | "closed" | "all";
 const PERIODS: [Period, string][] = [["all", "За всё время"], ["month", "Месяц"], ["week", "Неделя"]];
 const BOOKS: [Book, string][] = [["active", "Активные"], ["closed", "Закрытые"], ["all", "Все"]];
-
-const inPeriod = (i: Idea, p: Period) =>
-  p === "all" || TODAY.getTime() - new Date(i.openDate).getTime() <= (p === "month" ? 30 : 7) * 864e5;
-const inBook = (i: Idea, b: Book) => b === "all" || i.status === b;
 const pct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
-const date = (s: string) => new Date(s).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" });
-const money = (v: number) => v.toLocaleString("ru-RU", { maximumFractionDigits: 1 });
+const isoLabel = (s: string) => s ? new Date(s).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "";
+const money = (v: number) => v.toLocaleString("ru-RU", { maximumFractionDigits: 4 });
 
-function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, string][]; value: T; onChange: (v: T) => void; counts: Record<T, number> }) {
+function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, string][]; value: T; onChange: (v: T) => void; counts?: Record<T, number> }) {
   return (
     <div className="flex rounded-md border bg-card p-0.5 text-sm">
       {items.map(([k, l]) => (
@@ -40,7 +35,7 @@ function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, 
           onClick={() => onChange(k)}
           className={`flex-1 whitespace-nowrap rounded px-3 py-1.5 transition-colors ${value === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
-          {l} <span className="ml-1 font-mono text-[11px] opacity-70">{counts[k]}</span>
+          {l} <span className="ml-1 font-mono text-[11px] opacity-70">{counts?.[k] ?? "·"}</span>
         </button>
       ))}
     </div>
@@ -53,27 +48,23 @@ function Index() {
   const [analyst, setAnalyst] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(false);
-  const [zone, setZone] = useState<Zone | "notarget" | null>(null);
+  const [tq, setTq] = useState("");
+  const [tFocus, setTFocus] = useState(false);
+  const [zone, setZone] = useState<Zone | null>(null);
   const [sel, setSel] = useState<Idea | null>(null);
 
-  const byPeriod = IDEAS.filter((i) => inPeriod(i, period));
-  const [tq, setTq] = useState("");
+  const filters = { period, book, analyst: analyst ?? "", ticker: tq.trim() };
+  const { data, isError, isFetching } = useQuery({
+    queryKey: ["flight", filters],
+    queryFn: () => fetchFlight(filters),
+    placeholderData: keepPreviousData,
+  });
+
+  const ideas = data?.ideas ?? [];
+  const shown = useMemo(() => (zone ? ideas.filter((i) => zoneOf(i) === zone) : ideas), [ideas, zone]);
+  const analysts = (data?.analysts ?? []).filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   const tqn = tq.trim().toLowerCase();
-  const byTicker = (i: Idea) => !tqn || i.ticker.toLowerCase().includes(tqn) || i.name.toLowerCase().includes(tqn);
-  const byAnalyst = byPeriod.filter((i) => (!analyst || i.analyst === analyst) && byTicker(i));
-  const shown = useMemo(
-    () => byAnalyst.filter((i) => inBook(i, book) && (!zone || (zone === "notarget" ? i.target == null : zoneOf(i) === zone))),
-    [period, book, analyst, zone, tqn],
-  );
-
-  const periodCounts = Object.fromEntries(PERIODS.map(([p]) => [p, IDEAS.filter((i) => inPeriod(i, p) && inBook(i, book) && (!analyst || i.analyst === analyst) && byTicker(i)).length])) as Record<Period, number>;
-  const bookCounts = Object.fromEntries(BOOKS.map(([b]) => [b, byAnalyst.filter((i) => inBook(i, b)).length])) as Record<Book, number>;
-
-  const analysts = useMemo(() => {
-    const m = new Map<string, number>();
-    byPeriod.forEach((i) => m.set(i.analyst, (m.get(i.analyst) ?? 0) + 1));
-    return [...m].filter(([a]) => a.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b[1] - a[1]);
-  }, [period, q]);
+  const instruments = (data?.instruments ?? []).filter((x) => !tqn || x.ticker.toLowerCase().includes(tqn) || x.name.toLowerCase().includes(tqn)).slice(0, 30);
 
   return (
     <div className="min-h-screen">
@@ -86,7 +77,7 @@ function Index() {
           </div>
         </div>
         <div className="font-mono text-[11px] text-muted-foreground">
-          Источник: база Invest-Idei · Срез {date(TODAY.toISOString())} · 11:00
+          {data ? <>Источник: база Invest-Idei · Срез {isoLabel(data.asOf)} · Период {isoLabel(data.from)} — {isoLabel(data.to)}</> : isError ? "Источник недоступен" : "Загрузка…"}
         </div>
       </header>
 
@@ -95,11 +86,11 @@ function Index() {
        <div className="flex flex-col gap-3 md:flex-row md:items-end">
         <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Дата старта идей</span>
-          <Seg items={PERIODS} value={period} onChange={setPeriod} counts={periodCounts} />
+          <Seg items={PERIODS} value={period} onChange={setPeriod} counts={data?.periods} />
         </div>
         <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Статус</span>
-          <Seg items={BOOKS} value={book} onChange={setBook} counts={bookCounts} />
+          <Seg items={BOOKS} value={book} onChange={setBook} counts={data?.counts} />
         </div>
        </div>
        <div className="flex flex-col gap-3 md:flex-row md:items-end">
@@ -118,11 +109,11 @@ function Index() {
             <button onClick={() => { setAnalyst(null); setQ(""); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground">✕</button>
           )}
           {focus && !analyst && (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border bg-popover text-sm shadow-xl">
+            <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover text-sm shadow-xl">
               <button onMouseDown={() => { setAnalyst(null); setQ(""); }} className="flex w-full justify-between px-3 py-2 text-left text-muted-foreground hover:bg-accent">Все аналитики</button>
-              {analysts.map(([a, n]) => (
-                <button key={a} onMouseDown={() => { setAnalyst(a); setQ(""); }} className="flex w-full justify-between px-3 py-2 text-left hover:bg-accent">
-                  {a} <span className="font-mono text-xs text-muted-foreground">{n}</span>
+              {analysts.map((a) => (
+                <button key={a.name} onMouseDown={() => { setAnalyst(a.name); setQ(""); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
+                  {a.name} <span className="font-mono text-xs text-muted-foreground">{a.count}</span>
                 </button>
               ))}
               {!analysts.length && <div className="px-3 py-2 text-muted-foreground">Никого не нашли</div>}
@@ -136,10 +127,22 @@ function Index() {
             <input
               value={tq}
               onChange={(e) => setTq(e.target.value)}
+              onFocus={() => setTFocus(true)}
+              onBlur={() => setTimeout(() => setTFocus(false), 150)}
               placeholder="Тикер или название…"
               className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
             />
             {tq && <button onClick={() => setTq("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground" aria-label="Очистить">✕</button>}
+            {tFocus && instruments.length > 0 && (
+              <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover text-sm shadow-xl">
+                {instruments.map((x) => (
+                  <button key={x.ticker} type="button" onMouseDown={() => setTq(x.ticker)} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
+                    <span className="min-w-0 truncate"><span className="font-mono font-semibold">{x.ticker}</span> <span className="text-muted-foreground">{x.name}</span></span>
+                    <span className="font-mono text-xs text-muted-foreground">{x.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </label>
        </div>
@@ -148,7 +151,23 @@ function Index() {
       {/* Scene */}
       <div className="flex flex-col pb-8 lg:flex-row">
         <div className="relative mb-4 h-[480px] p-2 lg:flex-1 md:h-[680px] md:p-4">
-          <FlightChart ideas={shown} onSelect={setSel} selectedId={sel?.id} activeZone={zone} onZoneChange={(z) => setZone(zone === z ? null : z)} />
+          {data && ideas.length > 0 ? (
+            <FlightChart
+              ideas={shown}
+              yieldMin={data.yieldMin}
+              yieldMax={data.yieldMax}
+              zoneCounts={data.counts}
+              onSelect={setSel}
+              selectedId={sel?.id != null ? String(sel.id) : undefined}
+              activeZone={zone}
+              onZoneChange={(z) => setZone(zone === z ? null : z)}
+            />
+          ) : (
+            <div className="map-bg flex h-full w-full items-center justify-center rounded-xl border text-sm text-muted-foreground">
+              {isError ? "Не удалось загрузить данные. Попробуйте обновить страницу." : data ? "По выбранным фильтрам идей нет" : "Загружаем идеи…"}
+            </div>
+          )}
+          {isFetching && data && <div className="pointer-events-none absolute right-6 top-4 font-mono text-[10px] text-muted-foreground">обновление…</div>}
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
             <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span>
           </div>
@@ -163,7 +182,7 @@ function Index() {
 
 function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
   const z = zoneOf(i);
-  const r = ret(i);
+  const r = i.yieldPct;
   const Col = ({ k, v, sub, align }: { k: string; v: string; sub: React.ReactNode; align: string }) => (
     <div className={`flex min-w-0 flex-col ${align}`}>
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{k}</span>
@@ -189,17 +208,17 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
       </div>
       <IdeaPath idea={i} />
       <div className="mt-2 grid grid-cols-3 gap-2">
-        <Col k="Вход" v={money(i.openPrice)} sub={date(i.openDate)} align="items-start text-left" />
+        <Col k="Вход" v={money(i.start)} sub={i.openedLabel} align="items-start text-left" />
         <Col
           k={i.status === "active" ? "Сейчас" : "Закрытие"}
-          v={money(i.price)}
-          sub={<span className={r >= 0 ? "text-long" : "text-short"}>{pct(r)}</span>}
+          v={money(i.current)}
+          sub={<>{i.status === "closed" && i.closedLabel ? `${i.closedLabel} · ` : ""}<span className={r >= 0 ? "text-long" : "text-short"}>{pct(r)}</span></>}
           align="items-center text-center"
         />
         <Col
           k="Цель"
-          v={i.target != null ? money(i.target) : "—"}
-          sub={i.target != null && i.targetDate ? date(i.targetDate) : "—"}
+          v={!i.noTarget && i.target != null ? money(i.target) : "—"}
+          sub={!i.noTarget && i.expectedEndLabel ? i.expectedEndLabel : "—"}
           align="items-end text-right"
         />
       </div>
@@ -207,8 +226,8 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
         <div className="mt-2 border-t border-dashed pt-2">
           <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Драйверы роста</div>
           <ul className="mt-1 space-y-0.5 text-[11px]">
-            {i.drivers.map((d) => (
-              <li key={d} className="flex gap-1.5"><span className="text-long">•</span>{d}</li>
+            {i.drivers.map((d, n) => (
+              <li key={n} className="flex gap-1.5"><span className="text-long">•</span>{d}</li>
             ))}
           </ul>
         </div>
