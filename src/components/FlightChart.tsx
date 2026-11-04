@@ -11,7 +11,7 @@ const BANDS: { z: Zone; from: number; to: number }[] = [
 ];
 const TICKS_X: [number, string][] = [[0, "0"], [0.2, "0,2x"], [0.5, "0,5x"], [0.8, "0,8x"]];
 /** how much of the zone colour the band keeps — the rest is the dark map base */
-const BAND_MIX: Record<Zone, number> = { 1: 30, 2: 30, 3: 26, 4: 30, 5: 18 };
+const BAND_MIX: Record<Zone, number> = { 1: 28, 2: 30, 3: 26, 4: 30, 5: 24 };
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const fmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
