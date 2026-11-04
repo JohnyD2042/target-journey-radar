@@ -23,12 +23,33 @@ const PLANE_D =
   "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
 /** infographic glyph per zone: on ground / climbing / cruising / descending / parked */
 const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean }> = {
-  1: { rot: 0, ground: true },
-  2: { rot: -30 },
+  1: { rot: 6, ground: true },
+  2: { rot: -32 },
   3: { rot: 0 },
-  4: { rot: 22 },
+  4: { rot: 18 },
   5: { rot: 0, ground: true },
 };
+
+/**
+ * Header glyph: side-view outline airliner, one swept wing + one fin, nose +x.
+ * Deliberately different from the filled top-down markers used on the map.
+ */
+const SIDE_FUSELAGE = "M6 17 L23 17 Q27 17 27 19 Q27 21 23 21 L6 21 Q2 21 2 19 Q2 17 6 17 Z";
+const SIDE_WING = "M19 17 L12 4 L9 4 L13 17";
+const SIDE_FIN = "M8 17 L4 9 L2 9 L4 17";
+
+function ZoneGlyph({ rot, ground }: { rot: number; ground?: boolean }) {
+  return (
+    <svg viewBox="-3 0 33 26" className="!h-6 !w-6" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <g transform={`rotate(${rot} 15 19)`}>
+        <path d={SIDE_FUSELAGE} />
+        <path d={SIDE_WING} />
+        <path d={SIDE_FIN} />
+      </g>
+      {ground && <line x1={1} x2={28} y1={23.5} y2={23.5} />}
+    </svg>
+  );
+}
 
 function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   return (
