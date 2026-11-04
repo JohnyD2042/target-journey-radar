@@ -57,8 +57,7 @@ export const ZONE_STAGE: Record<Zone, Stage> = { 1: "cold", 2: "liftoff", 3: "cr
 export const zoneOf = (i: Idea): Zone => STAGE_ZONE[i.stage] ?? 1;
 export const isLong = (i: Idea) => i.strategy === "лонг";
 
-export const ZONES: Record<Zone, { name: string; short: string; hint: string }> = {
-  1: { name: "Не завелись", short: "На земле", hint: "доходность ниже нуля" },
+export const ZONES: Record<Zone, { name: string; short: string; hint: string }> = {  1: { name: "Не завелись", short: "На земле", hint: "доходность ниже нуля" },
   2: { name: "Взлёт", short: "0 → 0,2x", hint: "до 20% пути" },
   3: { name: "В полёте", short: "0,2x → 0,8x", hint: "20–80% пути" },
   4: { name: "Посадка", short: "0,8x → 1x", hint: "больше 80%" },

@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart } from "@/components/FlightChart";
 import { SideTag, IdeaPath } from "@/components/IdeaPath";
 import { WindowMark } from "@/components/WindowMark";
-import { ZONES, applyFilters, fetchFlight, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
+import { ZONES, applyFilters, fetchFlight, isoLabel, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,7 +23,6 @@ export const Route = createFileRoute("/")({
 const PERIODS: [Period, string][] = [["all", "За всё время"], ["month", "Месяц"], ["week", "Неделя"]];
 const BOOKS: [Book, string][] = [["active", "Активные"], ["closed", "Закрытые"], ["all", "Все"]];
 const pct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
-const isoLabel = (s: string) => s ? new Date(s).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "";
 const money = (v: number) => v.toLocaleString("ru-RU", { maximumFractionDigits: 4 });
 
 function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, string][]; value: T; onChange: (v: T) => void; counts?: Record<T, number> | undefined }) {
