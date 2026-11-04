@@ -46,7 +46,8 @@ export function flightUrl(f: { period: Period; book: Book; analyst: string; tick
 }
 
 export async function fetchFlight(f: { period: Period; book: Book; analyst: string; ticker: string }): Promise<FlightResponse> {
-  const res = await fetch(flightUrl(f));
+  // the API sometimes hangs; give up after 30s so the page shows an error instead of endless loading
+  const res = await fetch(flightUrl(f), { signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
