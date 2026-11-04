@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyFilters, type FlightResponse, type Idea } from "@/lib/ideas";
+import { applyFilters, ideaTitle, isBasket, type FlightResponse, type Idea } from "@/lib/ideas";
 
 const idea = (o: Partial<Idea> & { opened: string }): Idea => ({
   id: Math.random(), ticker: "GAZP", name: "Газпром", analyst: "A", strategy: "лонг", status: "active",
@@ -28,5 +28,31 @@ describe("local filters", () => {
   it("analyst is exact match, ticker searches ticker/name", () => {
     expect(applyFilters(all, { period: "all", book: "all", analyst: "B", ticker: "" }).ideas.length).toBe(1);
     expect(applyFilters(all, { period: "all", book: "all", analyst: "", ticker: "сбер" }).ideas.length).toBe(1);
+  });
+});
+
+describe("portfolio ideas", () => {
+  const basket = idea({
+    opened: "2026-11-02", ticker: "GAZP, NVTK, ROSN, LKOH", name: "Газпром",
+    title: "Как заработать на расхождении нефти и газа?", basket: true,
+    start: 100, current: 92.83, target: null, noTarget: true, yieldPct: -7.17,
+    stage: "cold", status: "closed",
+  });
+  const plain = idea({ opened: "2026-11-02", ticker: "NVTK", name: "Новатэк" });
+  const set = { ...all, ideas: [basket, plain] } as FlightResponse;
+  const f = (ticker: string) => ({ period: "all" as const, book: "all" as const, analyst: "", ticker });
+
+  it("stays one idea and keeps its ticker string whole", () => {
+    const r = applyFilters(set, f(""));
+    expect(r.ideas.length).toBe(2);
+    expect(r.ideas.find((i) => isBasket(i))?.ticker).toBe("GAZP, NVTK, ROSN, LKOH");
+  });
+  it("is found when any code inside its ticker string is searched", () => {
+    expect(applyFilters(set, f("rosn")).ideas.map((i) => i.ticker)).toEqual(["GAZP, NVTK, ROSN, LKOH"]);
+    expect(applyFilters(set, f("nvtk")).ideas.length).toBe(2);
+  });
+  it("is described by its title, a single idea by its name", () => {
+    expect(ideaTitle(basket)).toBe("Как заработать на расхождении нефти и газа?");
+    expect(ideaTitle(plain)).toBe("Новатэк");
   });
 });
