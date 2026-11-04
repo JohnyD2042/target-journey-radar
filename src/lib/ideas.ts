@@ -22,6 +22,10 @@ export interface Idea {
   noTarget: boolean;
   capturedX: number;
   stage: Stage;
+  /** portfolio idea: one plane, one bet, several tickers inside the ticker string */
+  basket?: boolean;
+  /** portfolio idea title; a single-ticker idea is described by name */
+  title?: string;
   drivers?: string[];
   url?: string | null;
 }
@@ -56,6 +60,10 @@ export const STAGE_ZONE: Record<Stage, Zone> = { cold: 1, liftoff: 2, cruise: 3,
 export const ZONE_STAGE: Record<Zone, Stage> = { 1: "cold", 2: "liftoff", 3: "cruise", 4: "approach", 5: "landed" };
 export const zoneOf = (i: Idea): Zone => STAGE_ZONE[i.stage] ?? 1;
 export const isLong = (i: Idea) => i.strategy === "лонг";
+/** portfolio idea: one plane, one bet, several tickers inside the ticker string */
+export const isBasket = (i: Idea) => i.basket === true;
+/** line under the tickers: portfolio ideas carry their title, single ideas their name */
+export const ideaTitle = (i: Idea) => (isBasket(i) ? (i.title ?? i.name) : i.name);
 
 /**
  * Show an API date (YYYY-MM-DD) as DD.MM.YY. The day is taken from the string itself,
@@ -77,7 +85,7 @@ export const ZONES: Record<Zone, { name: string; short: string; hint: string }> 
 };
 
 export interface Filters { period: Period; book: Book; analyst: string; ticker: string }
-type RawIdea = Idea & { opened?: string; title?: string };
+type RawIdea = Idea & { opened?: string };
 
 const DAY = 86_400_000;
 const PERIOD_DAYS: Record<Period, number> = { all: Infinity, month: 30, week: 7 };

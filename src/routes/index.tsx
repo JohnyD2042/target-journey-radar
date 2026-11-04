@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart } from "@/components/FlightChart";
-import { SideTag, IdeaPath } from "@/components/IdeaPath";
+import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
 import { WindowMark } from "@/components/WindowMark";
-import { ZONES, applyFilters, fetchFlight, isoLabel, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
+import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -216,11 +216,23 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
     >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-base font-semibold leading-none">{i.ticker}</span>
-            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{i.name}</span>
-            <SideTag idea={i} />
-          </div>
+          {isBasket(i) ? (
+            <>
+              {/* portfolio: the whole ticker string on one plane, its title underneath */}
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                <span className="font-mono text-base font-semibold leading-tight">{i.ticker}</span>
+                <SideTag idea={i} />
+                <BasketTag />
+              </div>
+              <div className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">{ideaTitle(i)}</div>
+            </>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-base font-semibold leading-none">{i.ticker}</span>
+              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{i.name}</span>
+              <SideTag idea={i} />
+            </div>
+          )}
           <div className="mt-1 truncate text-[11px] text-muted-foreground">{i.analyst}</div>
         </div>
         <button onClick={onClose} className="-mr-1 -mt-1 rounded p-1 text-xs text-muted-foreground hover:text-foreground" aria-label="Закрыть">✕</button>

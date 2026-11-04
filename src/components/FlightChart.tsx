@@ -1,11 +1,11 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type Idea, type Zone, ZONES, ZONE_STAGE, isLong, zoneOf } from "@/lib/ideas";
+import { type Idea, type Zone, ZONES, ZONE_STAGE, isBasket, isLong, zoneOf } from "@/lib/ideas";
 const AIRBORNE = ["liftoff", "cruise", "approach", "landed"] as const;
 const ret = (i: Idea) => i.yieldPct;
 import { Button } from "@/components/ui/button";
 import { constrainMapView, initialMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
 import { bandLabelSlot } from "@/lib/map-view";
-import { IdeaPath, SideTag } from "@/components/IdeaPath";
+import { BasketTag, IdeaPath, SideTag } from "@/components/IdeaPath";
 
 const PAD = { l: 48, r: 12, t: 100, b: 40 };
 const BANDS: { z: Zone; from: number; to: number }[] = [
@@ -110,6 +110,9 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
   const [size, setSize] = useState({ w: 900, h: 480 });
   const [view, setView] = useState(initialMapView);
   const [hover, setHover] = useState<{ idea: Idea; x: number; y: number } | null>(null);
+  // the tooltip grows when a portfolio's ticker string wraps: keep it inside the map
+  const tip = useRef<HTMLDivElement>(null);
+  const [tipH, setTipH] = useState(110);
   const [launch, setLaunch] = useState(0);
   const viewRef = useRef(view);
   viewRef.current = view;
@@ -233,6 +236,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     }
   };
   useLayoutEffect(() => paint(performance.now()));
+  useLayoutEffect(() => { if (hover && tip.current) setTipH(tip.current.offsetHeight); }, [hover]);
   useEffect(() => {
     let raf = 0, last = 0;
     const tick = (now: number) => {
@@ -413,12 +417,14 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
 
       {hover && (
         <div
+          ref={tip}
           className="pointer-events-none absolute z-10 w-48 rounded-lg border bg-popover/95 px-2.5 py-2 text-xs shadow-xl backdrop-blur"
-          style={{ left: clamp(hover.x + 16, 4, size.w - 196), top: clamp(hover.y - 20, 4, size.h - 110) }}
+          style={{ left: clamp(hover.x + 16, 4, size.w - 196), top: clamp(hover.y - 20, 4, size.h - tipH - 8) }}
         >
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-sm font-semibold leading-none">{hover.idea.ticker}</span>
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            <span className="font-mono text-sm font-semibold leading-tight">{hover.idea.ticker}</span>
             <SideTag idea={hover.idea} />
+            {isBasket(hover.idea) && <BasketTag />}
             {hover.idea.status === "closed" && <span className="ml-auto font-mono text-[9px] uppercase text-muted-foreground">закрыта</span>}
           </div>
           <div className="mt-1 truncate text-[11px] text-muted-foreground">{hover.idea.analyst}</div>
