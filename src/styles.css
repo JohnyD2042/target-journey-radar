@@ -135,5 +135,5 @@
 
 /* airliner crossing the cabin window in the header mark */
 @keyframes mark-drift { 0% { transform: translate(-9px, 27px); } 100% { transform: translate(33px, 22px); } }
-.mark-plane { transform: translate(13px, 24px); animation: mark-drift 15s linear infinite; }
+.mark-plane { transform: translate(13px, 24px); animation: mark-drift 15s linear infinite; animation-delay: -6.5s; }
 @media (prefers-reduced-motion: reduce) { .mark-plane { animation: none; } }
