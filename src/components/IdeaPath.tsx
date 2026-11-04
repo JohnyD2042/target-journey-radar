@@ -16,8 +16,8 @@ export function IdeaPath({ idea: i }: { idea: Idea }) {
   const fillCls = r < 0 ? "bg-short" : reached ? "bg-z5" : i.side === "long" ? "bg-long" : "bg-short";
 
   return (
-    <div className="mt-2">
-      <div className="relative h-2 rounded-full bg-muted">
+    <div className="mt-5">
+      <div className="relative h-1.5 rounded-full bg-muted">
         {[0.2, 0.5, 0.8].map((t) => (
           <span key={t} className="absolute top-0 h-full w-px bg-background/70" style={{ left: `${t * 100}%` }} />
         ))}
