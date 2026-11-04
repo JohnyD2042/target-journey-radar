@@ -56,15 +56,17 @@ function ZoneGlyph({
   rot,
   ground = false,
   flag = false,
+  small = false,
 }: {
   rot: number;
   ground?: boolean | undefined;
   flag?: boolean | undefined;
+  small?: boolean | undefined;
 }) {
   const box = flag ? "-4 -10 76 40" : ground ? "-4 -8 56 40" : "-3 -9 54 42";
-  const width = flag ? "!w-12" : "!w-10";
+  const width = flag ? (small ? "!w-10" : "!w-12") : small ? "!w-8" : "!w-10";
   return (
-    <svg viewBox={box} className={`!h-6 ${width}`} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox={box} className={`${small ? "!h-5" : "!h-6"} ${width}`} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
       <g transform={`rotate(${rot} 24 12.6)`}>
         <path d={SIDE_D} />
       </g>
