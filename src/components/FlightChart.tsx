@@ -384,8 +384,8 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
           if (slot.width < 24) return null;
           const icon = ZONE_ICON[z];
           const colorClass = { 1: "text-z1", 2: "text-z2", 3: "text-z3", 4: "text-z4", 5: "text-z5" }[z];
-          // narrow band: the name and its count flow as one text block, so the count sits right after the last word
-          const tight = slot.width < 96;
+          // narrow band: the name sits above its count so all five headers keep one and the same rhythm
+          const tight = size.w < 640 || slot.width < 96;
           return (
             <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[66px] min-w-0 flex-col items-center justify-between gap-1 overflow-visible rounded-sm px-px py-0.5 min-[640px]:h-[76px] min-[1024px]:h-[84px] min-[1024px]:py-2 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
               <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} small={tight} />
