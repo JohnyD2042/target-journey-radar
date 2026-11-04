@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { type Idea, type Zone, ZONES, ret, progress, upside, zoneOf } from "@/lib/ideas";
+import { type Idea, type Zone, ZONES, ZONE_STAGE, isLong, zoneOf } from "@/lib/ideas";
+const ret = (i: Idea) => i.yieldPct;
 import { Button } from "@/components/ui/button";
 import { constrainMapView, initialMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
 import { bandLabelSlot } from "@/lib/map-view";
@@ -17,7 +18,7 @@ const TICKS_X: [number, string][] = [[0, "0"], [0.2, "0,2x"], [0.5, "0,5x"], [0.
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const fmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
-const hash = (s: string) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const hash = (v: string | number) => { const s = String(v); let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
 /** zone icon: top-down passenger airliner (Flightradar-style), nose +x */
@@ -91,7 +92,7 @@ function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   );
 }
 
-type Props = { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string | undefined; activeZone?: Zone | "notarget" | null; onZoneChange: (zone: Zone) => void };
+type Props = { ideas: Idea[]; yieldMin: number; yieldMax: number; zoneCounts: Record<string, number>; onSelect: (i: Idea) => void; selectedId?: string | undefined; activeZone?: Zone | "notarget" | null; onZoneChange: (zone: Zone) => void };
 
 export function FlightChart(props: Props) {
   // animated map is client-only: avoids SSR/hydration mismatch of per-frame values
@@ -101,7 +102,7 @@ export function FlightChart(props: Props) {
   return <FlightMap {...props} />;
 }
 
-function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Props) {
+function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId, activeZone, onZoneChange }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 900, h: 480 });
   const [view, setView] = useState(initialMapView);
@@ -157,16 +158,14 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
   useEffect(() => { viewRef.current = initialMapView(); setView(viewRef.current); setLaunch(performance.now()); }, [ideas]);
 
   const { yMin, yMax, minR } = useMemo(() => {
-    const rs = ideas.map(ret);
-    // Y range hugs the actual min/max returns (with 0 always visible) plus a small margin
-    const lo = Math.min(0, ...rs), hi = Math.max(1, ...rs);
-    const pad = Math.max((hi - lo) * 0.04, 1);
-    return { yMin: lo - pad, yMax: hi + pad, minR: Math.min(-0.01, ...rs) };
-  }, [ideas]);
+    // vertical scale edges come from the API as is
+    const span = yieldMax - yieldMin || 1;
+    return { yMin: yieldMin, yMax: yieldMax === yieldMin ? yieldMin + span : yieldMax, minR: Math.min(-0.01, yieldMin) };
+  }, [yieldMin, yieldMax]);
 
   const baseX = (i: Idea) => {
     const z = zoneOf(i);
-    const r = ret(i), p = progress(i);
+    const r = ret(i), p = i.capturedX;
     let f: number;
     if (z === 1) f = 0.012 + (1 - r / minR) * 0.105;
     else if (z === 5) f = 0.89 + clamp((p - 1) / 0.2, 0, 1) * 0.09;
@@ -290,15 +289,15 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
                   key={`t${i.id}`}
                   x1={x - Math.cos(ang) * trail} y1={y - Math.sin(ang) * trail}
                   x2={x - Math.cos(ang) * 6} y2={y - Math.sin(ang) * 6}
-                  stroke={`url(#trail-${i.side})`} strokeWidth={2} strokeLinecap="round"
+                  stroke={`url(#trail-${isLong(i) ? "long" : "short"})`} strokeWidth={2} strokeLinecap="round"
                   gradientUnits="userSpaceOnUse"
                 />
               ))}
 
               {/* planes */}
               {planes.map(({ i, z, x, y, ang }) => {
-                const col = i.side === "long" ? "var(--long)" : "var(--short)";
-                const sel = i.id === selectedId;
+                const col = isLong(i) ? "var(--long)" : "var(--short)";
+                const sel = String(i.id) === selectedId;
                 const hov = hover?.idea.id === i.id;
                 return (
                   <g
@@ -359,7 +358,7 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
               <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} />
               <span className="flex min-h-10 max-w-full flex-col items-center justify-center gap-x-1.5 gap-y-1 min-[1024px]:min-h-8 min-[1024px]:flex-row">
                 {!narrow && <span className="flex min-h-6 items-center whitespace-normal break-words text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>}
-                <span className="inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1.5 font-mono text-[10px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground">{ideas.filter((i) => zoneOf(i) === z).length}</span>
+                <span className="inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1.5 font-mono text-[10px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground">{zoneCounts[ZONE_STAGE[z]] ?? 0}</span>
               </span>
             </Button>
           );
