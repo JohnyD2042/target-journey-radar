@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type Idea, type Zone, ZONES, ZONE_STAGE, isLong, zoneOf } from "@/lib/ideas";
+const AIRBORNE = ["liftoff", "cruise", "approach", "landed"] as const;
 const ret = (i: Idea) => i.yieldPct;
 import { Button } from "@/components/ui/button";
 import { constrainMapView, initialMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
@@ -78,7 +79,7 @@ function ZoneGlyph({
 }
 
 
-function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
+const Plane = memo(function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   return (
     <g transform={`scale(${scale})`}>
       <path
@@ -90,7 +91,7 @@ function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
       />
     </g>
   );
-}
+});
 
 type Props = { ideas: Idea[]; yieldMin: number; yieldMax: number; zoneCounts: Record<string, number>; onSelect: (i: Idea) => void; selectedId?: string | undefined; activeZone?: Zone | "notarget" | null; onZoneChange: (zone: Zone) => void };
 
@@ -107,18 +108,10 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
   const [size, setSize] = useState({ w: 900, h: 480 });
   const [view, setView] = useState(initialMapView);
   const [hover, setHover] = useState<{ idea: Idea; x: number; y: number } | null>(null);
-  const [now, setNow] = useState(0);
   const [launch, setLaunch] = useState(0);
   const viewRef = useRef(view);
   viewRef.current = view;
 
-  // animation clock
-  useEffect(() => {
-    let raf = 0;
-    const tick = (t: number) => { setNow(t); raf = requestAnimationFrame(tick); };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
 
   useEffect(() => {
     const el = wrap.current;
@@ -193,31 +186,67 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
   const depX = sx(0.13 * pw), depY = sy(baseY(0));
   const arrX = sx(0.935 * pw), arrY = sy(baseY(yMax * 0.55));
 
-  // per-plane animated state
-  const planes = ideas.map((i) => {
+  // static per-plane resting geometry; recomputed only on data / pan / zoom / resize
+  const targets = useMemo(() => ideas.map((i) => {
     const h = hash(i.id);
     const z = zoneOf(i);
     const tx = sx(baseX(i)), ty = sy(baseY(ret(i)));
-    const delay = (h % 600);
-    const t = easeOut(clamp((now - launch - delay) / 1400, 0, 1));
-    // fly-in from departure runway (zone 1 taxi in from runway too)
-    let x = depX + (tx - depX) * t;
-    let y = depY + (ty - depY) * t;
-    // heading: toward target airport for flying, flat on ground, parked at gate
     let ang = Math.atan2(arrY - ty, arrX - tx) * 0.55;
     if (z === 1) ang = Math.PI * (h % 2 ? 0.02 : -0.02) + (ret(i) < -5 ? 0.25 : 0);
     if (z === 5) ang = -Math.PI / 2;
-    if (t < 1) ang = Math.atan2(ty - depY, tx - depX || 1);
-    // cruising wobble along heading (not on ground / gate)
     const moving = z !== 5 && i.status === "active";
-    const ph2 = (h % 1000) / 1000 * Math.PI * 2;
-    const amp = z === 1 ? 1.2 : 3;
-    const wob = moving && t >= 1 ? Math.sin(now / 900 + ph2) * amp : 0;
-    x += Math.cos(ang) * wob;
-    y += Math.sin(ang) * wob + (moving && t >= 1 && z !== 1 ? Math.cos(now / 1300 + ph2) * 1.2 : 0);
-    const trail = z === 1 ? 10 : z === 5 ? 0 : 18 + (z - 2) * 8;
-    return { i, z, x, y, ang, trail, moving };
-  });
+    return { key: String(i.id), tx, ty, ang, delay: h % 600, ph: ((h % 1000) / 1000) * Math.PI * 2, amp: z === 1 ? 1.2 : 3, bob: z !== 1, moving, trail: z === 1 ? 10 : z === 5 ? 0 : 18 + (z - 2) * 8 };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [ideas, view, pw, ph, yMin, yMax, minR]);
+
+  // Animation runs outside React: one rAF loop mutates SVG attributes directly (~30fps),
+  // so thousands of planes don't trigger a React re-render per frame.
+  const nodes = useRef(new Map<string, { g: SVGGElement | null; r: SVGGElement | null; t: SVGLineElement | null; x: number; y: number }>());
+  const anim = useRef({ targets, launch, depX, depY });
+  anim.current = { targets, launch, depX, depY };
+  const paint = (now: number) => {
+    const { targets: ts, launch: l0, depX: dx, depY: dy } = anim.current;
+    const still = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    for (const p of ts) {
+      const n = nodes.current.get(p.key);
+      if (!n?.g) continue;
+      const t = still ? 1 : easeOut(clamp((now - l0 - p.delay) / 1400, 0, 1));
+      let x = dx + (p.tx - dx) * t, y = dy + (p.ty - dy) * t;
+      const ang = t < 1 ? Math.atan2(p.ty - dy, p.tx - dx || 1) : p.ang;
+      if (p.moving && t >= 1 && !still) {
+        const wob = Math.sin(now / 900 + p.ph) * p.amp;
+        x += Math.cos(ang) * wob;
+        y += Math.sin(ang) * wob + (p.bob ? Math.cos(now / 1300 + p.ph) * 1.2 : 0);
+      }
+      n.x = x; n.y = y;
+      n.g.setAttribute("transform", `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+      n.r?.setAttribute("transform", `rotate(${((ang * 180) / Math.PI).toFixed(1)})`);
+      if (n.t && p.trail > 0) {
+        const c = Math.cos(ang), s2 = Math.sin(ang);
+        n.t.setAttribute("x1", (x - c * p.trail).toFixed(1)); n.t.setAttribute("y1", (y - s2 * p.trail).toFixed(1));
+        n.t.setAttribute("x2", (x - c * 6).toFixed(1)); n.t.setAttribute("y2", (y - s2 * 6).toFixed(1));
+      }
+    }
+  };
+  useLayoutEffect(() => paint(performance.now()));
+  useEffect(() => {
+    let raf = 0, last = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (document.hidden || now - last < 33) return;
+      last = now;
+      paint(now);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const node = (key: string) => {
+    let n = nodes.current.get(key);
+    if (!n) { n = { g: null, r: null, t: null, x: 0, y: 0 }; nodes.current.set(key, n); }
+    return n;
+  };
+  const live = AIRBORNE.reduce((sum, s) => sum + (zoneCounts[s] ?? 0), 0);
 
   return (
     <div className="relative h-full w-full select-none">
@@ -257,7 +286,6 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
             ))}
             <linearGradient id="trail-long" x1="1" x2="0"><stop offset="0" stopColor="var(--long)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--long)" stopOpacity="0" /></linearGradient>
             <linearGradient id="trail-short" x1="1" x2="0"><stop offset="0" stopColor="var(--short)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--short)" stopOpacity="0" /></linearGradient>
-            <filter id="glow"><feGaussianBlur stdDeviation="2.2" /></filter>
           </defs>
 
           <g transform={`translate(${PAD.l},${PAD.t})`}>
@@ -284,39 +312,39 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
               <Airport x={depX} y={depY} label="СТАРТ" />
 
               {/* trails */}
-              {planes.map(({ i, x, y, ang, trail }) => trail > 0 && (
+              {ideas.map((i, k) => targets[k]!.trail > 0 && (
                 <line
                   key={`t${i.id}`}
-                  x1={x - Math.cos(ang) * trail} y1={y - Math.sin(ang) * trail}
-                  x2={x - Math.cos(ang) * 6} y2={y - Math.sin(ang) * 6}
+                  ref={(el) => { node(String(i.id)).t = el; }}
                   stroke={`url(#trail-${isLong(i) ? "long" : "short"})`} strokeWidth={2} strokeLinecap="round"
                   gradientUnits="userSpaceOnUse"
                 />
               ))}
 
               {/* planes */}
-              {planes.map(({ i, z, x, y, ang }) => {
+              {ideas.map((i) => {
+                const z = zoneOf(i);
                 const col = isLong(i) ? "var(--long)" : "var(--short)";
                 const sel = String(i.id) === selectedId;
                 const hov = hover?.idea.id === i.id;
                 return (
                   <g
                     key={i.id}
-                    transform={`translate(${x},${y})`}
+                    ref={(el) => { node(String(i.id)).g = el; }}
                     className="cursor-pointer"
-                    onPointerEnter={(e) => e.pointerType === "mouse" && setHover({ idea: i, x: x + PAD.l, y: y + PAD.t })}
+                    onPointerEnter={(e) => { const n = node(String(i.id)); if (e.pointerType === "mouse") setHover({ idea: i, x: n.x + PAD.l, y: n.y + PAD.t }); }}
                     onPointerLeave={() => setHover(null)}
                     onClick={() => !drag.current?.moved && onSelect(i)}
                   >
                     <circle r={14} fill="transparent" />
-                    <circle r={11} fill={`var(--z${z})`} opacity={0.22} filter="url(#glow)" />
+                    <circle r={10} fill={`var(--z${z})`} opacity={0.16} />
                     {sel && (
                       <>
                         <circle r={15} fill="none" stroke="var(--primary)" strokeWidth={1.5} />
                         <circle r={15} fill="none" stroke="var(--primary)" strokeWidth={1} className="ping" />
                       </>
                     )}
-                    <g transform={`rotate(${(ang * 180) / Math.PI})`} opacity={i.status === "closed" ? 0.55 : 1}>
+                    <g ref={(el) => { node(String(i.id)).r = el; }} opacity={i.status === "closed" ? 0.55 : 1}>
                       <Plane color={col} scale={sel || hov ? 1.25 : 1} />
                     </g>
                   </g>
@@ -373,7 +401,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
       <div className="pointer-events-none absolute bottom-14 left-14 flex items-center gap-2 rounded bg-popover/80 px-2 py-0.5 font-mono text-[10px] backdrop-blur">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-short" />
         <span className="text-primary">LIVE</span>
-        <span className="text-muted-foreground">{ideas.length} в воздухе · ×{view.k.toFixed(1)}</span>
+        <span className="text-muted-foreground">{live} в воздухе · ×{view.k.toFixed(1)}</span>
       </div>
 
       {hover && (

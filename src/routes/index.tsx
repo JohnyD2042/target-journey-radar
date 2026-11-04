@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart } from "@/components/FlightChart";
 import { SideTag, IdeaPath } from "@/components/IdeaPath";
@@ -53,11 +53,15 @@ function Index() {
   const [zone, setZone] = useState<Zone | null>(null);
   const [sel, setSel] = useState<Idea | null>(null);
 
-  const filters = { period, book, analyst: analyst ?? "", ticker: tq.trim() };
+  // debounce typing so each keystroke doesn't hit the API and re-render the map
+  const [ticker, setTicker] = useState("");
+  useEffect(() => { const t = setTimeout(() => setTicker(tq.trim()), 350); return () => clearTimeout(t); }, [tq]);
+  const filters = { period, book, analyst: analyst ?? "", ticker };
   const { data, isError, isFetching } = useQuery({
     queryKey: ["flight", filters],
     queryFn: () => fetchFlight(filters),
     placeholderData: keepPreviousData,
+    staleTime: 60_000,
   });
 
   const ideas = data?.ideas ?? [];
@@ -77,7 +81,7 @@ function Index() {
           </div>
         </div>
         <div className="font-mono text-[11px] text-muted-foreground">
-          {data ? <>Источник: база Invest-Idei · Срез {isoLabel(data.asOf)} · Период {isoLabel(data.from)} — {isoLabel(data.to)}</> : isError ? "Источник недоступен" : "Загрузка…"}
+          {data ? <>Источник: база Invest-Idei · Период {isoLabel(data.from)} — {isoLabel(data.to)}</> : isError ? "Источник недоступен" : "Загрузка…"}
         </div>
       </header>
 
