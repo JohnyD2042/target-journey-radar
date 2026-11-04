@@ -5,7 +5,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 export function constrainMapView(view: MapView, width: number, height: number): MapView {
   return {
     k: view.k,
-    x: clamp(view.x, width * (1 - view.k) - width * 0.65, width * 0.65),
+    x: clamp(view.x, width * (1 - view.k), 0),
     y: clamp(view.y, height * (1 - view.k) - height * 0.05, height * 0.05),
   };
 }

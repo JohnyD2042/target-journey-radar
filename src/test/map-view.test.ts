@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { constrainMapView, initialMapView, wheelMapView, zoomMapView } from "@/lib/map-view";
 
 describe("flight map navigation", () => {
-  it("allows horizontal pan at 1:1 but keeps the Y scale hugging the data", () => {
-    expect(constrainMapView({ k: 1, x: 100, y: -80 }, 800, 500)).toEqual({ k: 1, x: 100, y: -25 });
+  it("never pans past the map edges, so no empty space appears at the sides", () => {
+    expect(constrainMapView({ k: 1, x: 100, y: -80 }, 800, 500)).toEqual({ k: 1, x: 0, y: -25 });
+    expect(constrainMapView({ k: 2, x: -2000, y: 0 }, 800, 500).x).toBe(-800);
+    expect(constrainMapView({ k: 2, x: 300, y: 0 }, 800, 500).x).toBe(0);
   });
   it("two-finger scrolling pans both axes without changing zoom", () => {
     expect(wheelMapView(initialMapView(), { x: 42, y: -28, mode: 0, pinch: false }, 400, 250)).toEqual({ k: 1, x: -42, y: 28 });
