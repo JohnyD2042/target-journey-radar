@@ -9,14 +9,14 @@ describe("flight API", () => {
   it("maps stages to the five zones", () =>
     expect(STAGE_ZONE).toEqual({ cold: 1, liftoff: 2, cruise: 3, approach: 4, landed: 5 }));
   it("shows the day the API sent, even for a viewer west of UTC", () => {
-    const prev = process.env.TZ;
-    process.env.TZ = "America/Argentina/Buenos_Aires";
+    const prev = process.env["TZ"];
+    process.env["TZ"] = "America/Argentina/Buenos_Aires";
     try {
       expect(isoLabel("2026-11-04")).toBe("04.11.26");
       expect(isoLabel("2026-06-01")).toBe("01.06.26");
     } finally {
-      if (prev === undefined) delete process.env.TZ;
-      else process.env.TZ = prev;
+      if (prev === undefined) delete process.env["TZ"];
+      else process.env["TZ"] = prev;
     }
   });
 });

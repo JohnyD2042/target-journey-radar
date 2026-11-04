@@ -62,10 +62,10 @@ export const isLong = (i: Idea) => i.strategy === "лонг";
  * so a viewer west of UTC (e.g. Buenos Aires) never sees yesterday's date.
  */
 export function isoLabel(s: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-  if (m) return `${m[3]}.${m[2]}.${m[1].slice(2)}`;
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? "" : d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" });
+  const [, y, mo, d] = /^(\d{4})-(\d{2})-(\d{2})/.exec(s) ?? [];
+  if (y && mo && d) return `${d}.${mo}.${y.slice(2)}`;
+  const t = new Date(s);
+  return isNaN(t.getTime()) ? "" : t.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" });
 }
 
 export const ZONES: Record<Zone, { name: string; short: string; hint: string }> = {
