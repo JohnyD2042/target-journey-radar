@@ -190,6 +190,14 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
         <svg width={size.w} height={size.h} className="block">
           <defs>
             <clipPath id="plot"><rect x={0} y={0} width={pw} height={ph} /></clipPath>
+            {/* zone band: zone colour strongest under its own label, fading toward the plot floor */}
+            {[1, 2, 3, 4, 5].map((z) => (
+              <linearGradient key={z} id={`band-${z}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stopColor={`var(--z${z})`} stopOpacity={z === 5 ? 0.42 : 0.34} />
+                <stop offset="0.55" stopColor={`var(--z${z})`} stopOpacity={z === 5 ? 0.16 : 0.12} />
+                <stop offset="1" stopColor={`var(--z${z})`} stopOpacity={0.07} />
+              </linearGradient>
+            ))}
             <linearGradient id="trail-long" x1="1" x2="0"><stop offset="0" stopColor="var(--long)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--long)" stopOpacity="0" /></linearGradient>
             <linearGradient id="trail-short" x1="1" x2="0"><stop offset="0" stopColor="var(--short)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--short)" stopOpacity="0" /></linearGradient>
             <filter id="glow"><feGaussianBlur stdDeviation="2.2" /></filter>
@@ -201,9 +209,12 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
                 <g key={b.z}>
                   <rect
                     x={sx(b.from * pw)} y={0} width={(b.to - b.from) * pw * view.k} height={ph}
-                    fill={`var(--z${b.z})`} opacity={b.z === 3 ? 0.07 : b.z === 5 ? 0.1 : 0.16}
+                    fill={`url(#band-${b.z})`}
                   />
-                  <line x1={sx(b.to * pw)} x2={sx(b.to * pw)} y1={0} y2={ph} stroke={`var(--z${b.z})`} strokeOpacity={0.35} strokeDasharray={b.z === 4 ? "0" : "3 5"} strokeWidth={b.z === 4 ? 2 : 1} />
+                  {/* each zone is opened by a line in its own colour */}
+                  {b.from > 0 && (
+                    <line x1={sx(b.from * pw)} x2={sx(b.from * pw)} y1={0} y2={ph} stroke={`var(--z${b.z})`} strokeOpacity={0.55} strokeDasharray={b.z === 5 ? "0" : "3 5"} strokeWidth={b.z === 5 ? 2 : 1} />
+                  )}
                 </g>
               ))}
               {yTicks.map((t) => (
