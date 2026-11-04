@@ -191,7 +191,7 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
           <defs>
             <clipPath id="plot"><rect x={0} y={0} width={pw} height={ph} /></clipPath>
             {/* zone band: zone colour strongest under its own label, fading toward the plot floor */}
-            {ZONES.map((_, z) => z > 0 && z <= 5 && (
+            {[1, 2, 3, 4, 5].map((z) => (
               <linearGradient key={z} id={`band-${z}`} x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0" stopColor={`var(--z${z})`} stopOpacity={z === 5 ? 0.42 : 0.34} />
                 <stop offset="0.55" stopColor={`var(--z${z})`} stopOpacity={z === 5 ? 0.16 : 0.12} />
