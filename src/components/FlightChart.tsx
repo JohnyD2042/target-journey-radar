@@ -192,6 +192,14 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
         <svg width={size.w} height={size.h} className="block">
           <defs>
             <clipPath id="plot"><rect x={0} y={0} width={pw} height={ph} /></clipPath>
+            {/* zone band: zone colour strongest under its own label, fading toward the plot floor */}
+            {ZONES.map((_, z) => z > 0 && z <= 5 && (
+              <linearGradient key={z} id={`band-${z}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stopColor={`var(--z${z})`} stopOpacity={z === 5 ? 0.42 : 0.34} />
+                <stop offset="0.55" stopColor={`var(--z${z})`} stopOpacity={z === 5 ? 0.16 : 0.12} />
+                <stop offset="1" stopColor={`var(--z${z})`} stopOpacity={0.07} />
+              </linearGradient>
+            ))}
             <linearGradient id="trail-long" x1="1" x2="0"><stop offset="0" stopColor="var(--long)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--long)" stopOpacity="0" /></linearGradient>
             <linearGradient id="trail-short" x1="1" x2="0"><stop offset="0" stopColor="var(--short)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--short)" stopOpacity="0" /></linearGradient>
             <filter id="glow"><feGaussianBlur stdDeviation="2.2" /></filter>
