@@ -123,8 +123,10 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     return () => ro.disconnect();
   }, []);
 
-  const pw = Math.max(1, size.w - PAD.l - PAD.r);
-  const ph = Math.max(1, size.h - PAD.t - PAD.b);
+  // on a phone the legend is shorter, so the plot takes the freed strip at the top
+  const pad = size.w < 640 ? { ...PAD, t: 76 } : PAD;
+  const pw = Math.max(1, size.w - pad.l - pad.r);
+  const ph = Math.max(1, size.h - pad.t - pad.b);
 
   const updateView = (next: MapView) => {
     viewRef.current = constrainMapView(next, pw, ph);
@@ -376,19 +378,22 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
         </svg>
       </div>
 
-      <div className="absolute top-2" style={{ left: PAD.l, width: pw }} aria-label="Зоны и количество идей">
+      <div className="absolute top-2" style={{ left: pad.l, width: pw }} aria-label="Зоны и количество идей">
         {BANDS.map(({ z, from, to }) => {
           const slot = bandLabelSlot(from, to, pw, view);
           if (slot.width < 24) return null;
-          const narrow = slot.width < 64;
           const icon = ZONE_ICON[z];
           const colorClass = { 1: "text-z1", 2: "text-z2", 3: "text-z3", 4: "text-z4", 5: "text-z5" }[z];
+          // narrow band: the name and its count flow as one text block, so the count sits right after the last word
+          const tight = slot.width < 96;
           return (
-            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[84px] min-w-0 flex-col gap-2 overflow-hidden rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
-              <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} />
-              <span className="flex min-h-10 max-w-full flex-col items-center justify-center gap-x-1.5 gap-y-1 min-[1024px]:min-h-8 min-[1024px]:flex-row">
-                {!narrow && <span className="flex min-h-6 items-center whitespace-normal break-words text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>}
-                <span className="inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1.5 font-mono text-[10px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground">{zoneCounts[ZONE_STAGE[z]] ?? 0}</span>
+            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[62px] min-w-0 flex-col items-center justify-between gap-1 overflow-visible rounded-sm px-px min-[640px]:h-[76px] min-[1024px]:h-[84px] ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
+              <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} small={tight} />
+              <span className={tight
+                ? "block w-full whitespace-normal break-words text-center text-[8px] font-semibold uppercase leading-[1.25] tracking-[-0.02em] min-[640px]:text-[9px]"
+                : "flex min-h-8 w-full flex-row items-center justify-center gap-1.5 whitespace-normal text-center text-[10px] font-semibold uppercase leading-tight"}>
+                {ZONES[z].name}
+                <span className="mx-0.5 inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1 align-middle font-mono text-[9px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground min-[640px]:h-5 min-[640px]:min-w-6 min-[640px]:px-1.5 min-[640px]:text-[10px]">{zoneCounts[ZONE_STAGE[z]] ?? 0}</span>
               </span>
             </Button>
           );
