@@ -55,7 +55,7 @@ function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   return (
     <g transform={`scale(${scale})`}>
       <path
-        d="M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z"
+        d={PLANE_D}
         fill={color}
         stroke="oklch(0.12 0.02 250)"
         strokeWidth={0.9}
