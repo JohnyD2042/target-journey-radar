@@ -72,8 +72,7 @@
   /* cabin-window header mark */
   --sky-1: oklch(0.4 0.13 255);
   --sky-2: oklch(0.6 0.14 240);
-  --sky-3: oklch(0.88 0.05 80);
-  --sunset: oklch(0.8 0.14 55);
+  --sky-3: oklch(0.86 0.06 220);
   --cloud: oklch(0.97 0.01 240);
   --shade-1: oklch(0.87 0.02 240);
   --shade-2: oklch(0.6 0.03 240);

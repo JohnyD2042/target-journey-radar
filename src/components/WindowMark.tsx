@@ -1,18 +1,22 @@
 /**
  * Header mark: an aircraft cabin window (иллюминатор) with its shade pulled
- * down over the top half. Behind the glass — sky, a low sun, clouds and an
- * airliner that drifts slowly past, so the mark reads as "a window on a flight"
- * rather than a generic plane glyph.
+ * down over the top half. The shade's bottom edge sags in a soft curve, the way
+ * a real blind does. Behind the glass — a plain sky, two schematic cloud bands
+ * and an airliner that drifts slowly past.
  *
- * Colours come from theme tokens (--sky-*, --shade-*, --frame, --primary).
+ * Deliberately schematic: no sun, no ground, no cast shadow. Colours come from
+ * theme tokens (--sky-*, --cloud, --shade-*, --frame).
  */
 
 /** top-down airliner silhouette (nose +x), same family as the map markers */
 const DART =
   "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
 
-/** how far the shade hangs: glass runs y 4.4 → 35.6, the rail sits at ~17.6 */
-const SHADE_BOTTOM = 17.6;
+/** glass box + the shade's bottom edge: 14.8 at the sides, sagging to ~17.9 mid-way */
+const GLASS = { x: 5.4, y: 4.4, w: 21.2, h: 31.2 };
+const SHADE_SIDE = 14.8;
+const SHADE_SAG = 21;
+const SHADE_EDGE = `M${GLASS.x} ${SHADE_SIDE} Q16 ${SHADE_SAG} ${GLASS.x + GLASS.w} ${SHADE_SIDE}`;
 
 export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
   return (
@@ -20,12 +24,8 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
       <defs>
         <linearGradient id="wm-sky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="var(--sky-1)" />
-          <stop offset="0.5" stopColor="var(--sky-2)" />
+          <stop offset="0.55" stopColor="var(--sky-2)" />
           <stop offset="1" stopColor="var(--sky-3)" />
-        </linearGradient>
-        <linearGradient id="wm-warm" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--sunset)" stopOpacity="0" />
-          <stop offset="1" stopColor="var(--sunset)" stopOpacity="0.5" />
         </linearGradient>
         {/* contrail: one continuous streak that fades out behind the airliner */}
         <linearGradient id="wm-trail" gradientUnits="userSpaceOnUse" x1="-21" y1="0" x2="-6" y2="0">
@@ -38,23 +38,21 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
           <stop offset="0.9" stopColor="var(--shade-1)" />
           <stop offset="1" stopColor="var(--shade-2)" />
         </linearGradient>
-        <linearGradient id="wm-drop" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--background)" stopOpacity="0.55" />
-          <stop offset="1" stopColor="var(--background)" stopOpacity="0" />
-        </linearGradient>
         <clipPath id="wm-glass">
-          <rect x="5.4" y="4.4" width="21.2" height="31.2" rx="9.4" />
+          <rect x={GLASS.x} y={GLASS.y} width={GLASS.w} height={GLASS.h} rx="9.4" />
         </clipPath>
       </defs>
 
       {/* what you can see through the glass */}
       <g clipPath="url(#wm-glass)">
-        <rect x="5.4" y="4.4" width="21.2" height="31.2" fill="url(#wm-sky)" />
-        <rect x="5.4" y="24" width="21.2" height="11.6" fill="url(#wm-warm)" />
-        <g fill="var(--cloud)" opacity="0.85">
-          <ellipse cx="10" cy="32.6" rx="6" ry="2.3" />
-          <ellipse cx="14.6" cy="31.2" rx="3.6" ry="1.9" />
+        <rect x={GLASS.x} y={GLASS.y} width={GLASS.w} height={GLASS.h} fill="url(#wm-sky)" />
+
+        {/* one schematic cloud puff, low in the frame */}
+        <g fill="var(--cloud)" opacity="0.45">
+          <ellipse cx="12" cy="32.4" rx="4.2" ry="2.6" />
+          <ellipse cx="15" cy="31" rx="2.6" ry="2.1" />
         </g>
+
         <g className="mark-plane">
           <line x1="-21" y1="0" x2="-6" y2="0" stroke="url(#wm-trail)" strokeWidth="1.6" strokeLinecap="round" />
           <g transform="scale(0.46)">
@@ -62,16 +60,11 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
           </g>
         </g>
 
-        {/* the shade: panel, rigid bottom rail with a thumb notch, cast shadow */}
-        <rect x="5.4" y="4.4" width="21.2" height={SHADE_BOTTOM - 4.4} fill="url(#wm-shade)" />
-        <rect x="4" y={SHADE_BOTTOM - 1.1} width="24" height="2.6" rx="1.3" fill="var(--shade-2)" />
-        <rect x="4" y={SHADE_BOTTOM - 0.8} width="24" height="0.8" rx="0.4" fill="var(--shade-1)" opacity="0.45" />
-        <rect x="13.9" y={SHADE_BOTTOM - 0.5} width="4.2" height="1.4" rx="0.7" fill="var(--sky-1)" opacity="0.5" />
-        <rect x="4" y={SHADE_BOTTOM + 1.3} width="24" height="0.8" fill="var(--background)" opacity="0.4" />
-        <rect x="5.4" y={SHADE_BOTTOM + 1.5} width="21.2" height="5" fill="url(#wm-drop)" />
-
-        {/* reflection on the glass, above everything behind it */}
-        <path d="M4 30 L18 4 L23 4 L9 33 Z" fill="var(--foreground)" opacity="0.09" />
+        {/* the shade: panel with a sagging bottom edge, rigid rail along it, a pull tab */}
+        <path d={`M${GLASS.x} ${GLASS.y} H${GLASS.x + GLASS.w} V${SHADE_SIDE} Q16 ${SHADE_SAG} ${GLASS.x} ${SHADE_SIDE} Z`} fill="url(#wm-shade)" />
+        <path d={SHADE_EDGE} fill="none" stroke="var(--shade-2)" strokeWidth="2.4" strokeLinecap="round" />
+        <path d={SHADE_EDGE} fill="none" stroke="var(--shade-1)" strokeWidth="0.6" opacity="0.5" transform="translate(0 -0.85)" />
+        <rect x="14.2" y="18.4" width="3.6" height="1.8" rx="0.9" fill="var(--shade-2)" />
       </g>
 
       {/* window frame: plastic rim, dark seam, a soft highlight up top */}
