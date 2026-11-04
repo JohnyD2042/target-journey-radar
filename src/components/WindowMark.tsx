@@ -28,6 +28,10 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
           <stop offset="0.4" stopColor="var(--primary)" stopOpacity="0.45" />
           <stop offset="1" stopColor="var(--primary)" stopOpacity="0" />
         </radialGradient>
+        <linearGradient id="wm-warm" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--primary)" stopOpacity="0" />
+          <stop offset="1" stopColor="var(--primary)" stopOpacity="0.55" />
+        </linearGradient>
         <linearGradient id="wm-shade" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="var(--shade-2)" />
           <stop offset="0.16" stopColor="var(--shade-1)" />
@@ -46,11 +50,10 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
       {/* what you can see through the glass */}
       <g clipPath="url(#wm-glass)">
         <rect x="5.4" y="4.4" width="21.2" height="31.2" fill="url(#wm-sky)" />
-        <circle cx="21.5" cy="28" r="6" fill="url(#wm-sun)" />
-        <g fill="var(--cloud)" opacity="0.8">
+        <rect x="5.4" y="24" width="21.2" height="11.6" fill="url(#wm-warm)" />
+        <g fill="var(--cloud)" opacity="0.85">
           <ellipse cx="10" cy="32.6" rx="6" ry="2.3" />
           <ellipse cx="14.6" cy="31.2" rx="3.6" ry="1.9" />
-          <ellipse cx="23" cy="34.4" rx="5" ry="1.8" />
         </g>
         <g className="mark-plane">
           <line x1="-20" y1="0" x2="-6" y2="0" stroke="var(--foreground)" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" />
