@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { type Idea, type Zone, ZONES, ret, progress, upside, zoneOf } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
 import { constrainMapView, initialMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
+import { bandLabelSlot } from "@/lib/map-view";
 
 const PAD = { l: 48, r: 12, t: 100, b: 40 };
 const BANDS: { z: Zone; from: number; to: number }[] = [
@@ -321,15 +322,18 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
         </svg>
       </div>
 
-      <div className="absolute left-3 right-3 top-2 grid grid-cols-5 min-[640px]:left-12 min-[640px]:grid-cols-[13fr_14.8fr_44.4fr_14.8fr_13fr]" aria-label="Зоны и количество идей">
-        {BANDS.map(({ z }) => {
+      <div className="absolute top-2" style={{ left: PAD.l, width: pw }} aria-label="Зоны и количество идей">
+        {BANDS.map(({ z, from, to }) => {
+          const slot = bandLabelSlot(from, to, pw, view);
+          if (slot.width < 24) return null;
+          const narrow = slot.width < 64;
           const icon = ZONE_ICON[z];
           const colorClass = { 1: "text-z1", 2: "text-z2", 3: "text-z3", 4: "text-z4", 5: "text-z5" }[z];
           return (
-            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} className={`group h-[84px] min-w-0 flex-col gap-2 rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
+            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[84px] min-w-0 flex-col gap-2 overflow-hidden rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
               <ZoneGlyph rot={icon.rot} />
               <span className="flex min-h-10 max-w-full flex-col items-center justify-center gap-x-1.5 gap-y-1 min-[1024px]:min-h-8 min-[1024px]:flex-row">
-                <span className="flex min-h-6 items-center whitespace-normal text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>
+                {!narrow && <span className="flex min-h-6 items-center whitespace-normal break-words text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>}
                 <span className="inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1.5 font-mono text-[10px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground">{ideas.filter((i) => zoneOf(i) === z).length}</span>
               </span>
             </Button>
