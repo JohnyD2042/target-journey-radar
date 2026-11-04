@@ -199,7 +199,7 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
         <Col
           k="Цель"
           v={i.target != null ? money(i.target) : "—"}
-          sub={i.target != null ? `${u != null && u > 0 ? `${pct(u)} · ` : ""}${i.targetDate ? date(i.targetDate) : ""}` : "—"}
+          sub={i.target != null && i.targetDate ? date(i.targetDate) : "—"}
           align="items-end text-right"
         />
       </div>
