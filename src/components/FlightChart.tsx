@@ -56,15 +56,17 @@ function ZoneGlyph({
   rot,
   ground = false,
   flag = false,
+  small = false,
 }: {
   rot: number;
   ground?: boolean | undefined;
   flag?: boolean | undefined;
+  small?: boolean | undefined;
 }) {
   const box = flag ? "-4 -10 76 40" : ground ? "-4 -8 56 40" : "-3 -9 54 42";
-  const width = flag ? "!w-12" : "!w-10";
+  const width = flag ? (small ? "!w-10" : "!w-12") : small ? "!w-8" : "!w-10";
   return (
-    <svg viewBox={box} className={`!h-6 ${width}`} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox={box} className={`${small ? "!h-5" : "!h-6"} ${width}`} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
       <g transform={`rotate(${rot} 24 12.6)`}>
         <path d={SIDE_D} />
       </g>
@@ -121,8 +123,10 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     return () => ro.disconnect();
   }, []);
 
-  const pw = Math.max(1, size.w - PAD.l - PAD.r);
-  const ph = Math.max(1, size.h - PAD.t - PAD.b);
+  // on a phone the legend is shorter, so the plot takes the freed strip at the top
+  const pad = size.w < 640 ? { ...PAD, t: 80 } : PAD;
+  const pw = Math.max(1, size.w - pad.l - pad.r);
+  const ph = Math.max(1, size.h - pad.t - pad.b);
 
   const updateView = (next: MapView) => {
     viewRef.current = constrainMapView(next, pw, ph);
@@ -141,7 +145,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const rect = el.getBoundingClientRect();
-      updateView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch: e.ctrlKey || e.metaKey }, e.clientX - rect.left - PAD.l, e.clientY - rect.top - PAD.t));
+      updateView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch: e.ctrlKey || e.metaKey }, e.clientX - rect.left - pad.l, e.clientY - rect.top - pad.t));
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
@@ -288,7 +292,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
             <linearGradient id="trail-short" x1="1" x2="0"><stop offset="0" stopColor="var(--short)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--short)" stopOpacity="0" /></linearGradient>
           </defs>
 
-          <g transform={`translate(${PAD.l},${PAD.t})`}>
+          <g transform={`translate(${pad.l},${pad.t})`}>
             <g clipPath="url(#plot)">
               {BANDS.map((b) => (
                 <g key={b.z}>
@@ -332,7 +336,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
                     key={i.id}
                     ref={(el) => { node(String(i.id)).g = el; }}
                     className="cursor-pointer"
-                    onPointerEnter={(e) => { const n = node(String(i.id)); if (e.pointerType === "mouse") setHover({ idea: i, x: n.x + PAD.l, y: n.y + PAD.t }); }}
+                    onPointerEnter={(e) => { const n = node(String(i.id)); if (e.pointerType === "mouse") setHover({ idea: i, x: n.x + pad.l, y: n.y + pad.t }); }}
                     onPointerLeave={() => setHover(null)}
                     onClick={() => !drag.current?.moved && onSelect(i)}
                   >
@@ -374,19 +378,22 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
         </svg>
       </div>
 
-      <div className="absolute top-2" style={{ left: PAD.l, width: pw }} aria-label="Зоны и количество идей">
+      <div className="absolute top-2" style={{ left: pad.l, width: pw }} aria-label="Зоны и количество идей">
         {BANDS.map(({ z, from, to }) => {
           const slot = bandLabelSlot(from, to, pw, view);
           if (slot.width < 24) return null;
-          const narrow = slot.width < 64;
           const icon = ZONE_ICON[z];
           const colorClass = { 1: "text-z1", 2: "text-z2", 3: "text-z3", 4: "text-z4", 5: "text-z5" }[z];
+          // narrow band: the name sits above its count so all five headers keep one and the same rhythm
+          const tight = size.w < 640 || slot.width < 96;
           return (
-            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[84px] min-w-0 flex-col gap-2 overflow-hidden rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
-              <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} />
-              <span className="flex min-h-10 max-w-full flex-col items-center justify-center gap-x-1.5 gap-y-1 min-[1024px]:min-h-8 min-[1024px]:flex-row">
-                {!narrow && <span className="flex min-h-6 items-center whitespace-normal break-words text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>}
-                <span className="inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1.5 font-mono text-[10px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground">{zoneCounts[ZONE_STAGE[z]] ?? 0}</span>
+            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[66px] min-w-0 flex-col items-center justify-between gap-1 overflow-visible rounded-sm px-px py-0.5 min-[640px]:h-[76px] min-[1024px]:h-[84px] min-[1024px]:py-2 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
+              <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} small={tight} />
+              <span className={tight
+                ? "flex w-full flex-col items-center justify-end gap-0.5 whitespace-normal text-center text-[8px] font-semibold uppercase leading-[1.15] tracking-[-0.02em] min-[640px]:text-[9px]"
+                : "flex min-h-8 w-full flex-row items-center justify-center gap-1.5 whitespace-normal text-center text-[10px] font-semibold uppercase leading-tight"}>
+                <span className="block max-w-full">{ZONES[z].name}</span>
+                <span className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1 font-mono text-[9px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground min-[640px]:h-5 min-[640px]:min-w-6 min-[640px]:px-1.5 min-[640px]:text-[10px] min-[1024px]:min-w-7">{zoneCounts[ZONE_STAGE[z]] ?? 0}</span>
               </span>
             </Button>
           );
