@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { FlightChart } from "@/components/FlightChart";
 import { SideTag, IdeaPath } from "@/components/IdeaPath";
+import { WindowMark } from "@/components/WindowMark";
 import { IDEAS, TODAY, ZONES, type Idea, type Zone, ret, upside, zoneOf } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
@@ -78,7 +79,7 @@ function Index() {
     <div className="min-h-screen">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 md:px-6">
         <div className="flex items-center gap-3">
-          <div className="grid h-8 w-8 place-items-center rounded bg-primary font-mono text-sm font-bold text-primary-foreground">✈</div>
+          <WindowMark className="h-10 w-8 shrink-0" />
           <div>
             <h1 className="text-lg font-semibold leading-none tracking-tight">Монитор полётов</h1>
             <p className="mt-1 text-xs text-muted-foreground">Инвестидеи аналитиков на маршруте к целевой цене</p>
