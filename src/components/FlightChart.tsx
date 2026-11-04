@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Idea, type Zone, ZONES, ret, progress, upside, zoneOf } from "@/lib/ideas";
+import { Button } from "@/components/ui/button";
+import { constrainMapView, initialMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
 
-const PAD = { l: 48, r: 12, t: 46, b: 40 };
+const PAD = { l: 48, r: 12, t: 100, b: 40 };
 const BANDS: { z: Zone; from: number; to: number }[] = [
   { z: 1, from: 0, to: 0.13 },
   { z: 2, from: 0.13, to: 0.13 + 0.2 * 0.74 },
@@ -42,7 +44,7 @@ function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   );
 }
 
-type Props = { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string | undefined };
+type Props = { ideas: Idea[]; onSelect: (i: Idea) => void; selectedId?: string | undefined; activeZone?: Zone | "notarget" | null; onZoneChange: (zone: Zone) => void };
 
 export function FlightChart(props: Props) {
   // animated map is client-only: avoids SSR/hydration mismatch of per-frame values
@@ -52,10 +54,10 @@ export function FlightChart(props: Props) {
   return <FlightMap {...props} />;
 }
 
-function FlightMap({ ideas, onSelect, selectedId }: Props) {
+function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 900, h: 480 });
-  const [view, setView] = useState({ k: 1, x: 0, y: 0 });
+  const [view, setView] = useState(initialMapView);
   const [hover, setHover] = useState<{ idea: Idea; x: number; y: number } | null>(null);
   const [now, setNow] = useState(0);
   const [launch, setLaunch] = useState(0);
@@ -71,42 +73,41 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
   }, []);
 
   useEffect(() => {
-    const el = wrap.current!;
+    const el = wrap.current;
+    if (!el) return;
     const ro = new ResizeObserver(([e]) => e && setSize({ w: e.contentRect.width, h: e.contentRect.height }));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  const pw = size.w - PAD.l - PAD.r;
-  const ph = size.h - PAD.t - PAD.b;
+  const pw = Math.max(1, size.w - PAD.l - PAD.r);
+  const ph = Math.max(1, size.h - PAD.t - PAD.b);
 
-  const constrain = (v: { k: number; x: number; y: number }) => ({
-    k: v.k,
-    x: clamp(v.x, pw - pw * v.k, 0),
-    y: clamp(v.y, ph - ph * v.k, 0),
-  });
+  const updateView = (next: MapView) => {
+    viewRef.current = constrainMapView(next, pw, ph);
+    setView(viewRef.current);
+    setHover(null);
+  };
+  const resetView = () => { viewRef.current = initialMapView(); setView(viewRef.current); setHover(null); };
 
   const zoomAt = (px: number, py: number, next: number) => {
-    const v = viewRef.current;
-    const k = clamp(next, 1, 10);
-    const f = k / v.k;
-    setView(constrain({ k, x: px - (px - v.x) * f, y: py - (py - v.y) * f }));
+    updateView(zoomMapView(viewRef.current, px, py, next));
   };
 
   useEffect(() => {
-    const el = wrap.current!;
+    const el = wrap.current;
+    if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const rect = el.getBoundingClientRect();
-      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
-      zoomAt(e.clientX - rect.left - PAD.l, e.clientY - rect.top - PAD.t, viewRef.current.k * Math.exp(-dy * 0.002));
+      updateView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch: e.ctrlKey || e.metaKey }, e.clientX - rect.left - PAD.l, e.clientY - rect.top - PAD.t));
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   });
 
   // reset zoom & replay take-off when dataset changes
-  useEffect(() => { setView({ k: 1, x: 0, y: 0 }); setLaunch(performance.now()); }, [ideas]);
+  useEffect(() => { viewRef.current = initialMapView(); setView(viewRef.current); setLaunch(performance.now()); }, [ideas]);
 
   const { yMin, yMax, minR } = useMemo(() => {
     const rs = ideas.map(ret);
@@ -176,16 +177,25 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
       <div
         ref={wrap}
         className="map-bg absolute inset-0 overflow-hidden rounded-xl border touch-none"
-        style={{ cursor: view.k > 1 ? "grab" : "default" }}
-        onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false }; }}
+        aria-label="Карта инвестиционных идей"
+        data-map-view={`${view.k},${view.x},${view.y}`}
+        style={{ cursor: "grab" }}
+        onPointerDown={(e) => {
+          if (e.button !== 0) return;
+          drag.current = { x: e.clientX, y: e.clientY, vx: viewRef.current.x, vy: viewRef.current.y, moved: false };
+        }}
         onPointerMove={(e) => {
           const d = drag.current;
-          if (!d || view.k === 1) return;
+          if (!d) return;
           if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 3) d.moved = true;
-          setView(constrain({ k: view.k, x: d.vx + e.clientX - d.x, y: d.vy + e.clientY - d.y }));
+          if (d.moved) {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            updateView({ k: viewRef.current.k, x: d.vx + e.clientX - d.x, y: d.vy + e.clientY - d.y });
+          }
         }}
         onPointerUp={() => setTimeout(() => (drag.current = null))}
-        onPointerLeave={() => (drag.current = null)}
+        onPointerCancel={() => (drag.current = null)}
+        onPointerLeave={() => { if (!drag.current?.moved) drag.current = null; }}
       >
         <svg width={size.w} height={size.h} className="block">
           <defs>
@@ -267,29 +277,6 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
               })}
             </g>
 
-            {BANDS.map((b) => {
-              const cx = sx(((b.from + b.to) / 2) * pw);
-              if (cx < 0 || cx > pw) return null;
-              const icon = ZONE_ICON[b.z];
-              return (
-                <g key={b.z} transform={`translate(${cx},-24)`}>
-                  <g transform={`translate(0,-2) rotate(${icon.rot})`} opacity={0.95}>
-                    <path
-                      d={PLANE_D}
-                      fill={`var(--z${b.z})`}
-                      stroke="oklch(0.12 0.02 250)"
-                      strokeWidth={1}
-                      strokeLinejoin="round"
-                      transform="scale(0.72)"
-                    />
-                  </g>
-                  {icon.ground && <line x1={-11} x2={11} y1={9} y2={9} stroke={`var(--z${b.z})`} strokeWidth={1} />}
-                  <text y={20} textAnchor="middle" className="font-mono text-[10px] font-semibold uppercase tracking-wider" fill={`var(--z${b.z})`}>
-                    {size.w < 640 ? b.z : ZONES[b.z].name}
-                  </text>
-                </g>
-              );
-            })}
             {yTicks.map((t) => {
               const y = sy(baseY(t));
               if (y < 0 || y > ph) return null;
@@ -304,18 +291,35 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
               if (x < 0 || x > pw) return null;
               return <text key={l} x={x} y={ph + 22} textAnchor="middle" className="font-mono text-[10px]" fill="var(--muted-foreground)">{l}</text>;
             })}
-            {sx(0.87 * pw) <= pw && <Airport x={sx(0.87 * pw)} y={ph} label="" accent />}
-            {sx(0.87 * pw) <= pw && (
+            {sx(0.87 * pw) >= 0 && sx(0.87 * pw) <= pw && <Airport x={sx(0.87 * pw)} y={ph} label="" accent />}
+            {sx(0.87 * pw) >= 0 && sx(0.87 * pw) <= pw && (
               <text x={sx(0.87 * pw)} y={ph + 30} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill="var(--primary)">1X ЦЕЛЬ</text>
             )}
           </g>
         </svg>
       </div>
 
+      <div className="absolute left-3 right-3 top-2 grid grid-cols-5 min-[640px]:left-12 min-[640px]:grid-cols-[13fr_14.8fr_44.4fr_14.8fr_13fr]" aria-label="Зоны и количество идей">
+        {BANDS.map(({ z }) => {
+          const icon = ZONE_ICON[z];
+          const colorClass = { 1: "text-z1", 2: "text-z2", 3: "text-z3", 4: "text-z4", 5: "text-z5" }[z];
+          return (
+            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} className={`h-[84px] min-w-0 flex-col gap-0.5 rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
+              <svg viewBox="-14 -14 28 28" className="!h-5 !w-5" aria-hidden="true">
+                <path d={PLANE_D} transform={`rotate(${icon.rot})`} fill="currentColor" />
+                {icon.ground && <line x1={-11} x2={11} y1={11} y2={11} stroke="currentColor" />}
+              </svg>
+              <span className="flex min-h-7 items-center whitespace-normal text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>
+              <span className="font-mono text-lg leading-none">{ideas.filter((i) => zoneOf(i) === z).length}</span>
+            </Button>
+          );
+        })}
+      </div>
+
       <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-col gap-2">
-        <button className="map-btn" aria-label="Приблизить" onClick={() => zoomAt(pw / 2, ph / 2, view.k * 1.6)}>+</button>
-        <button className="map-btn" aria-label="Отдалить" onClick={() => zoomAt(pw / 2, ph / 2, view.k / 1.6)}>−</button>
-        <button className="map-btn text-[10px] disabled:opacity-40" aria-label="Сбросить" disabled={view.k === 1} onClick={() => setView({ k: 1, x: 0, y: 0 })}>1:1</button>
+        <Button variant="ghost" className="map-btn" aria-label="Приблизить" title="Приблизить" onClick={() => zoomAt(pw / 2, ph / 2, viewRef.current.k * 1.6)}>+</Button>
+        <Button variant="ghost" className="map-btn" aria-label="Отдалить" title="Отдалить" onClick={() => zoomAt(pw / 2, ph / 2, viewRef.current.k / 1.6)}>−</Button>
+        <Button variant="ghost" className="map-btn text-[10px] disabled:opacity-40" aria-label="Сбросить" title="Исходный вид" disabled={view.k === 1 && view.x === 0 && view.y === 0} onClick={resetView}>1:1</Button>
       </div>
       <div className="pointer-events-none absolute bottom-14 left-14 flex items-center gap-2 rounded bg-popover/80 px-2 py-0.5 font-mono text-[10px] backdrop-blur">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-short" />
@@ -339,7 +343,7 @@ function FlightMap({ ideas, onSelect, selectedId }: Props) {
             {hover.idea.status === "active" && hover.idea.target != null && (
               <>
                 <span className="text-muted-foreground">Апсайд</span>
-                <span className="text-right">{fmt(upside(hover.idea)!)}</span>
+                <span className="text-right">{fmt(upside(hover.idea) ?? 0)}</span>
               </>
             )}
           </div>
