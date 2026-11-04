@@ -3,6 +3,7 @@ import { type Idea, type Zone, ZONES, ret, progress, upside, zoneOf } from "@/li
 import { Button } from "@/components/ui/button";
 import { constrainMapView, initialMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
 import { bandLabelSlot } from "@/lib/map-view";
+import { IdeaPath, SideTag } from "@/components/IdeaPath";
 
 const PAD = { l: 48, r: 12, t: 100, b: 40 };
 const BANDS: { z: Zone; from: number; to: number }[] = [
@@ -304,8 +305,8 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
                     key={i.id}
                     transform={`translate(${x},${y})`}
                     className="cursor-pointer"
-                    onMouseEnter={() => setHover({ idea: i, x: x + PAD.l, y: y + PAD.t })}
-                    onMouseLeave={() => setHover(null)}
+                    onPointerEnter={(e) => e.pointerType === "mouse" && setHover({ idea: i, x: x + PAD.l, y: y + PAD.t })}
+                    onPointerLeave={() => setHover(null)}
                     onClick={() => !drag.current?.moved && onSelect(i)}
                   >
                     <circle r={14} fill="transparent" />
@@ -378,26 +379,16 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
 
       {hover && (
         <div
-          className="pointer-events-none absolute z-10 w-56 rounded-md border bg-popover p-3 text-xs shadow-xl"
-          style={{ left: clamp(hover.x + 16, 4, size.w - 230), top: clamp(hover.y - 20, 4, size.h - 140) }}
+          className="pointer-events-none absolute z-10 w-48 rounded-lg border bg-popover/95 px-2.5 py-2 text-xs shadow-xl backdrop-blur"
+          style={{ left: clamp(hover.x + 16, 4, size.w - 196), top: clamp(hover.y - 20, 4, size.h - 110) }}
         >
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-sm font-semibold">{hover.idea.ticker}</span>
-            <span className={`font-mono text-[10px] uppercase ${hover.idea.side === "long" ? "text-long" : "text-short"}`}>{hover.idea.side === "long" ? "лонг" : "шорт"}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-sm font-semibold leading-none">{hover.idea.ticker}</span>
+            <SideTag idea={hover.idea} />
+            {hover.idea.status === "closed" && <span className="ml-auto font-mono text-[9px] uppercase text-muted-foreground">закрыта</span>}
           </div>
-          <div className="mt-0.5 text-muted-foreground">{hover.idea.analyst}</div>
-          <div className="mt-2 grid grid-cols-2 gap-y-1 font-mono">
-            <span className="text-muted-foreground">Доходность</span>
-            <span className={`text-right ${ret(hover.idea) >= 0 ? "text-long" : "text-short"}`}>{fmt(ret(hover.idea))}</span>
-            {hover.idea.status === "active" && hover.idea.target != null && (
-              <>
-                <span className="text-muted-foreground">Апсайд</span>
-                <span className="text-right">{fmt(upside(hover.idea) ?? 0)}</span>
-              </>
-            )}
-          </div>
-          {hover.idea.status === "closed" && <div className="mt-2 text-[10px] uppercase tracking-wider text-muted-foreground">● закрыта</div>}
-          {hover.idea.target == null && <div className="mt-2 text-[10px] uppercase tracking-wider text-primary">идея без целевой цены</div>}
+          <div className="mt-1 truncate text-[11px] text-muted-foreground">{hover.idea.analyst}</div>
+          <IdeaPath idea={hover.idea} />
         </div>
       )}
     </div>

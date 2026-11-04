@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { FlightChart } from "@/components/FlightChart";
+import { SideTag, IdeaPath } from "@/components/IdeaPath";
 import { IDEAS, TODAY, ZONES, type Idea, type Zone, ret, upside, zoneOf } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
@@ -150,8 +151,8 @@ function Index() {
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
             <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span>
           </div>
+          {sel && <Card idea={sel} onClose={() => setSel(null)} />}
         </div>
-        {sel && <Card idea={sel} onClose={() => setSel(null)} />}
       </div>
 
     </div>
@@ -160,36 +161,36 @@ function Index() {
 
 
 function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
-  const z = zoneOf(i), r = ret(i), u = upside(i);
-  const Row = ({ k, v, cls = "" }: { k: string; v: React.ReactNode; cls?: string }) => (
-    <div className="flex justify-between border-b border-dashed py-2 text-sm"><span className="text-muted-foreground">{k}</span><span className={`font-mono ${cls}`}>{v}</span></div>
+  const z = zoneOf(i);
+  const Row = ({ k, v }: { k: string; v: React.ReactNode }) => (
+    <><span className="text-muted-foreground">{k}</span><span className="text-right font-mono">{v}</span></>
   );
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-30 max-h-[80vh] overflow-y-auto rounded-t-xl border-t bg-popover p-5 shadow-2xl lg:static lg:w-80 lg:rounded-none lg:border-l lg:border-t-0 lg:shadow-none">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-2xl font-semibold">{i.ticker}</span>
-            <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] uppercase ${i.side === "long" ? "bg-long/15 text-long" : "bg-short/15 text-short"}`}>{i.side === "long" ? "лонг" : "шорт"}</span>
+    <aside
+      aria-label={`Идея ${i.ticker}`}
+      className="fixed inset-x-2 bottom-2 z-30 rounded-xl border bg-popover/95 p-3 shadow-2xl backdrop-blur md:absolute md:inset-x-auto md:bottom-auto md:right-20 md:top-32 md:w-72 md:p-3"
+    >
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-base font-semibold leading-none">{i.ticker}</span>
+            <SideTag idea={i} />
+            <span className="truncate text-xs text-muted-foreground">{i.name}</span>
           </div>
-          <div className="text-sm text-muted-foreground">{i.name}</div>
+          <div className="mt-1 truncate text-[11px] text-muted-foreground">{i.analyst}</div>
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Закрыть">✕</button>
+        <button onClick={onClose} className="-mr-1 -mt-1 rounded p-1 text-xs text-muted-foreground hover:text-foreground" aria-label="Закрыть">✕</button>
       </div>
-      <div className="mt-3 flex items-center gap-2 text-xs">
-        <span className="rounded-full px-2 py-0.5" style={{ color: `var(--z${z})`, border: `1px solid var(--z${z})` }}>{ZONES[z].name}</span>
-        <span className={`rounded-full border px-2 py-0.5 ${i.status === "active" ? "text-foreground" : "text-muted-foreground"}`}>{i.status === "active" ? "Активна" : "Закрыта"}</span>
+      <IdeaPath idea={i} />
+      <div className="mt-2 grid grid-cols-2 gap-y-0.5 border-t border-dashed pt-2 text-[11px]">
+        <Row k="Вход" v={`${money(i.openPrice)} · ${date(i.openDate)}`} />
+        <Row k={i.status === "active" ? "Цена" : "Закрытие"} v={money(i.price)} />
+        <Row k="Цель" v={i.target != null ? money(i.target) : "—"} />
       </div>
-      <div className="mt-4">
-        <Row k="Аналитик" v={<span className="font-sans">{i.analyst}</span>} />
-        <Row k="Открытие" v={`${money(i.openPrice)} · ${date(i.openDate)}`} />
-        <Row k={i.status === "active" ? "Текущая цена" : "Цена закрытия"} v={money(i.price)} />
-        <Row k="Доходность" v={pct(r)} cls={r >= 0 ? "text-long" : "text-short"} />
-        <Row k="Целевая цена" v={i.target != null ? money(i.target) : "цели нет"} />
-        {i.status === "active" && <Row k="До цели / апсайд" v={u != null ? pct(u) : "цели нет"} />}
+      <div className="mt-2 flex items-center gap-1.5 text-[10px]">
+        <span className="rounded-full px-1.5 py-px" style={{ color: `var(--z${z})`, border: `1px solid var(--z${z})` }}>{ZONES[z].name}</span>
+        <span className="rounded-full border px-1.5 py-px text-muted-foreground">{i.status === "active" ? "Активна" : "Закрыта"}</span>
       </div>
-      {i.target == null && <p className="mt-3 text-xs text-primary">Идея без целевой цены — стоит на отметке 0,5x.</p>}
-      <p className="mt-4 font-mono text-[10px] text-muted-foreground">{i.id} · Invest-Idei</p>
     </aside>
   );
 }
