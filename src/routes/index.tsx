@@ -26,7 +26,7 @@ const pct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 const isoLabel = (s: string) => s ? new Date(s).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "";
 const money = (v: number) => v.toLocaleString("ru-RU", { maximumFractionDigits: 4 });
 
-function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, string][]; value: T; onChange: (v: T) => void; counts?: Record<T, number> }) {
+function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, string][]; value: T; onChange: (v: T) => void; counts?: Record<T, number> | undefined }) {
   return (
     <div className="flex rounded-md border bg-card p-0.5 text-sm">
       {items.map(([k, l]) => (

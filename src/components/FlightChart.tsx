@@ -297,7 +297,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
               {/* planes */}
               {planes.map(({ i, z, x, y, ang }) => {
                 const col = isLong(i) ? "var(--long)" : "var(--short)";
-                const sel = i.id === selectedId;
+                const sel = String(i.id) === selectedId;
                 const hov = hover?.idea.id === i.id;
                 return (
                   <g
