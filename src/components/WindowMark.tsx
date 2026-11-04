@@ -23,11 +23,6 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
           <stop offset="0.5" stopColor="var(--sky-2)" />
           <stop offset="1" stopColor="var(--sky-3)" />
         </linearGradient>
-        <radialGradient id="wm-sun">
-          <stop offset="0" stopColor="var(--primary)" stopOpacity="0.95" />
-          <stop offset="0.4" stopColor="var(--primary)" stopOpacity="0.45" />
-          <stop offset="1" stopColor="var(--primary)" stopOpacity="0" />
-        </radialGradient>
         <linearGradient id="wm-warm" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="var(--primary)" stopOpacity="0" />
           <stop offset="1" stopColor="var(--primary)" stopOpacity="0.55" />
