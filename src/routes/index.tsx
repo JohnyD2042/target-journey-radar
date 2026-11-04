@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart } from "@/components/FlightChart";
 import { SideTag, IdeaPath } from "@/components/IdeaPath";
@@ -53,9 +53,9 @@ function Index() {
   const [zone, setZone] = useState<Zone | null>(null);
   const [sel, setSel] = useState<Idea | null>(null);
 
-  // debounce typing so each keystroke doesn't hit the API and re-render the map
+  // the API is asked only after an exact instrument is chosen: list click, Enter, or an exactly typed ticker/name
   const [ticker, setTicker] = useState("");
-  useEffect(() => { const t = setTimeout(() => setTicker(tq.trim()), 350); return () => clearTimeout(t); }, [tq]);
+  const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
   const filters = { period, book, analyst: analyst ?? "", ticker };
   const { data, isError, isFetching } = useQuery({
     queryKey: ["flight", filters],
@@ -69,6 +69,12 @@ function Index() {
   const analysts = (data?.analysts ?? []).filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   const tqn = tq.trim().toLowerCase();
   const instruments = (data?.instruments ?? []).filter((x) => !tqn || x.ticker.toLowerCase().includes(tqn) || x.name.toLowerCase().includes(tqn)).slice(0, 30);
+  const exactHit = (text: string) => {
+    const t = text.trim().toLowerCase();
+    if (!t) return "";
+    const hit = (data?.instruments ?? []).find((x) => x.ticker.toLowerCase() === t || x.name.toLowerCase() === t);
+    return hit ? hit.ticker : "";
+  };
 
   return (
     <div className="min-h-screen">
@@ -131,16 +137,22 @@ function Index() {
             <input
               value={tq}
               onChange={(e) => setTq(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                commitTicker(instruments[0]?.ticker || exactHit(tq) || tq.trim());
+                setTFocus(false);
+              }}
               onFocus={() => setTFocus(true)}
-              onBlur={() => setTimeout(() => setTFocus(false), 150)}
+              onBlur={() => setTimeout(() => { setTFocus(false); const hit = exactHit(tq); if (hit) commitTicker(hit); }, 150)}
               placeholder="Тикер или название…"
               className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
             />
-            {tq && <button onClick={() => setTq("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground" aria-label="Очистить">✕</button>}
+            {tq && <button onClick={() => commitTicker("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground" aria-label="Очистить">✕</button>}
             {tFocus && instruments.length > 0 && (
               <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover text-sm shadow-xl">
                 {instruments.map((x) => (
-                  <button key={x.ticker} type="button" onMouseDown={() => setTq(x.ticker)} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
+                  <button key={x.ticker} type="button" onMouseDown={() => { commitTicker(x.ticker); setTFocus(false); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
                     <span className="min-w-0 truncate"><span className="font-mono font-semibold">{x.ticker}</span> <span className="text-muted-foreground">{x.name}</span></span>
                     <span className="font-mono text-xs text-muted-foreground">{x.count}</span>
                   </button>
