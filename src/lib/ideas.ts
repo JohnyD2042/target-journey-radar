@@ -57,7 +57,19 @@ export const ZONE_STAGE: Record<Zone, Stage> = { 1: "cold", 2: "liftoff", 3: "cr
 export const zoneOf = (i: Idea): Zone => STAGE_ZONE[i.stage] ?? 1;
 export const isLong = (i: Idea) => i.strategy === "лонг";
 
-export const ZONES: Record<Zone, { name: string; short: string; hint: string }> = {  1: { name: "Не завелись", short: "На земле", hint: "доходность ниже нуля" },
+/**
+ * Show an API date (YYYY-MM-DD) as DD.MM.YY. The day is taken from the string itself,
+ * so a viewer west of UTC (e.g. Buenos Aires) never sees yesterday's date.
+ */
+export function isoLabel(s: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m) return `${m[3]}.${m[2]}.${m[1].slice(2)}`;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" });
+}
+
+export const ZONES: Record<Zone, { name: string; short: string; hint: string }> = {
+  1: { name: "Не завелись", short: "На земле", hint: "доходность ниже нуля" },
   2: { name: "Взлёт", short: "0 → 0,2x", hint: "до 20% пути" },
   3: { name: "В полёте", short: "0,2x → 0,8x", hint: "20–80% пути" },
   4: { name: "Посадка", short: "0,8x → 1x", hint: "больше 80%" },
