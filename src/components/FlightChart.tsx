@@ -22,13 +22,13 @@ const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 /** zone icon: top-down passenger airliner (Flightradar-style), nose +x */
 const PLANE_D =
   "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
-/** infographic glyph per zone: sank / climbing / cruising / descending / on target */
-const ZONE_ICON: Record<Zone, { rot: number }> = {
-  1: { rot: 34 },
+/** infographic glyph per zone: on the runway / climbing / cruising / descending / finished */
+const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean; flag?: boolean }> = {
+  1: { rot: 0, ground: true },
   2: { rot: -30 },
   3: { rot: -10 },
   4: { rot: 22 },
-  5: { rot: -2 },
+  5: { rot: 0, ground: true, flag: true },
 };
 
 /**
@@ -41,12 +41,36 @@ const SIDE_D =
   "M48 12.7 C46.5 10.6 42 9.2 36 9.2 L16 10 L7 1 L5 1 L9 10 L3 12.6 L6 14 L0 13 " +
   "L5 15.2 Q8 16 13 16 L20 16 L10 22 L14 23 L32 16 L36 16 C42 16 46.5 14.8 48 12.7 Z";
 
-function ZoneGlyph({ rot }: { rot: number }) {
+/** runway the parked airliner stands on, plus its wheels touching the pavement */
+const RUNWAY_D = "M-2 24.4 H52 M40 16 V21.6 M24 19.1 V21.2";
+const WHEELS: [number, number, number][] = [[40, 22.9, 1.5], [24, 22.6, 1.8]];
+
+/** race marshal's checkered flag planted ahead of the parked airliner */
+const FLAG_D = "M53 24.4 V-8 M53 -8 H68 V7 H53 Z";
+const FLAG_CELLS: [number, number][] = [[53, -8], [63, -8], [58, -3], [53, 2], [63, 2]];
+
+function ZoneGlyph({
+  rot,
+  ground = false,
+  flag = false,
+}: {
+  rot: number;
+  ground?: boolean | undefined;
+  flag?: boolean | undefined;
+}) {
+  const box = flag ? "-4 -10 76 40" : ground ? "-4 -8 56 40" : "-3 -9 54 42";
+  const width = flag ? "!w-12" : "!w-10";
   return (
-    <svg viewBox="-3 -9 54 42" className="!h-6 !w-10" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox={box} className={`!h-6 ${width}`} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
       <g transform={`rotate(${rot} 24 12.6)`}>
         <path d={SIDE_D} />
       </g>
+      {ground && <path d={RUNWAY_D} strokeWidth={1.3} opacity={0.75} />}
+      {ground &&
+        WHEELS.map(([cx, cy, r]) => <circle key={cx} cx={cx} cy={cy} r={r} fill="currentColor" stroke="none" />)}
+      {flag && <path d={FLAG_D} strokeWidth={1.3} opacity={0.85} />}
+      {flag &&
+        FLAG_CELLS.map(([x, y]) => <rect key={`${x}:${y}`} x={x} y={y} width={5} height={5} fill="currentColor" stroke="none" />)}
     </svg>
   );
 }
@@ -331,7 +355,7 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
           const colorClass = { 1: "text-z1", 2: "text-z2", 3: "text-z3", 4: "text-z4", 5: "text-z5" }[z];
           return (
             <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[84px] min-w-0 flex-col gap-2 overflow-hidden rounded-sm px-0.5 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
-              <ZoneGlyph rot={icon.rot} />
+              <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} />
               <span className="flex min-h-10 max-w-full flex-col items-center justify-center gap-x-1.5 gap-y-1 min-[1024px]:min-h-8 min-[1024px]:flex-row">
                 {!narrow && <span className="flex min-h-6 items-center whitespace-normal break-words text-center text-[9px] font-semibold uppercase leading-tight min-[640px]:text-[10px]">{ZONES[z].name}</span>}
                 <span className="inline-flex h-5 min-w-7 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1.5 font-mono text-[10px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground">{ideas.filter((i) => zoneOf(i) === z).length}</span>
