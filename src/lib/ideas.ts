@@ -12,7 +12,19 @@ export interface Idea {
   openPrice: number;
   price: number; // current or close price
   target: number | null;
+  /** Expected finish date (ISO) */
+  targetDate?: string | null;
+  /** Growth drivers, short bullets (from API) */
+  drivers?: string[];
+  /** Link to the full original idea */
+  url?: string;
 }
+
+const DRIVERS = [
+  "Дивиденды выше рынка", "Рост цен на нефть", "Обратный выкуп акций", "Снижение ключевой ставки",
+  "Рост чистой прибыли", "Новые экспортные рынки", "Дешёвая оценка по P/E", "Сокращение долга",
+  "Запуск новых продуктов", "Рост цен на металлы", "Слабый рубль", "Рост доли рынка",
+];
 
 export const ZONES: Record<Zone, { name: string; short: string; hint: string }> = {
   1: { name: "Не завелись", short: "На земле", hint: "доходность ниже нуля" },
@@ -102,6 +114,9 @@ export const IDEAS: Idea[] = (() => {
       status: closed ? "closed" : "active",
       openDate: openDate.toISOString(),
       openPrice, price, target,
+      targetDate: target ? new Date(openDate.getTime() + (180 + (n % 4) * 90) * 864e5).toISOString() : null,
+      drivers: [0, 1, 2].slice(0, 2 + (n % 2)).map((k) => DRIVERS[(n * 5 + k * 7) % DRIVERS.length] ?? ""),
+      url: `https://example.com/ideas/II-${1000 + n}`,
     });
   }
   return out.sort((a, b) => b.openDate.localeCompare(a.openDate));
