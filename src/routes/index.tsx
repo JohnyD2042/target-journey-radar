@@ -168,7 +168,7 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
   return (
     <aside
       aria-label={`Идея ${i.ticker}`}
-      className="fixed inset-x-2 bottom-2 z-30 rounded-xl border bg-popover/95 p-3 shadow-2xl backdrop-blur md:absolute md:inset-x-auto md:bottom-auto md:left-16 md:top-32 md:w-64 md:p-3"
+      className="fixed inset-x-2 bottom-2 z-30 rounded-xl border bg-popover/95 p-3 shadow-2xl backdrop-blur md:absolute md:inset-x-auto md:bottom-auto md:right-20 md:top-32 md:w-72 md:p-3"
     >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
