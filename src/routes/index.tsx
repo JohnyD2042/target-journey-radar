@@ -49,7 +49,7 @@ function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, 
 
 function Index() {
   const [period, setPeriod] = useState<Period>("all");
-  const [book, setBook] = useState<Book>("all");
+  const [book, setBook] = useState<Book>("active");
   const [analyst, setAnalyst] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(false);
