@@ -145,7 +145,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const rect = el.getBoundingClientRect();
-      updateView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch: e.ctrlKey || e.metaKey }, e.clientX - rect.left - PAD.l, e.clientY - rect.top - PAD.t));
+      updateView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch: e.ctrlKey || e.metaKey }, e.clientX - rect.left - pad.l, e.clientY - rect.top - pad.t));
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
@@ -292,7 +292,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
             <linearGradient id="trail-short" x1="1" x2="0"><stop offset="0" stopColor="var(--short)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--short)" stopOpacity="0" /></linearGradient>
           </defs>
 
-          <g transform={`translate(${PAD.l},${PAD.t})`}>
+          <g transform={`translate(${pad.l},${pad.t})`}>
             <g clipPath="url(#plot)">
               {BANDS.map((b) => (
                 <g key={b.z}>
@@ -336,7 +336,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
                     key={i.id}
                     ref={(el) => { node(String(i.id)).g = el; }}
                     className="cursor-pointer"
-                    onPointerEnter={(e) => { const n = node(String(i.id)); if (e.pointerType === "mouse") setHover({ idea: i, x: n.x + PAD.l, y: n.y + PAD.t }); }}
+                    onPointerEnter={(e) => { const n = node(String(i.id)); if (e.pointerType === "mouse") setHover({ idea: i, x: n.x + pad.l, y: n.y + pad.t }); }}
                     onPointerLeave={() => setHover(null)}
                     onClick={() => !drag.current?.moved && onSelect(i)}
                   >
