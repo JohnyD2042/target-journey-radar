@@ -4,7 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart } from "@/components/FlightChart";
 import { SideTag, IdeaPath } from "@/components/IdeaPath";
 import { WindowMark } from "@/components/WindowMark";
-import { ZONES, fetchFlight, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
+import { ZONES, applyFilters, fetchFlight, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -57,12 +57,16 @@ function Index() {
   const [ticker, setTicker] = useState("");
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
   const filters = { period, book, analyst: analyst ?? "", ticker };
-  const { data, isError, isFetching } = useQuery({
-    queryKey: ["flight", filters],
-    queryFn: () => fetchFlight(filters),
+  // one full download, refreshed at most every 15 minutes; all filtering is local
+  const { data: full, isError, isFetching } = useQuery({
+    queryKey: ["flight", "full"],
+    queryFn: () => fetchFlight({ period: "all", book: "all", analyst: "", ticker: "" }),
     placeholderData: keepPreviousData,
-    staleTime: 60_000,
+    staleTime: 15 * 60_000,
+    refetchInterval: 15 * 60_000,
+    refetchOnWindowFocus: false,
   });
+  const data = useMemo(() => (full ? applyFilters(full, filters) : undefined), [full, period, book, analyst, ticker]);
 
   const ideas = data?.ideas ?? [];
   const shown = useMemo(() => (zone ? ideas.filter((i) => zoneOf(i) === zone) : ideas), [ideas, zone]);
