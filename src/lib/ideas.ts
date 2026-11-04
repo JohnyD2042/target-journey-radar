@@ -64,3 +64,57 @@ export const ZONES: Record<Zone, { name: string; short: string; hint: string }> 
   4: { name: "Посадка", short: "0,8x → 1x", hint: "больше 80%" },
   5: { name: "Достигли цели", short: "1X Цель", hint: "закрыты по цели" },
 };
+
+export interface Filters { period: Period; book: Book; analyst: string; ticker: string }
+type RawIdea = Idea & { opened?: string; title?: string };
+
+const DAY = 86_400_000;
+const PERIOD_DAYS: Record<Period, number> = { all: Infinity, month: 30, week: 7 };
+
+export function inPeriod(i: RawIdea, p: Period, asOf: string) {
+  if (p === "all") return true;
+  if (!i.opened) return false;
+  const days = (Date.parse(asOf) - Date.parse(i.opened)) / DAY;
+  return days <= PERIOD_DAYS[p];
+}
+const inBook = (i: Idea, b: Book) => b === "all" || i.status === b;
+const byAnalyst = (i: Idea, a: string) => !a || i.analyst === a;
+function byTicker(i: RawIdea, t: string) {
+  const q = t.trim().toLowerCase();
+  if (!q) return true;
+  return i.ticker.toLowerCase().includes(q) || i.name.toLowerCase().includes(q) || (i.title ?? "").toLowerCase().includes(q);
+}
+
+/** Apply all filters locally to the full dataset fetched once; counters are tallies of the filtered set. */
+export function applyFilters(all: FlightResponse, f: Filters): FlightResponse {
+  const src = all.ideas as RawIdea[];
+  const ok = (i: RawIdea, skip?: keyof Filters) =>
+    (skip === "period" || inPeriod(i, f.period, all.asOf)) &&
+    (skip === "book" || inBook(i, f.book)) &&
+    (skip === "analyst" || byAnalyst(i, f.analyst)) &&
+    (skip === "ticker" || byTicker(i, f.ticker));
+
+  const ideas = src.filter((i) => ok(i));
+  const periods: Record<Period, number> = { all: 0, month: 0, week: 0 };
+  const counts = { all: 0, active: 0, closed: 0, cold: 0, liftoff: 0, cruise: 0, approach: 0, landed: 0 } as Record<Book | Stage, number>;
+  const an = new Map<string, number>();
+  const ins = new Map<string, { ticker: string; name: string; count: number }>();
+  for (const i of src) {
+    if (ok(i, "period")) for (const p of ["all", "month", "week"] as Period[]) if (inPeriod(i, p, all.asOf)) periods[p]++;
+    if (ok(i, "book")) { counts.all++; counts[i.status]++; }
+    if (ok(i, "analyst")) an.set(i.analyst, (an.get(i.analyst) ?? 0) + 1);
+    if (ok(i, "ticker")) {
+      const e = ins.get(i.ticker) ?? { ticker: i.ticker, name: i.name, count: 0 };
+      e.count++; ins.set(i.ticker, e);
+    }
+  }
+  for (const i of ideas) counts[i.stage]++;
+  return {
+    ...all,
+    counts,
+    periods,
+    analysts: [...an].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+    instruments: [...ins.values()].sort((a, b) => b.count - a.count || a.ticker.localeCompare(b.ticker)),
+    ideas,
+  };
+}
