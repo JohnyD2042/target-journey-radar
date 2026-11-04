@@ -22,3 +22,9 @@ export function wheelMapView(view: MapView, delta: { x: number; y: number; mode:
     ? zoomMapView(view, px, py, view.k * Math.exp(-delta.y * unit * 0.002))
     : { ...view, x: view.x - delta.x * unit, y: view.y - delta.y * unit };
 }
+/** Screen-space slot for a zone header: the visible part of the band [from,to] (fractions of plot width), clipped to the plot. */
+export function bandLabelSlot(from: number, to: number, pw: number, view: { k: number; x: number }) {
+  const a = Math.max(0, from * pw * view.k + view.x);
+  const b = Math.min(pw, to * pw * view.k + view.x);
+  return { left: a, width: Math.max(0, b - a) };
+}
