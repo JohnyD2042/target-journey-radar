@@ -21,36 +21,35 @@ const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 /** zone icon: top-down passenger airliner (Flightradar-style), nose +x */
 const PLANE_D =
   "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
-/** infographic glyph per zone: on ground / climbing / cruising / descending / parked */
-const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean }> = {
-  1: { rot: 0, ground: true },
-  2: { rot: -34 },
-  3: { rot: 0 },
-  4: { rot: 18 },
-  5: { rot: 0, ground: true },
+/** infographic glyph per zone: sank / climbing / cruising / descending / on target */
+const ZONE_ICON: Record<Zone, { rot: number }> = {
+  1: { rot: 26 },
+  2: { rot: -24 },
+  3: { rot: -8 },
+  4: { rot: 9 },
+  5: { rot: -4 },
 };
 
 /**
- * Header glyph: ONE continuous side-view outline, Flightradar-pictogram style —
- * a slender fuselage that tapers to the tail, with one swept wing and one fin
- * grown out of the same contour (no separate body capsule, no fill).
+ * Header glyph: ONE continuous side-view outline of a passenger airliner — slender
+ * fuselage with a tapered nose, tall swept fin above the tail, short flat stabilizer
+ * just below it, one swept low wing under the belly. No fill, no ground line.
  * Deliberately different from the filled top-down markers used on the map.
  */
 const SIDE_D =
-  "M33 14 L23 14 L13 3.5 L10.5 3.5 L17 14 L9.5 14 L5.5 6 L3.5 6 L7 13 L2.5 15 Q7 17.5 14 18 L33 18 C36.5 18 38 17.2 38 16 C38 14.8 36.5 14 33 14 Z";
-const GEAR_D = "M28 18 L28 21 M14 18 L14 21";
+  "M48 12.7 C46.5 10.6 42 9.2 36 9.2 L16 10 L7 1 L5 1 L9 10 L3 12.6 L6 14 L0 13 " +
+  "L5 15.2 Q8 16 13 16 L20 16 L10 22 L14 23 L32 16 L36 16 C42 16 46.5 14.8 48 12.7 Z";
 
-function ZoneGlyph({ rot, ground }: { rot: number; ground?: boolean | undefined }) {
+function ZoneGlyph({ rot }: { rot: number }) {
   return (
-    <svg viewBox="-1 0 40 26" className="!h-6 !w-9" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
-      <g transform={`rotate(${rot} 20 15.5)`}>
+    <svg viewBox="-3 -9 54 42" className="!h-6 !w-10" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+      <g transform={`rotate(${rot} 24 12.6)`}>
         <path d={SIDE_D} />
-        {ground && <path d={GEAR_D} />}
       </g>
-      {ground && <line x1={3} x2={33} y1={21} y2={21} />}
     </svg>
   );
 }
+
 
 function Plane({ color, scale = 1 }: { color: string; scale?: number }) {
   return (
