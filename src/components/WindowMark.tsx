@@ -49,8 +49,8 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
 
         {/* one schematic cloud puff, low in the frame */}
         <g fill="var(--cloud)" opacity="0.45">
-          <ellipse cx="12" cy="32.6" rx="5.4" ry="2.1" />
-          <ellipse cx="14.9" cy="31.1" rx="3.1" ry="1.7" />
+          <ellipse cx="12" cy="32.4" rx="4.2" ry="2.6" />
+          <ellipse cx="15" cy="31" rx="2.6" ry="2.1" />
         </g>
 
         <g className="mark-plane">
@@ -65,9 +65,6 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
         <path d={SHADE_EDGE} fill="none" stroke="var(--shade-2)" strokeWidth="2.4" strokeLinecap="round" />
         <path d={SHADE_EDGE} fill="none" stroke="var(--shade-1)" strokeWidth="0.6" opacity="0.5" transform="translate(0 -0.85)" />
         <rect x="14.2" y="18.4" width="3.6" height="1.8" rx="0.9" fill="var(--shade-2)" />
-
-        {/* reflection on the glass, above everything behind it */}
-        <path d="M4 30 L18 4 L23 4 L9 33 Z" fill="var(--foreground)" opacity="0.08" />
       </g>
 
       {/* window frame: plastic rim, dark seam, a soft highlight up top */}
