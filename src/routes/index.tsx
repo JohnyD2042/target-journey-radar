@@ -162,8 +162,14 @@ function Index() {
 
 function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
   const z = zoneOf(i);
-  const Row = ({ k, v }: { k: string; v: React.ReactNode }) => (
-    <><span className="text-muted-foreground">{k}</span><span className="text-right font-mono">{v}</span></>
+  const r = ret(i);
+  const u = upside(i);
+  const Col = ({ k, v, sub, align }: { k: string; v: string; sub: React.ReactNode; align: string }) => (
+    <div className={`flex min-w-0 flex-col ${align}`}>
+      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{k}</span>
+      <span className="font-mono text-xs font-semibold">{v}</span>
+      <span className="font-mono text-[10px] text-muted-foreground">{sub}</span>
+    </div>
   );
   return (
     <aside
@@ -174,19 +180,44 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="font-mono text-base font-semibold leading-none">{i.ticker}</span>
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{i.name}</span>
             <SideTag idea={i} />
-            <span className="truncate text-xs text-muted-foreground">{i.name}</span>
           </div>
           <div className="mt-1 truncate text-[11px] text-muted-foreground">{i.analyst}</div>
         </div>
         <button onClick={onClose} className="-mr-1 -mt-1 rounded p-1 text-xs text-muted-foreground hover:text-foreground" aria-label="Закрыть">✕</button>
       </div>
       <IdeaPath idea={i} />
-      <div className="mt-2 grid grid-cols-2 gap-y-0.5 border-t border-dashed pt-2 text-[11px]">
-        <Row k="Вход" v={`${money(i.openPrice)} · ${date(i.openDate)}`} />
-        <Row k={i.status === "active" ? "Цена" : "Закрытие"} v={money(i.price)} />
-        <Row k="Цель" v={i.target != null ? money(i.target) : "—"} />
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        <Col k="Вход" v={money(i.openPrice)} sub={date(i.openDate)} align="items-start text-left" />
+        <Col
+          k={i.status === "active" ? "Сейчас" : "Закрытие"}
+          v={money(i.price)}
+          sub={<span className={r >= 0 ? "text-long" : "text-short"}>{pct(r)}</span>}
+          align="items-center text-center"
+        />
+        <Col
+          k="Цель"
+          v={i.target != null ? money(i.target) : "—"}
+          sub={i.target != null ? `${u != null && u > 0 ? `${pct(u)} · ` : ""}${i.targetDate ? date(i.targetDate) : ""}` : "—"}
+          align="items-end text-right"
+        />
       </div>
+      {!!i.drivers?.length && (
+        <div className="mt-2 border-t border-dashed pt-2">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Драйверы роста</div>
+          <ul className="mt-1 space-y-0.5 text-[11px]">
+            {i.drivers.map((d) => (
+              <li key={d} className="flex gap-1.5"><span className="text-long">•</span>{d}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {i.url && (
+        <a href={i.url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[11px] text-primary hover:underline">
+          Полная версия идеи ↗
+        </a>
+      )}
       <div className="mt-2 flex items-center gap-1.5 text-[10px]">
         <span className="rounded-full px-1.5 py-px" style={{ color: `var(--z${z})`, border: `1px solid var(--z${z})` }}>{ZONES[z].name}</span>
         <span className="rounded-full border px-1.5 py-px text-muted-foreground">{i.status === "active" ? "Активна" : "Закрыта"}</span>
