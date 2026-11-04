@@ -23,30 +23,31 @@ const PLANE_D =
   "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
 /** infographic glyph per zone: on ground / climbing / cruising / descending / parked */
 const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean }> = {
-  1: { rot: 6, ground: true },
-  2: { rot: -32 },
+  1: { rot: 0, ground: true },
+  2: { rot: -34 },
   3: { rot: 0 },
   4: { rot: 18 },
   5: { rot: 0, ground: true },
 };
 
 /**
- * Header glyph: side-view outline airliner, one swept wing + one fin, nose +x.
+ * Header glyph: ONE continuous side-view outline, Flightradar-pictogram style —
+ * a slender fuselage that tapers to the tail, with one swept wing and one fin
+ * grown out of the same contour (no separate body capsule, no fill).
  * Deliberately different from the filled top-down markers used on the map.
  */
-const SIDE_FUSELAGE = "M6 17 L23 17 Q27 17 27 19 Q27 21 23 21 L6 21 Q2 21 2 19 Q2 17 6 17 Z";
-const SIDE_WING = "M19 17 L12 4 L9 4 L13 17";
-const SIDE_FIN = "M8 17 L4 9 L2 9 L4 17";
+const SIDE_D =
+  "M33 14 L23 14 L13 3.5 L10.5 3.5 L17 14 L9.5 14 L5.5 6 L3.5 6 L7 13 L2.5 15 Q7 17.5 14 18 L33 18 C36.5 18 38 17.2 38 16 C38 14.8 36.5 14 33 14 Z";
+const GEAR_D = "M28 18 L28 21 M14 18 L14 21";
 
 function ZoneGlyph({ rot, ground }: { rot: number; ground?: boolean | undefined }) {
   return (
-    <svg viewBox="-3 0 33 26" className="!h-6 !w-6" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <g transform={`rotate(${rot} 15 19)`}>
-        <path d={SIDE_FUSELAGE} />
-        <path d={SIDE_WING} />
-        <path d={SIDE_FIN} />
+    <svg viewBox="-1 0 40 26" className="!h-6 !w-9" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <g transform={`rotate(${rot} 20 15.5)`}>
+        <path d={SIDE_D} />
+        {ground && <path d={GEAR_D} />}
       </g>
-      {ground && <line x1={1} x2={28} y1={23.5} y2={23.5} />}
+      {ground && <line x1={3} x2={33} y1={21} y2={21} />}
     </svg>
   );
 }
