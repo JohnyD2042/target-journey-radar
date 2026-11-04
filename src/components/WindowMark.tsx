@@ -24,8 +24,13 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
           <stop offset="1" stopColor="var(--sky-3)" />
         </linearGradient>
         <linearGradient id="wm-warm" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--primary)" stopOpacity="0" />
-          <stop offset="1" stopColor="var(--primary)" stopOpacity="0.55" />
+          <stop offset="0" stopColor="var(--sunset)" stopOpacity="0" />
+          <stop offset="1" stopColor="var(--sunset)" stopOpacity="0.5" />
+        </linearGradient>
+        {/* contrail: one continuous streak that fades out behind the airliner */}
+        <linearGradient id="wm-trail" gradientUnits="userSpaceOnUse" x1="-21" y1="0" x2="-6" y2="0">
+          <stop offset="0" stopColor="var(--foreground)" stopOpacity="0" />
+          <stop offset="1" stopColor="var(--foreground)" stopOpacity="0.55" />
         </linearGradient>
         <linearGradient id="wm-shade" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="var(--shade-2)" />
@@ -51,7 +56,7 @@ export function WindowMark({ className = "h-10 w-8" }: { className?: string }) {
           <ellipse cx="14.6" cy="31.2" rx="3.6" ry="1.9" />
         </g>
         <g className="mark-plane">
-          <line x1="-20" y1="0" x2="-6" y2="0" stroke="var(--foreground)" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" />
+          <line x1="-21" y1="0" x2="-6" y2="0" stroke="url(#wm-trail)" strokeWidth="1.6" strokeLinecap="round" />
           <g transform="scale(0.46)">
             <path d={DART} fill="var(--foreground)" />
           </g>

@@ -72,7 +72,8 @@
   /* cabin-window header mark */
   --sky-1: oklch(0.4 0.13 255);
   --sky-2: oklch(0.6 0.14 240);
-  --sky-3: oklch(0.86 0.09 200);
+  --sky-3: oklch(0.88 0.05 80);
+  --sunset: oklch(0.8 0.14 55);
   --cloud: oklch(0.97 0.01 240);
   --shade-1: oklch(0.87 0.02 240);
   --shade-2: oklch(0.6 0.03 240);
@@ -134,6 +135,6 @@
 @utility ping-slow { transform-box: fill-box; transform-origin: center; animation: ping-ring 2.6s ease-out infinite; }
 
 /* airliner crossing the cabin window in the header mark */
-@keyframes mark-drift { 0% { transform: translate(-9px, 27px); } 100% { transform: translate(33px, 22px); } }
-.mark-plane { transform: translate(13px, 24px); animation: mark-drift 15s linear infinite; animation-delay: -6.5s; }
+@keyframes mark-drift { 0% { transform: translate(-9px, 28px); } 100% { transform: translate(33px, 24px); } }
+.mark-plane { transform: translate(13px, 26px); animation: mark-drift 15s linear infinite; animation-delay: -6.5s; }
 @media (prefers-reduced-motion: reduce) { .mark-plane { animation: none; } }
