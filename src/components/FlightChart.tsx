@@ -132,8 +132,9 @@ function FlightMap({ ideas, onSelect, selectedId, activeZone, onZoneChange }: Pr
 
   const { yMin, yMax, minR } = useMemo(() => {
     const rs = ideas.map(ret);
-    const lo = Math.min(0, ...rs), hi = Math.max(5, ...rs);
-    const pad = (hi - lo) * 0.08 || 2;
+    // Y range hugs the actual min/max returns (with 0 always visible) plus a small margin
+    const lo = Math.min(0, ...rs), hi = Math.max(1, ...rs);
+    const pad = Math.max((hi - lo) * 0.04, 1);
     return { yMin: lo - pad, yMax: hi + pad, minR: Math.min(-0.01, ...rs) };
   }, [ideas]);
 

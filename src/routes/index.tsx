@@ -55,13 +55,16 @@ function Index() {
   const [sel, setSel] = useState<Idea | null>(null);
 
   const byPeriod = IDEAS.filter((i) => inPeriod(i, period));
-  const byAnalyst = byPeriod.filter((i) => !analyst || i.analyst === analyst);
+  const [tq, setTq] = useState("");
+  const tqn = tq.trim().toLowerCase();
+  const byTicker = (i: Idea) => !tqn || i.ticker.toLowerCase().includes(tqn) || i.name.toLowerCase().includes(tqn);
+  const byAnalyst = byPeriod.filter((i) => (!analyst || i.analyst === analyst) && byTicker(i));
   const shown = useMemo(
     () => byAnalyst.filter((i) => inBook(i, book) && (!zone || (zone === "notarget" ? i.target == null : zoneOf(i) === zone))),
-    [period, book, analyst, zone],
+    [period, book, analyst, zone, tqn],
   );
 
-  const periodCounts = Object.fromEntries(PERIODS.map(([p]) => [p, IDEAS.filter((i) => inPeriod(i, p) && inBook(i, book) && (!analyst || i.analyst === analyst)).length])) as Record<Period, number>;
+  const periodCounts = Object.fromEntries(PERIODS.map(([p]) => [p, IDEAS.filter((i) => inPeriod(i, p) && inBook(i, book) && (!analyst || i.analyst === analyst) && byTicker(i)).length])) as Record<Period, number>;
   const bookCounts = Object.fromEntries(BOOKS.map(([b]) => [b, byAnalyst.filter((i) => inBook(i, b)).length])) as Record<Book, number>;
 
   const analysts = useMemo(() => {
@@ -81,15 +84,26 @@ function Index() {
           </div>
         </div>
         <div className="font-mono text-[11px] text-muted-foreground">
-          Источник: база Invest-Idei · срез {date(TODAY.toISOString())} · по дате открытия {period === "all" ? "с 01.06.26" : period === "month" ? "за 30 дней" : "за 7 дней"}
+          Источник: база Invest-Idei · Срез {date(TODAY.toISOString())} · 11:00
         </div>
       </header>
 
       {/* Filters */}
-      <div className="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:px-6">
-        <Seg items={PERIODS} value={period} onChange={setPeriod} counts={periodCounts} />
-        <Seg items={BOOKS} value={book} onChange={setBook} counts={bookCounts} />
-        <div className="relative md:w-72">
+      <div className="flex flex-col gap-3 px-4 py-3 md:px-6">
+       <div className="flex flex-col gap-3 md:flex-row md:items-end">
+        <label className="flex flex-col gap-1">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Дата старта идей</span>
+          <Seg items={PERIODS} value={period} onChange={setPeriod} counts={periodCounts} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Статус</span>
+          <Seg items={BOOKS} value={book} onChange={setBook} counts={bookCounts} />
+        </label>
+       </div>
+       <div className="flex flex-col gap-3 md:flex-row md:items-end">
+        <div className="flex flex-col gap-1 md:w-80">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Аналитик</span>
+        <div className="relative">
           <input
             value={analyst ?? q}
             onChange={(e) => { setAnalyst(null); setQ(e.target.value); }}
@@ -113,6 +127,20 @@ function Index() {
             </div>
           )}
         </div>
+        </div>
+        <label className="flex flex-col gap-1 md:w-80">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Акция / инструмент</span>
+          <div className="relative">
+            <input
+              value={tq}
+              onChange={(e) => setTq(e.target.value)}
+              placeholder="Тикер или название…"
+              className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
+            />
+            {tq && <button onClick={() => setTq("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground" aria-label="Очистить">✕</button>}
+          </div>
+        </label>
+       </div>
       </div>
 
       {/* Scene */}
@@ -120,7 +148,7 @@ function Index() {
         <div className="relative mb-4 h-[480px] p-2 lg:flex-1 md:h-[680px] md:p-4">
           <FlightChart ideas={shown} onSelect={setSel} selectedId={sel?.id} activeZone={zone} onZoneChange={(z) => setZone(zone === z ? null : z)} />
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
-            <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span><span>бледный — закрыта</span>
+            <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span>
           </div>
         </div>
         {sel && <Card idea={sel} onClose={() => setSel(null)} />}
