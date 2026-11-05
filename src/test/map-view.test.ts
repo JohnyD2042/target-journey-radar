@@ -28,3 +28,14 @@ describe("bandLabelSlot", () => {
   it("clips to the visible part when zoomed", () => expect(bandLabelSlot(0.6, 0.87, 1000, { k: 2, x: -1000 })).toEqual({ left: 200, width: 540 }));
   it("off-screen band gets zero width", () => expect(bandLabelSlot(0, 0.13, 1000, { k: 4, x: -2000 }).width).toBe(0));
 });
+
+import { pinchMapView as pinchMV } from "@/lib/map-view";
+describe("pinchMapView", () => {
+  it("spreading fingers to double distance doubles zoom around the midpoint", () => {
+    const v = pinchMV({ k: 1, x: 0, y: 0 }, { x: 100, y: 50 }, 100, { x: 100, y: 50 }, 200);
+    expect(v).toEqual({ k: 2, x: -100, y: -50 });
+  });
+  it("moving both fingers without spreading pans the map", () => {
+    expect(pinchMV({ k: 2, x: -10, y: -10 }, { x: 0, y: 0 }, 80, { x: 30, y: 20 }, 80)).toEqual({ k: 2, x: 20, y: 10 });
+  });
+});
