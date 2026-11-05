@@ -162,7 +162,7 @@ function Index() {
               placeholder="Тикер или название…"
               className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
             />
-            {tq && <button onClick={() => commitTicker("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground" aria-label="Очистить">✕</button>}
+            {tq && <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={(e) => { e.preventDefault(); commitTicker(""); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground" aria-label="Очистить">✕</button>}
             {tFocus && instruments.length > 0 && (
               <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover text-sm shadow-xl">
                 {instruments.map((x) => (
