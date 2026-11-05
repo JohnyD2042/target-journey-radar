@@ -200,8 +200,10 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     let ang = Math.atan2(arrY - ty, arrX - tx) * 0.55;
     if (z === 1) ang = Math.PI * (h % 2 ? 0.02 : -0.02) + (ret(i) < -5 ? 0.25 : 0);
     if (z === 5) ang = -Math.PI / 2;
-    const moving = z !== 5 && i.status === "active";
-    return { key: String(i.id), tx, ty, ang, delay: h % 600, ph: ((h % 1000) / 1000) * Math.PI * 2, amp: z === 1 ? 1.2 : 3, bob: z !== 1, moving, trail: z === 1 ? 10 : z === 5 ? 0 : 18 + (z - 2) * 8 };
+    // active ideas always fly with an exhaust trail; closed ones are parked: static, no trail
+    const moving = i.status === "active";
+    if (moving && z === 5) ang = Math.atan2(arrY - ty, arrX - tx) * 0.55;
+    return { key: String(i.id), tx, ty, ang, delay: h % 600, ph: ((h % 1000) / 1000) * Math.PI * 2, amp: z === 1 ? 1.5 : 3, bob: true, moving, trail: moving ? (z === 1 ? 14 : z === 5 ? 22 : 18 + (z - 2) * 8) : 0 };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [ideas, view, pw, ph, yMin, yMax, minR]);
 
@@ -351,8 +353,8 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
                         <circle r={15} fill="none" stroke="var(--primary)" strokeWidth={1} className="ping" />
                       </>
                     )}
-                    <g ref={(el) => { node(String(i.id)).r = el; }} opacity={i.status === "closed" ? 0.55 : 1}>
-                      <Plane color={col} scale={sel || hov ? 1.25 : 1} />
+                    <g ref={(el) => { node(String(i.id)).r = el; }} opacity={i.status === "closed" ? 0.35 : 1} style={i.status === "closed" ? { filter: "saturate(0.3)" } : undefined}>
+                      <Plane color={col} scale={(sel || hov ? 1.25 : 1) * (i.status === "closed" ? 0.85 : 1)} />
                     </g>
                   </g>
                 );
