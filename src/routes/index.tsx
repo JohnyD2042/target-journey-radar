@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { FlightChart, ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
+import { FlightChart, ZoneGlyph, ZONE_ICON, ZONE_TEXT } from "@/components/FlightChart";
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
 import { WindowMark } from "@/components/WindowMark";
 import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
@@ -234,13 +234,6 @@ function Status({ asOf, fetchedAt, isError }: { asOf?: string | undefined; fetch
   );
 }
 
-const ZONE_TEXT: Record<Zone, string> = {
-  1: "Идеи, которые на данный момент показывают отрицательную доходность.",
-  2: "Идеи, которые прошли от 0 до 0,2x своего потенциала — повод обратить внимание на будущих чемпионов на ранней стадии.",
-  3: "Идеи, которые показывают устойчивый положительный перформанс, но всё ещё сохраняют потенциал роста.",
-  4: "Идеи, которые прошли более 0,8x своего потенциала и приближаются к целевой цене — приготовиться к фиксации прибыли.",
-  5: "Идеи, закрытые по целевой цене. Зона помогает узнать имена лучших аналитиков и оценить перформанс идей.",
-};
 
 function Legend() {
   return (
