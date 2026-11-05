@@ -26,7 +26,7 @@ const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const PLANE_D =
   "M10 0 C10 -0.9 9 -1.4 7.5 -1.4 L3 -1.4 L-1.5 -8.5 L-3.5 -8.5 L-1 -1.4 L-6 -1.3 L-8 -4 L-9.4 -4 L-8.4 0 L-9.4 4 L-8 4 L-6 1.3 L-1 1.4 L-3.5 8.5 L-1.5 8.5 L3 1.4 L7.5 1.4 C9 1.4 10 0.9 10 0 Z";
 /** infographic glyph per zone: on the runway / climbing / cruising / descending / finished */
-const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean; flag?: boolean }> = {
+export const ZONE_ICON: Record<Zone, { rot: number; ground?: boolean; flag?: boolean }> = {
   1: { rot: 0, ground: true },
   2: { rot: -30 },
   3: { rot: -10 },
@@ -52,7 +52,7 @@ const WHEELS: [number, number, number][] = [[40, 22.9, 1.5], [24, 22.6, 1.8]];
 const FLAG_D = "M53 24.4 V-8 M53 -8 H68 V7 H53 Z";
 const FLAG_CELLS: [number, number][] = [[53, -8], [63, -8], [58, -3], [53, 2], [63, 2]];
 
-function ZoneGlyph({
+export function ZoneGlyph({
   rot,
   ground = false,
   flag = false,
@@ -408,11 +408,12 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
         <Button variant="ghost" className="map-btn" aria-label="Приблизить" title="Приблизить" onClick={() => zoomAt(pw / 2, ph / 2, viewRef.current.k * 1.6)}>+</Button>
         <Button variant="ghost" className="map-btn" aria-label="Отдалить" title="Отдалить" onClick={() => zoomAt(pw / 2, ph / 2, viewRef.current.k / 1.6)}>−</Button>
         <Button variant="ghost" className="map-btn text-[10px] disabled:opacity-40" aria-label="Сбросить" title="Исходный вид" disabled={view.k === 1 && view.x === 0 && view.y === 0} onClick={resetView}>1:1</Button>
+        <span className="map-btn pointer-events-none flex items-center justify-center font-mono text-[10px] text-muted-foreground" aria-label="Текущий масштаб">×{view.k.toFixed(1)}</span>
       </div>
       <div className="pointer-events-none absolute bottom-14 left-14 flex items-center gap-2 rounded bg-popover/80 px-2 py-0.5 font-mono text-[10px] backdrop-blur">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-short" />
         <span className="text-primary">LIVE</span>
-        <span className="text-muted-foreground">{live} в воздухе · ×{view.k.toFixed(1)}</span>
+        <span className="text-muted-foreground">{live} в воздухе</span>
       </div>
 
       {hover && (
