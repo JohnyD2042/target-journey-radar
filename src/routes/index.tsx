@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart, ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
@@ -54,6 +54,8 @@ function Index() {
 
   // the API is asked only after an exact instrument is chosen: list click, Enter, or an exactly typed ticker/name
   const [ticker, setTicker] = useState("");
+  // any header filter change drops the secondary zone highlight: the whole map shows again
+  useEffect(() => { setZone(null); }, [period, book, analyst, ticker]);
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
   const filters = { period, book, analyst: analyst ?? "", ticker };
   // one full download, refreshed at most every 15 minutes; all filtering is local
