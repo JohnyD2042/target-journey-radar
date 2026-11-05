@@ -262,8 +262,9 @@ function Legend() {
             <p className="mt-0.5 text-xs leading-snug text-muted-foreground">Сколько сейчас активных идей с положительной доходностью.</p>
           </div>
         </div>
+        </div>
       </div>
-    </section>
+    </details>
   );
 }
 
