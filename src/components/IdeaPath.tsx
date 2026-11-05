@@ -31,7 +31,7 @@ export function IdeaPath({ idea: i }: { idea: Idea }) {
       <div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground">
         <span className={r >= 0 ? "text-long" : "text-short"}>{pct(r)}</span>
         <span>
-          {i.noTarget ? "цели нет" : reached ? "цель 1X ✓" : i.toTargetPct != null ? `апсайд ${pct(i.toTargetPct)}` : ""}
+          {i.noTarget ? "цели нет" : reached ? "цель 1X ✓" : i.status === "active" && i.toTargetPct != null ? `апсайд ${pct(i.toTargetPct)}` : ""}
         </span>
       </div>
     </div>

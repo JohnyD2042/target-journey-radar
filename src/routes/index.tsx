@@ -346,7 +346,6 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
           style={{ mixBlendMode: "screen" }}
         >
           Закрыта
-          {i.closedLabel && <div className="text-center text-[8px] tracking-widest">{i.closedLabel}</div>}
         </div>
       )}
     </aside>
