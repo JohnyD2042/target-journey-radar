@@ -94,6 +94,14 @@ const Plane = memo(function Plane({ color, scale = 1 }: { color: string; scale?:
   );
 });
 
+export const ZONE_TEXT: Record<Zone, string> = {
+  1: "Идеи, которые на данный момент показывают отрицательную доходность.",
+  2: "Идеи, которые прошли от 0 до 0,2x своего потенциала — повод обратить внимание на будущих чемпионов на ранней стадии.",
+  3: "Идеи, которые показывают устойчивый положительный перформанс, но всё ещё сохраняют потенциал роста.",
+  4: "Идеи, которые прошли более 0,8x своего потенциала и приближаются к целевой цене — приготовиться к фиксации прибыли.",
+  5: "Идеи, закрытые по целевой цене. Зона помогает узнать имена лучших аналитиков и оценить перформанс идей.",
+};
+
 type Props = { ideas: Idea[]; yieldMin: number; yieldMax: number; zoneCounts: Record<string, number>; onSelect: (i: Idea) => void; selectedId?: string | undefined; activeZone?: Zone | "notarget" | null; onZoneChange: (zone: Zone) => void };
 
 export function FlightChart(props: Props) {
@@ -105,6 +113,14 @@ export function FlightChart(props: Props) {
 }
 
 function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId, activeZone, onZoneChange }: Props) {
+  const [help, setHelp] = useState<Zone | null>(null);
+  const [helpHover, setHelpHover] = useState<Zone | null>(null);
+  useEffect(() => {
+    if (help == null) return;
+    const close = () => setHelp(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [help]);
   const wrap = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 900, h: 480 });
   const [view, setView] = useState(initialMapView);
@@ -415,7 +431,8 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
           // narrow band: the name sits above its count so all five headers keep one and the same rhythm
           const tight = size.w < 640 || slot.width < 96;
           return (
-            <Button key={z} variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} style={{ position: "absolute", left: slot.left, width: slot.width }} className={`group h-[66px] min-w-0 flex-col items-center justify-between gap-1 overflow-visible rounded-sm px-px py-0.5 min-[640px]:h-[76px] min-[1024px]:h-[84px] min-[1024px]:py-2 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
+            <div key={z} className="absolute" style={{ left: slot.left, width: slot.width }}>
+            <Button variant="ghost" aria-label={ZONES[z].name} aria-pressed={activeZone === z} onClick={() => onZoneChange(z)} className={`group h-[66px] w-full min-w-0 flex-col items-center justify-between gap-1 overflow-visible rounded-sm px-px py-0.5 min-[640px]:h-[76px] min-[1024px]:h-[84px] min-[1024px]:py-2 ${colorClass} ${activeZone === z ? "bg-accent" : ""}`}>
               <ZoneGlyph rot={icon.rot} ground={icon.ground} flag={icon.flag} small={tight} />
               <span className={tight
                 ? "flex w-full flex-col items-center justify-end gap-0.5 whitespace-normal text-center text-[8px] font-semibold uppercase leading-[1.15] tracking-[-0.02em] min-[640px]:text-[9px]"
@@ -424,6 +441,29 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
                 <span className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded border border-current/25 bg-background/50 px-1 font-mono text-[9px] font-medium leading-none text-muted-foreground transition-colors group-hover:border-current/50 group-hover:text-foreground min-[640px]:h-5 min-[640px]:min-w-6 min-[640px]:px-1.5 min-[640px]:text-[10px] min-[1024px]:min-w-7">{zoneCounts[ZONE_STAGE[z]] ?? 0}</span>
               </span>
             </Button>
+            <button
+              type="button"
+              aria-label={`Что такое «${ZONES[z].name}»`}
+              aria-expanded={help === z}
+              onClick={(e) => { e.stopPropagation(); setHelp(help === z ? null : z); }}
+              onMouseEnter={() => setHelpHover(z)}
+              onMouseLeave={() => setHelpHover(null)}
+              className="absolute -top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-current/40 bg-background/80 font-mono text-[9px] font-semibold leading-none opacity-70 transition-opacity hover:opacity-100 min-[640px]:h-[18px] min-[640px]:w-[18px] min-[640px]:text-[10px]"
+              style={{ color: `var(--z${z})` }}
+            >?</button>
+            {(help === z || helpHover === z) && (
+              <div
+                role="tooltip"
+                className={`absolute top-full z-30 mt-1 w-56 rounded-lg border bg-popover/95 p-2.5 text-left shadow-xl backdrop-blur ${z === 1 ? "left-0" : z === 5 ? "right-0" : "left-1/2 -translate-x-1/2"}`}
+                style={{ borderColor: `var(--z${z})` }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="text-[10px] font-semibold uppercase" style={{ color: `var(--z${z})` }}>{ZONES[z].name}</div>
+                <p className="mt-1 text-[11px] normal-case leading-snug text-popover-foreground">{ZONE_TEXT[z]}</p>
+                <div className="mt-1.5 text-[10px] text-muted-foreground">Нажмите на название зоны, чтобы показать только её идеи</div>
+              </div>
+            )}
+            </div>
           );
         })}
       </div>
