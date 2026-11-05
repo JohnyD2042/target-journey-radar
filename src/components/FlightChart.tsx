@@ -52,7 +52,7 @@ const WHEELS: [number, number, number][] = [[40, 22.9, 1.5], [24, 22.6, 1.8]];
 const FLAG_D = "M53 24.4 V-8 M53 -8 H68 V7 H53 Z";
 const FLAG_CELLS: [number, number][] = [[53, -8], [63, -8], [58, -3], [53, 2], [63, 2]];
 
-function ZoneGlyph({
+export function ZoneGlyph({
   rot,
   ground = false,
   flag = false,
