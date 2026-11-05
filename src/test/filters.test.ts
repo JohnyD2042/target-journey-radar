@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyFilters, ideaTitle, isBasket, type FlightResponse, type Idea } from "@/lib/ideas";
+import { applyFilters, ideaTitle, isBasket, liveInAir, type FlightResponse, type Idea } from "@/lib/ideas";
 
 const idea = (o: Partial<Idea> & { opened: string }): Idea => ({
   id: Math.random(), ticker: "GAZP", name: "Газпром", analyst: "A", strategy: "лонг", status: "active",
@@ -54,5 +54,22 @@ describe("portfolio ideas", () => {
   it("is described by its title, a single idea by its name", () => {
     expect(ideaTitle(basket)).toBe("Как заработать на расхождении нефти и газа?");
     expect(ideaTitle(plain)).toBe("Новатэк");
+  });
+});
+
+describe("LIVE in the air", () => {
+  const set: Idea[] = [
+    idea({ opened: "2026-11-01", status: "active", yieldPct: 4.2 }),
+    idea({ opened: "2026-11-01", status: "active", yieldPct: -1.5 }),
+    idea({ opened: "2026-11-01", status: "active", yieldPct: 0 }),
+    idea({ opened: "2026-11-01", status: "closed", yieldPct: 18 }),
+    idea({ opened: "2026-11-01", status: "closed", yieldPct: -3 }),
+  ];
+  it("counts active ideas with a positive yield, nothing else", () => {
+    expect(liveInAir(set)).toBe(1);
+  });
+  it("does not depend on the stage a plane sits in", () => {
+    expect(liveInAir([idea({ opened: "2026-11-01", status: "active", stage: "landed", yieldPct: 12 })])).toBe(1);
+    expect(liveInAir([idea({ opened: "2026-11-01", status: "closed", stage: "liftoff", yieldPct: 12 })])).toBe(0);
   });
 });
