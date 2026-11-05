@@ -2,7 +2,7 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "rea
 import { type Idea, type Zone, ZONES, ZONE_STAGE, isBasket, isLong, liveInAir, zoneOf } from "@/lib/ideas";
 const ret = (i: Idea) => i.yieldPct;
 import { Button } from "@/components/ui/button";
-import { constrainMapView, initialMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
+import { constrainMapView, initialMapView, pinchMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
 import { bandLabelSlot } from "@/lib/map-view";
 import { BasketTag, IdeaPath, SideTag } from "@/components/IdeaPath";
 
@@ -187,6 +187,13 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
   }, [yMin, yMax, ph, view]);
 
   const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
+  // active touch points + two-finger pinch state
+  const pts = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ start: MapView; m0: { x: number; y: number }; d0: number } | null>(null);
+  const endPointer = (id: number) => {
+    pts.current.delete(id);
+    if (pts.current.size < 2) pinch.current = null;
+  };
 
   // airports
   const depX = sx(0.13 * pw), depY = sy(baseY(0));
@@ -267,9 +274,25 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
         style={{ cursor: "grab" }}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
+          pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (pts.current.size === 2) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const [a, b] = [...pts.current.values()] as [{ x: number; y: number }, { x: number; y: number }];
+            pinch.current = { start: viewRef.current, m0: { x: (a.x + b.x) / 2 - rect.left - pad.l, y: (a.y + b.y) / 2 - rect.top - pad.t }, d0: Math.hypot(a.x - b.x, a.y - b.y) };
+            drag.current = { x: 0, y: 0, vx: 0, vy: 0, moved: true };
+            return;
+          }
           drag.current = { x: e.clientX, y: e.clientY, vx: viewRef.current.x, vy: viewRef.current.y, moved: false };
         }}
         onPointerMove={(e) => {
+          if (pts.current.has(e.pointerId)) pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          const pz = pinch.current;
+          if (pz && pts.current.size >= 2) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const [a, b] = [...pts.current.values()] as [{ x: number; y: number }, { x: number; y: number }];
+            updateView(pinchMapView(pz.start, pz.m0, pz.d0, { x: (a.x + b.x) / 2 - rect.left - pad.l, y: (a.y + b.y) / 2 - rect.top - pad.t }, Math.hypot(a.x - b.x, a.y - b.y)));
+            return;
+          }
           const d = drag.current;
           if (!d) return;
           if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 3) d.moved = true;
@@ -278,8 +301,8 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
             updateView({ k: viewRef.current.k, x: d.vx + e.clientX - d.x, y: d.vy + e.clientY - d.y });
           }
         }}
-        onPointerUp={() => setTimeout(() => (drag.current = null))}
-        onPointerCancel={() => (drag.current = null)}
+        onPointerUp={(e) => { endPointer(e.pointerId); setTimeout(() => (drag.current = null)); }}
+        onPointerCancel={(e) => { endPointer(e.pointerId); drag.current = null; }}
         onPointerLeave={() => { if (!drag.current?.moved) drag.current = null; }}
       >
         <svg width={size.w} height={size.h} className="block">
