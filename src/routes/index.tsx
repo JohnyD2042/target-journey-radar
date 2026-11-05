@@ -224,8 +224,8 @@ function Status({ asOf, fetchedAt, isError }: { asOf?: string; fetchedAt: number
   return (
     <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-[11px]" title={stale ? "Данные устарели более чем на сутки" : "Данные актуальны"}>
       <span className="relative flex h-2 w-2">
-        <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${stale ? "bg-z4" : "bg-long"}`} />
-        <span className={`relative inline-flex h-2 w-2 rounded-full ${stale ? "bg-z4" : "bg-long"}`} />
+        <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${stale ? "bg-z5" : "bg-long"}`} />
+        <span className={`relative inline-flex h-2 w-2 rounded-full ${stale ? "bg-z5" : "bg-long"}`} />
       </span>
       <span className="font-medium">Invest-Idei</span>
       <span className="font-mono text-muted-foreground">обновлено {isoLabel(asOf)}{time && `, ${time}`}</span>
@@ -248,9 +248,9 @@ function Legend() {
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {([1, 2, 3, 4, 5] as Zone[]).map((z) => (
           <div key={z} className="flex gap-3">
-            <div className={`shrink-0 text-z${z}`}><ZoneGlyph rot={ZONE_ICON[z].rot} ground={ZONE_ICON[z].ground} flag={ZONE_ICON[z].flag} /></div>
+            <div className="shrink-0" style={{ color: `var(--z${z})` }}><ZoneGlyph rot={ZONE_ICON[z].rot} ground={ZONE_ICON[z].ground} flag={ZONE_ICON[z].flag} /></div>
             <div>
-              <div className={`text-xs font-semibold uppercase text-z${z}`}>{ZONES[z].name}</div>
+              <div className="text-xs font-semibold uppercase" style={{ color: `var(--z${z})` }}>{ZONES[z].name}</div>
               <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{ZONE_TEXT[z]}</p>
             </div>
           </div>
