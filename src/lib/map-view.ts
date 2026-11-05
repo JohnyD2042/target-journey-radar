@@ -16,6 +16,12 @@ export function zoomMapView(view: MapView, px: number, py: number, next: number)
   return { k, x: px - (px - view.x) * factor, y: py - (py - view.y) * factor };
 }
 
+/** Two-finger pinch: zoom the starting view about the starting midpoint by d/d0, then follow the midpoint. */
+export function pinchMapView(start: MapView, m0: { x: number; y: number }, d0: number, m: { x: number; y: number }, d: number): MapView {
+  const z = zoomMapView(start, m0.x, m0.y, start.k * (d / Math.max(1, d0)));
+  return { k: z.k, x: z.x + m.x - m0.x, y: z.y + m.y - m0.y };
+}
+
 export function wheelMapView(view: MapView, delta: { x: number; y: number; mode: number; pinch: boolean }, px: number, py: number): MapView {
   const unit = delta.mode === 1 ? 16 : delta.mode === 2 ? 100 : 1;
   return delta.pinch
