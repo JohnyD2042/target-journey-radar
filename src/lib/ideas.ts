@@ -126,8 +126,14 @@ export function applyFilters(all: FlightResponse, f: Filters): FlightResponse {
     if (ok(i, "book")) { counts.all++; counts[i.status]++; }
     if (ok(i, "analyst")) an.set(i.analyst, (an.get(i.analyst) ?? 0) + 1);
     if (ok(i, "ticker")) {
-      const e = ins.get(i.ticker) ?? { ticker: i.ticker, name: i.name, count: 0 };
-      e.count++; ins.set(i.ticker, e);
+      // portfolio ideas are not listed as their own row: each ticker inside counts towards that stock
+      const basket = i.basket === true;
+      const tks = basket ? i.ticker.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean) : [i.ticker];
+      for (const t of tks) {
+        const e = ins.get(t) ?? { ticker: t, name: basket ? "" : i.name, count: 0 };
+        if (!basket && !e.name) e.name = i.name;
+        e.count++; ins.set(t, e);
+      }
     }
   }
   for (const i of ideas) counts[i.stage]++;
