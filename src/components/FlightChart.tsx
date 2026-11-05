@@ -114,7 +114,7 @@ export function FlightChart(props: Props) {
 
 function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId, activeZone, onZoneChange }: Props) {
   const [help, setHelp] = useState<Zone | null>(null);
-  const [hover, setHover] = useState<Zone | null>(null);
+  const [helpHover, setHelpHover] = useState<Zone | null>(null);
   useEffect(() => {
     if (help == null) return;
     const close = () => setHelp(null);
@@ -446,12 +446,12 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
               aria-label={`Что такое «${ZONES[z].name}»`}
               aria-expanded={help === z}
               onClick={(e) => { e.stopPropagation(); setHelp(help === z ? null : z); }}
-              onMouseEnter={() => setHover(z)}
-              onMouseLeave={() => setHover(null)}
+              onMouseEnter={() => setHelpHover(z)}
+              onMouseLeave={() => setHelpHover(null)}
               className="absolute -top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-current/40 bg-background/80 font-mono text-[9px] font-semibold leading-none opacity-70 transition-opacity hover:opacity-100 min-[640px]:h-[18px] min-[640px]:w-[18px] min-[640px]:text-[10px]"
               style={{ color: `var(--z${z})` }}
             >?</button>
-            {(help === z || hover === z) && (
+            {(help === z || helpHover === z) && (
               <div
                 role="tooltip"
                 className={`absolute top-full z-30 mt-1 w-56 rounded-lg border bg-popover/95 p-2.5 text-left shadow-xl backdrop-blur ${z === 1 ? "left-0" : z === 5 ? "right-0" : "left-1/2 -translate-x-1/2"}`}
