@@ -64,6 +64,9 @@ export const isLong = (i: Idea) => i.strategy === "лонг";
 export const isBasket = (i: Idea) => i.basket === true;
 /** line under the tickers: portfolio ideas carry their title, single ideas their name */
 export const ideaTitle = (i: Idea) => (isBasket(i) ? (i.title ?? i.name) : i.name);
+/** LIVE in the air: active ideas currently showing a positive yield */
+export const liveInAir = (ideas: Idea[]) =>
+  ideas.reduce((n, i) => n + (i.status === "active" && i.yieldPct > 0 ? 1 : 0), 0);
 
 /**
  * Show an API date (YYYY-MM-DD) as DD.MM.YY. The day is taken from the string itself,
