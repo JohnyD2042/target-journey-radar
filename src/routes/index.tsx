@@ -21,7 +21,7 @@ export const Route = createFileRoute("/")({
 });
 
 const PERIODS: [Period, string][] = [["all", "За всё время"], ["month", "Месяц"], ["week", "Неделя"]];
-const BOOKS: [Book, string][] = [["active", "Активные"], ["closed", "Закрытые"], ["all", "Все"]];
+const BOOKS: [Book, string][] = [["all", "Все"], ["active", "Активные"], ["closed", "Закрытые"]];
 const pct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 const money = (v: number) => v.toLocaleString("ru-RU", { maximumFractionDigits: 4 });
 
@@ -43,7 +43,7 @@ function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, 
 
 function Index() {
   const [period, setPeriod] = useState<Period>("all");
-  const [book, setBook] = useState<Book>("active");
+  const [book, setBook] = useState<Book>("all");
   const [analyst, setAnalyst] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(false);
