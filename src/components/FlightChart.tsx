@@ -1,6 +1,5 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { type Idea, type Zone, ZONES, ZONE_STAGE, isBasket, isLong, zoneOf } from "@/lib/ideas";
-const AIRBORNE = ["liftoff", "cruise", "approach", "landed"] as const;
+import { type Idea, type Zone, ZONES, ZONE_STAGE, isBasket, isLong, liveInAir, zoneOf } from "@/lib/ideas";
 const ret = (i: Idea) => i.yieldPct;
 import { Button } from "@/components/ui/button";
 import { constrainMapView, initialMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
@@ -254,7 +253,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     if (!n) { n = { g: null, r: null, t: null, x: 0, y: 0 }; nodes.current.set(key, n); }
     return n;
   };
-  const live = AIRBORNE.reduce((sum, s) => sum + (zoneCounts[s] ?? 0), 0);
+  const live = liveInAir(ideas);
 
   return (
     <div className="relative h-full w-full select-none">
