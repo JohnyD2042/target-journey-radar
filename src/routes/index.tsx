@@ -145,7 +145,12 @@ function Index() {
           <div className="relative">
             <input
               value={tq}
-              onChange={(e) => setTq(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                // editing the committed ticker (or erasing it) releases the ticker filter at once
+                if (ticker && v.trim() !== ticker) setTicker("");
+                setTq(v);
+              }}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
                 e.preventDefault();
