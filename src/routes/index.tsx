@@ -237,9 +237,15 @@ function Status({ asOf, fetchedAt, isError }: { asOf?: string | undefined; fetch
 
 function Legend() {
   return (
-    <section aria-label="Легенда карты" className="mx-4 mb-10 rounded-xl border bg-card/60 p-4 md:mx-6 md:p-5">
-      <h2 className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Стадии жизни идеи</h2>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <details className="group mx-4 mb-10 rounded-xl border bg-card/60 md:mx-6">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 md:px-5 [&::-webkit-details-marker]:hidden">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Легенда карты</span>
+        <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </summary>
+      <div className="border-t px-4 pb-4 pt-3 md:px-5 md:pb-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {([1, 2, 3, 4, 5] as Zone[]).map((z) => (
           <div key={z} className="flex gap-3">
             <div className="shrink-0" style={{ color: `var(--z${z})` }}><ZoneGlyph rot={ZONE_ICON[z].rot} ground={ZONE_ICON[z].ground} flag={ZONE_ICON[z].flag} /></div>
@@ -256,8 +262,9 @@ function Legend() {
             <p className="mt-0.5 text-xs leading-snug text-muted-foreground">Сколько сейчас активных идей с положительной доходностью.</p>
           </div>
         </div>
+        </div>
       </div>
-    </section>
+    </details>
   );
 }
 
