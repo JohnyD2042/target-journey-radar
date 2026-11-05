@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { FlightChart } from "@/components/FlightChart";
+import { FlightChart, ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
 import { WindowMark } from "@/components/WindowMark";
 import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
@@ -57,7 +57,7 @@ function Index() {
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
   const filters = { period, book, analyst: analyst ?? "", ticker };
   // one full download, refreshed at most every 15 minutes; all filtering is local
-  const { data: full, isError, isFetching } = useQuery({
+  const { data: full, isError, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ["flight", "full"],
     queryFn: () => fetchFlight({ period: "all", book: "all", analyst: "", ticker: "" }),
     placeholderData: keepPreviousData,
@@ -89,8 +89,11 @@ function Index() {
             <p className="mt-1 text-xs text-muted-foreground">Инвестидеи аналитиков на маршруте к целевой цене</p>
           </div>
         </div>
-        <div className="font-mono text-[11px] text-muted-foreground">
-          {data ? <>Источник: база Invest-Idei · Период {isoLabel(data.from)} — {isoLabel(data.to)}</> : isError ? "Источник недоступен" : "Загрузка…"}
+        <div className="flex items-center gap-3">
+          <Status asOf={data?.asOf} fetchedAt={dataUpdatedAt} isError={isError} />
+          <a href="https://t.me/investidei_konkurs" target="_blank" rel="noopener noreferrer" aria-label="Комьюнити в Телеграме" title="Комьюнити в Телеграме" className="flex h-8 w-8 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3 18.7 19.4c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.3 13 1.5 11.5c-1-.3-1.1-1 .2-1.5L20.6 2.8c.9-.3 1.6.2 1.3 1.5Z" /></svg>
+          </a>
         </div>
       </header>
 
@@ -133,6 +136,7 @@ function Index() {
             </div>
           )}
         </div>
+        <Presets items={["СберИнвестиции", "Финам"]} onPick={(v) => { setAnalyst(v); setQ(""); }} />
         </div>
         <label className="flex flex-col gap-1 md:w-80">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Акция / инструмент</span>
@@ -163,6 +167,7 @@ function Index() {
               </div>
             )}
           </div>
+          <Presets items={["OZON", "Новатэк"]} onPick={(v) => commitTicker(exactHit(v) || v)} />
         </label>
        </div>
       </div>
@@ -193,11 +198,74 @@ function Index() {
           {sel && <Card idea={sel} onClose={() => setSel(null)} />}
         </div>
       </div>
+      <Legend />
 
     </div>
   );
 }
 
+function Presets({ items, onPick }: { items: string[]; onPick: (v: string) => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[10px] text-muted-foreground">например:</span>
+      {items.map((v) => (
+        <button key={v} type="button" onClick={() => onPick(v)} className="rounded-full border bg-card px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground">{v}</button>
+      ))}
+    </div>
+  );
+}
+
+function Status({ asOf, fetchedAt, isError }: { asOf?: string; fetchedAt: number; isError: boolean }) {
+  if (!asOf) return <span className="font-mono text-[11px] text-muted-foreground">{isError ? "Источник недоступен" : "Загрузка…"}</span>;
+  // asOf is a calendar day: treat it as fresh until the end of that day (UTC)
+  const dayEnd = Date.parse(asOf.slice(0, 10)) + 86_400_000;
+  const stale = isError || Date.now() - (asOf.includes("T") ? Date.parse(asOf) : dayEnd) > 86_400_000;
+  const time = fetchedAt ? new Date(fetchedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "";
+  return (
+    <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-[11px]" title={stale ? "Данные устарели более чем на сутки" : "Данные актуальны"}>
+      <span className="relative flex h-2 w-2">
+        <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 ${stale ? "bg-z4" : "bg-long"}`} />
+        <span className={`relative inline-flex h-2 w-2 rounded-full ${stale ? "bg-z4" : "bg-long"}`} />
+      </span>
+      <span className="font-medium">Invest-Idei</span>
+      <span className="font-mono text-muted-foreground">обновлено {isoLabel(asOf)}{time && `, ${time}`}</span>
+    </div>
+  );
+}
+
+const ZONE_TEXT: Record<Zone, string> = {
+  1: "Идеи, которые на данный момент показывают отрицательную доходность.",
+  2: "Идеи, которые прошли от 0 до 0,2x своего потенциала — повод обратить внимание на будущих чемпионов на ранней стадии.",
+  3: "Идеи, которые показывают устойчивый положительный перформанс, но всё ещё сохраняют потенциал роста.",
+  4: "Идеи, которые прошли более 0,8x своего потенциала и приближаются к целевой цене — приготовиться к фиксации прибыли.",
+  5: "Идеи, закрытые по целевой цене. Зона помогает узнать имена лучших аналитиков и оценить перформанс идей.",
+};
+
+function Legend() {
+  return (
+    <section aria-label="Легенда карты" className="mx-4 mb-10 rounded-xl border bg-card/60 p-4 md:mx-6 md:p-5">
+      <h2 className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Стадии жизни идеи</h2>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {([1, 2, 3, 4, 5] as Zone[]).map((z) => (
+          <div key={z} className="flex gap-3">
+            <div className={`shrink-0 text-z${z}`}><ZoneGlyph rot={ZONE_ICON[z].rot} ground={ZONE_ICON[z].ground} flag={ZONE_ICON[z].flag} /></div>
+            <div>
+              <div className={`text-xs font-semibold uppercase text-z${z}`}>{ZONES[z].name}</div>
+              <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{ZONE_TEXT[z]}</p>
+            </div>
+          </div>
+        ))}
+        <div className="flex gap-3">
+          <span className="mt-1 h-2 w-2 shrink-0 animate-pulse rounded-full bg-short" />
+          <div>
+            <div className="text-xs font-semibold uppercase text-primary">LIVE в воздухе</div>
+            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">Сколько сейчас активных идей с положительной доходностью.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
   const z = zoneOf(i);
