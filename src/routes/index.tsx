@@ -207,7 +207,6 @@ function Index() {
 function Presets({ items, onPick }: { items: string[]; onPick: (v: string) => void }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[10px] text-muted-foreground">например:</span>
       {items.map((v) => (
         <button key={v} type="button" onClick={() => onPick(v)} className="rounded-full border bg-card px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground">{v}</button>
       ))}
