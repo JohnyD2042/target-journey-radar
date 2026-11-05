@@ -215,7 +215,7 @@ function Presets({ items, onPick }: { items: string[]; onPick: (v: string) => vo
   );
 }
 
-function Status({ asOf, fetchedAt, isError }: { asOf?: string; fetchedAt: number; isError: boolean }) {
+function Status({ asOf, fetchedAt, isError }: { asOf?: string | undefined; fetchedAt: number; isError: boolean }) {
   if (!asOf) return <span className="font-mono text-[11px] text-muted-foreground">{isError ? "Источник недоступен" : "Загрузка…"}</span>;
   // asOf is a calendar day: treat it as fresh until the end of that day (UTC)
   const dayEnd = Date.parse(asOf.slice(0, 10)) + 86_400_000;
