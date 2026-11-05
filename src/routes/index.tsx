@@ -337,8 +337,18 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
       )}
       <div className="mt-2 flex items-center gap-1.5 text-[10px]">
         <span className="rounded-full px-1.5 py-px" style={{ color: `var(--z${z})`, border: `1px solid var(--z${z})` }}>{ZONES[z].name}</span>
-        <span className="rounded-full border px-1.5 py-px text-muted-foreground">{i.status === "active" ? "Активна" : "Закрыта"}</span>
+        {i.status === "active" && <span className="rounded-full border border-long/60 px-1.5 py-px text-long">Активна</span>}
       </div>
+      {i.status === "closed" && (
+        <div
+          aria-label="Статус: закрыта"
+          className="pointer-events-none absolute bottom-3 right-3 -rotate-12 rounded-md border-2 border-double border-short px-2 py-0.5 font-mono text-sm font-bold uppercase tracking-[0.2em] text-short opacity-85 shadow-[0_0_0_2px_var(--short)_inset]"
+          style={{ mixBlendMode: "screen" }}
+        >
+          Закрыта
+          {i.closedLabel && <div className="text-center text-[8px] tracking-widest">{i.closedLabel}</div>}
+        </div>
+      )}
     </aside>
   );
 }
