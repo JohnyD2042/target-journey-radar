@@ -261,6 +261,19 @@ function Legend() {
           </div>
         ))}
         <div className="flex gap-3">
+          <svg viewBox="0 0 24 24" className="mt-0.5 h-6 w-6 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+            <path d="M3 20 H21" strokeLinecap="round" opacity="0.5" />
+            <path d="M12 20 V4" strokeDasharray="3 3" strokeLinecap="round" />
+            <circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" />
+          </svg>
+          <div>
+            <div className="text-xs font-semibold uppercase text-foreground">Идеи без целевой цены</div>
+            <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+              Целевая цена таких идей неизвестна, поэтому их путь не строится: идеи с положительной доходностью показываются на координате 0,5x по умолчанию.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3">
           <span className="mt-1 h-2 w-2 shrink-0 animate-pulse rounded-full bg-short" />
           <div>
             <div className="text-xs font-semibold uppercase text-primary">LIVE в воздухе</div>
