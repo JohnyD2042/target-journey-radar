@@ -420,6 +420,17 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
               if (x < 0 || x > pw) return null;
               return <text key={l} x={x} y={ph + 22} textAnchor="middle" className="font-mono text-[10px]" fill="var(--muted-foreground)">{l}</text>;
             })}
+            {/* duplicate X ticks on the zero line so the scale is visible on the first screen */}
+            {depY >= 0 && depY <= ph && TICKS_X.filter(([p]) => p > 0).map(([p, l]) => {
+              const x = sx((0.13 + p * 0.74) * pw);
+              if (x < 0 || x > pw) return null;
+              return (
+                <g key={`z${l}`}>
+                  <line x1={x} x2={x} y1={depY - 5} y2={depY + 5} stroke="var(--muted-foreground)" strokeWidth={1.5} />
+                  <text x={x} y={depY + 18} textAnchor="middle" className="font-mono text-[10px]" fill="var(--muted-foreground)">{l}</text>
+                </g>
+              );
+            })}
             {sx(0.87 * pw) >= 0 && sx(0.87 * pw) <= pw && <Airport x={sx(0.87 * pw)} y={depY} label="" accent />}
             {sx(0.87 * pw) >= 0 && sx(0.87 * pw) <= pw && (
               <text x={sx(0.87 * pw)} y={depY + 30} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill="var(--primary)">1X ЦЕЛЬ</text>
