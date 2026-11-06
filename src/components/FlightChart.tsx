@@ -219,7 +219,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
 
   // airports
   const depX = sx(0.13 * pw), depY = sy(baseY(0));
-  const arrX = sx(0.935 * pw), arrY = sy(baseY(0));
+  const arrX = sx(0.935 * pw), arrY = sy(baseY(yMax * 0.55));
 
   // static per-plane resting geometry; recomputed only on data / pan / zoom / resize
   const targets = useMemo(() => ideas.map((i) => {
