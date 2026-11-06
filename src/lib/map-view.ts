@@ -34,3 +34,8 @@ export function bandLabelSlot(from: number, to: number, pw: number, view: { k: n
   const b = Math.min(pw, to * pw * view.k + view.x);
   return { left: a, width: Math.max(0, b - a) };
 }
+
+/** True when a plain scroll could not move the map (already at its edge), so the page should scroll instead. */
+export function wheelHitsEdge(before: MapView, after: MapView, pinch: boolean): boolean {
+  return !pinch && Math.abs(after.x - before.x) < 0.5 && Math.abs(after.y - before.y) < 0.5;
+}
