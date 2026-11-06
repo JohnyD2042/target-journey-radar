@@ -447,7 +447,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
               fill="var(--muted-foreground)"
               opacity={0.7}
             >
-              Доходность ↑
+              Доходность
             </text>
             <text
               x={pw / 2}
@@ -457,7 +457,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
               fill="var(--muted-foreground)"
               opacity={0.7}
             >
-              Путь до целевой цены →
+              Путь до целевой цены
             </text>
           </g>
         </svg>
