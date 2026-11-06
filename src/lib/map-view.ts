@@ -2,11 +2,12 @@ export type MapView = { k: number; x: number; y: number };
 export const initialMapView = (): MapView => ({ k: 1, x: 0, y: 0 });
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
-export function constrainMapView(view: MapView, width: number, height: number): MapView {
+/** contentH: full plot height at zoom 1 — may exceed the visible height (losses sit below the first screen). */
+export function constrainMapView(view: MapView, width: number, height: number, contentH = height): MapView {
   return {
     k: view.k,
     x: clamp(view.x, width * (1 - view.k), 0),
-    y: clamp(view.y, height * (1 - view.k) - height * 0.05, height * 0.05),
+    y: clamp(view.y, height - contentH * view.k - height * 0.05, height * 0.05),
   };
 }
 
@@ -38,4 +39,11 @@ export function bandLabelSlot(from: number, to: number, pw: number, view: { k: n
 /** True when a plain scroll could not move the map (already at its edge), so the page should scroll instead. */
 export function wheelHitsEdge(before: MapView, after: MapView, pinch: boolean): boolean {
   return !pinch && Math.abs(after.x - before.x) < 0.5 && Math.abs(after.y - before.y) < 0.5;
+}
+
+/** Vertical scale: the first screen shows a little below 0 up to yMax; deeper losses continue below it. */
+export function yScale(yMin: number, yMax: number, ph: number) {
+  const bottom = yMax > 0 ? Math.max(yMin, -0.12 * yMax) : yMin;
+  const k = ph / (yMax - bottom || 1);
+  return { k, contentH: (yMax - yMin) * k };
 }

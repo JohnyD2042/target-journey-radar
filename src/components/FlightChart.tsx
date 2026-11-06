@@ -2,7 +2,7 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "rea
 import { type Idea, type Zone, ZONES, ZONE_STAGE, isBasket, isLong, liveInAir, zoneOf } from "@/lib/ideas";
 const ret = (i: Idea) => i.yieldPct;
 import { Button } from "@/components/ui/button";
-import { constrainMapView, initialMapView, pinchMapView, wheelHitsEdge, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
+import { yScale, constrainMapView, initialMapView, pinchMapView, wheelHitsEdge, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
 import { bandLabelSlot } from "@/lib/map-view";
 import { BasketTag, IdeaPath, SideTag } from "@/components/IdeaPath";
 
@@ -147,7 +147,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
   const ph = Math.max(1, size.h - pad.t - pad.b);
 
   const updateView = (next: MapView) => {
-    viewRef.current = constrainMapView(next, pw, ph);
+    viewRef.current = constrainMapView(next, pw, ph, contentH);
     setView(viewRef.current);
     setHover(null);
   };
@@ -163,7 +163,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     const onWheel = (e: WheelEvent) => {
       const rect = el.getBoundingClientRect();
       const pinch = e.ctrlKey || e.metaKey;
-      const next = constrainMapView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch }, e.clientX - rect.left - pad.l, e.clientY - rect.top - pad.t), pw, ph);
+      const next = constrainMapView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch }, e.clientX - rect.left - pad.l, e.clientY - rect.top - pad.t), pw, ph, contentH);
       // map already at its edge: let the page scroll on, like any other page area
       if (wheelHitsEdge(viewRef.current, next, pinch)) return;
       e.preventDefault();
@@ -182,6 +182,8 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     return { yMin: yieldMin, yMax: yieldMax === yieldMin ? yieldMin + span : yieldMax, minR: Math.min(-0.01, yieldMin) };
   }, [yieldMin, yieldMax]);
 
+  const { k: yK, contentH } = yScale(yMin, yMax, ph);
+
   const baseX = (i: Idea) => {
     const z = zoneOf(i);
     const r = ret(i), p = i.capturedX;
@@ -191,20 +193,20 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     else f = 0.13 + clamp(p, 0, 0.995) * 0.74;
     return f * pw;
   };
-  const baseY = (r: number) => ((yMax - r) / (yMax - yMin)) * ph;
+  const baseY = (r: number) => (yMax - r) * yK;
   const sx = (bx: number) => bx * view.k + view.x;
   const sy = (by: number) => by * view.k + view.y;
 
   const yTicks = useMemo(() => {
-    const visLo = yMax - ((ph - view.y) / view.k / ph) * (yMax - yMin);
-    const visHi = yMax - ((-view.y) / view.k / ph) * (yMax - yMin);
+    const visLo = yMax - (ph - view.y) / view.k / yK;
+    const visHi = yMax - -view.y / view.k / yK;
     const span = (visHi - visLo) / 6;
     const mag = Math.pow(10, Math.floor(Math.log10(span)));
     const step = [1, 2, 5, 10].map((m) => m * mag).find((s) => s >= span) ?? mag * 10;
     const out: number[] = [];
     for (let v = Math.ceil(visLo / step) * step; v <= visHi; v += step) out.push(Math.round(v * 100) / 100);
     return out;
-  }, [yMin, yMax, ph, view]);
+  }, [yMin, yMax, ph, view, yK]);
 
   const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
   // active touch points + two-finger pinch state
@@ -418,9 +420,9 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
               if (x < 0 || x > pw) return null;
               return <text key={l} x={x} y={ph + 22} textAnchor="middle" className="font-mono text-[10px]" fill="var(--muted-foreground)">{l}</text>;
             })}
-            {sx(0.87 * pw) >= 0 && sx(0.87 * pw) <= pw && <Airport x={sx(0.87 * pw)} y={ph} label="" accent />}
+            {sx(0.87 * pw) >= 0 && sx(0.87 * pw) <= pw && <Airport x={sx(0.87 * pw)} y={depY} label="" accent />}
             {sx(0.87 * pw) >= 0 && sx(0.87 * pw) <= pw && (
-              <text x={sx(0.87 * pw)} y={ph + 30} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill="var(--primary)">1X ЦЕЛЬ</text>
+              <text x={sx(0.87 * pw)} y={depY + 30} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill="var(--primary)">1X ЦЕЛЬ</text>
             )}
           </g>
         </svg>
