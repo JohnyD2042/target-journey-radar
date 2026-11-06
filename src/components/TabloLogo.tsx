@@ -4,7 +4,7 @@
  * letter centre-lines and an SVG mask, so it stays sharp and theme-coloured.
  */
 const W = 40; // letter width
-const STEP = 56;
+const STEP = 62;
 const T = 15; // top
 const B = 55; // bottom
 
@@ -20,9 +20,9 @@ const D = LETTERS.map((f, i) => f(x(i))).join("");
 
 export function TabloLogo({ className = "h-8 w-auto" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 296 70" className={className} role="img" aria-label="Табло">
+    <svg viewBox="0 0 322 70" className={className} role="img" aria-label="Табло">
       <defs>
-        <mask id="tablo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="296" height="70">
+        <mask id="tablo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="322" height="70">
           <g fill="none" strokeLinecap="round" strokeLinejoin="round">
             <path d={D} stroke="white" strokeWidth="17" />
             <path d={D} stroke="black" strokeWidth="12" />
@@ -38,7 +38,7 @@ export function TabloLogo({ className = "h-8 w-auto" }: { className?: string }) 
         </filter>
       </defs>
       <g filter="url(#tablo-glow)">
-        <rect width="296" height="70" fill="var(--primary)" mask="url(#tablo-mask)" />
+        <rect width="322" height="70" fill="var(--primary)" mask="url(#tablo-mask)" />
       </g>
     </svg>
   );
