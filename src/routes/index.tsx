@@ -100,8 +100,8 @@ function Index() {
       </header>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 px-4 py-3 md:px-6">
-       <div className="flex flex-col gap-3 md:flex-row md:items-end">
+      <div className="grid grid-cols-1 items-start gap-3 px-4 py-3 md:grid-cols-2 md:px-6 xl:grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)] xl:gap-x-5">
+       <div className="contents">
         <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Дата старта идей</span>
           <Seg items={PERIODS} value={period} onChange={setPeriod} counts={data?.periods} />
@@ -111,8 +111,8 @@ function Index() {
           <Seg items={BOOKS} value={book} onChange={setBook} counts={data?.counts} />
         </div>
        </div>
-       <div className="flex flex-col gap-3 md:flex-row md:items-end">
-        <div className="flex flex-col gap-1 md:w-80">
+       <div className="contents">
+        <div className="flex min-w-0 flex-col gap-1">
         <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Аналитик</span>
         <div className="relative">
           <input
@@ -140,7 +140,7 @@ function Index() {
         </div>
         <Presets items={["СберИнвестиции", "Финам"]} onPick={(v) => { setAnalyst(v); setQ(""); }} />
         </div>
-        <label className="flex flex-col gap-1 md:w-80">
+        <label className="flex min-w-0 flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Акция / инструмент</span>
           <div className="relative">
             <input
