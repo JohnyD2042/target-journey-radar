@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { constrainMapView, initialMapView, wheelMapView, zoomMapView } from "@/lib/map-view";
+import { wheelHitsEdge, describe, expect, it } from "vitest";
+import { wheelHitsEdge, constrainMapView, initialMapView, wheelMapView, zoomMapView } from "@/lib/map-view";
 
 describe("flight map navigation", () => {
   it("never pans past the map edges, so no empty space appears at the sides", () => {
@@ -37,5 +37,17 @@ describe("pinchMapView", () => {
   });
   it("moving both fingers without spreading pans the map", () => {
     expect(pinchMV({ k: 2, x: -10, y: -10 }, { x: 0, y: 0 }, 80, { x: 30, y: 20 }, 80)).toEqual({ k: 2, x: 20, y: 10 });
+  });
+});
+
+describe("wheelHitsEdge", () => {
+  it("passes scroll to the page when the map cannot move", () => {
+    expect(wheelHitsEdge({ k: 1, x: 0, y: 10 }, { k: 1, x: 0, y: 10 }, false)).toBe(true);
+  });
+  it("keeps scroll on the map while it still moves", () => {
+    expect(wheelHitsEdge({ k: 1, x: 0, y: 0 }, { k: 1, x: 0, y: 8 }, false)).toBe(false);
+  });
+  it("never passes a pinch-zoom to the page", () => {
+    expect(wheelHitsEdge({ k: 1, x: 0, y: 0 }, { k: 1, x: 0, y: 0 }, true)).toBe(false);
   });
 });

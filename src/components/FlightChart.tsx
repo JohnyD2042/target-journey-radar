@@ -2,7 +2,7 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "rea
 import { type Idea, type Zone, ZONES, ZONE_STAGE, isBasket, isLong, liveInAir, zoneOf } from "@/lib/ideas";
 const ret = (i: Idea) => i.yieldPct;
 import { Button } from "@/components/ui/button";
-import { constrainMapView, initialMapView, pinchMapView, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
+import { constrainMapView, initialMapView, pinchMapView, wheelHitsEdge, wheelMapView, zoomMapView, type MapView } from "@/lib/map-view";
 import { bandLabelSlot } from "@/lib/map-view";
 import { BasketTag, IdeaPath, SideTag } from "@/components/IdeaPath";
 
@@ -161,9 +161,13 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     const el = wrap.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
       const rect = el.getBoundingClientRect();
-      updateView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch: e.ctrlKey || e.metaKey }, e.clientX - rect.left - pad.l, e.clientY - rect.top - pad.t));
+      const pinch = e.ctrlKey || e.metaKey;
+      const next = constrainMapView(wheelMapView(viewRef.current, { x: e.deltaX, y: e.deltaY, mode: e.deltaMode, pinch }, e.clientX - rect.left - pad.l, e.clientY - rect.top - pad.t), pw, ph);
+      // map already at its edge: let the page scroll on, like any other page area
+      if (wheelHitsEdge(viewRef.current, next, pinch)) return;
+      e.preventDefault();
+      updateView(next);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
