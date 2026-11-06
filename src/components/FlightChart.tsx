@@ -6,7 +6,8 @@ import { yScale, constrainMapView, initialMapView, pinchMapView, wheelHitsEdge, 
 import { bandLabelSlot } from "@/lib/map-view";
 import { BasketTag, IdeaPath, SideTag } from "@/components/IdeaPath";
 
-const PAD = { l: 48, r: 12, t: 100, b: 40 };
+// left strip carries the rotated "доходность" caption, bottom strip the "путь до целевой цены" one
+const PAD = { l: 70, r: 12, t: 100, b: 54 };
 const BANDS: { z: Zone; from: number; to: number }[] = [
   { z: 1, from: 0, to: 0.13 },
   { z: 2, from: 0.13, to: 0.13 + 0.2 * 0.74 },
@@ -435,6 +436,29 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
             {sx(0.87 * pw) >= 0 && sx(0.87 * pw) <= pw && (
               <text x={sx(0.87 * pw)} y={depY + 30} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill="var(--primary)">1X ЦЕЛЬ</text>
             )}
+
+            {/* axis captions: quiet mono labels sitting in the padding, outside the plot itself */}
+            <text
+              x={-pad.l + 13}
+              y={ph / 2}
+              transform={`rotate(-90 ${-pad.l + 13} ${ph / 2})`}
+              textAnchor="middle"
+              className="font-mono text-[9px] uppercase tracking-[0.18em]"
+              fill="var(--muted-foreground)"
+              opacity={0.7}
+            >
+              Доходность ↑
+            </text>
+            <text
+              x={pw / 2}
+              y={ph + 42}
+              textAnchor="middle"
+              className="font-mono text-[9px] uppercase tracking-[0.18em]"
+              fill="var(--muted-foreground)"
+              opacity={0.7}
+            >
+              Путь до целевой цены →
+            </text>
           </g>
         </svg>
       </div>
