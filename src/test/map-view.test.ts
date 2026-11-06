@@ -1,4 +1,4 @@
-import { wheelHitsEdge, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { wheelHitsEdge, constrainMapView, initialMapView, wheelMapView, zoomMapView } from "@/lib/map-view";
 
 describe("flight map navigation", () => {
