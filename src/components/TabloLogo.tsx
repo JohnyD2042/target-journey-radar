@@ -17,7 +17,7 @@ export function TabloLogo({ className = "h-8 w-auto" }: { className?: string }) 
         </filter>
         {CUTS.slice(0, -1).map((x, i) => (
           <clipPath key={i} id={`tablo-l${i}`}>
-            <rect x={x} y={0} width={CUTS[i + 1] - x} height={333} />
+            <rect x={x} y={0} width={(CUTS[i + 1] ?? 1522) - x} height={333} />
           </clipPath>
         ))}
       </defs>
