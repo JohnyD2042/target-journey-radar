@@ -38,6 +38,7 @@
   --color-z4: var(--z4);
   --color-z5: var(--z5);
   --color-grid: var(--grid);
+  --color-kind: var(--kind);
 }
 
 :root {
@@ -69,6 +70,9 @@
   --z4: oklch(0.7 0.16 295);
   --z5: oklch(0.84 0.16 85);
   --grid: oklch(0.4 0.03 250 / 0.5);
+  /* annunciator accent: FMS magenta — the colour of an active leg on a flight-system screen,
+     deliberately far from amber (zone 5), green (long), red (short) and every zone band */
+  --kind: oklch(0.76 0.19 345);
 }
 
 @layer base {

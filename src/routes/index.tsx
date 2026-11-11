@@ -188,7 +188,7 @@ function Index() {
             )}
           </div>
           <Presets items={["OZON", "Новатэк"]} wide="Яндекс" onPick={(v) => commitTicker(exactHit(v) || v)}>
-            <Annunciator label="ETF" count={data?.kinds?.etf ?? 0} on={kind === "etf"} onClick={() => toggleKind("etf")} />
+            <Annunciator label="БПИФ" count={data?.kinds?.etf ?? 0} on={kind === "etf"} onClick={() => toggleKind("etf")} />
             {kind && kind !== "etf" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => setKind("")} />}
           </Presets>
         </label>
@@ -240,10 +240,10 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
       onMouseDown={mouseDown ? act : (e) => e.preventDefault()}
       onClick={mouseDown ? undefined : act}
       className={`inline-flex items-center gap-1.5 rounded-[3px] border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
-        on ? "border-z5 bg-z5/10 text-z5 shadow-[0_0_8px_-2px_var(--z5)]" : off ? "cursor-not-allowed border-dashed opacity-40 text-muted-foreground" : "border-border bg-background text-muted-foreground hover:border-z5/60 hover:text-foreground"
+        on ? "border-kind bg-kind/10 text-kind shadow-[0_0_8px_-2px_var(--kind)]" : off ? "cursor-not-allowed border-dashed opacity-40 text-muted-foreground" : "border-border bg-background text-muted-foreground hover:border-kind/60 hover:text-foreground"
       }`}
     >
-      <span className={`h-1.5 w-1.5 rounded-[1px] ${on ? "bg-z5 shadow-[0_0_6px_var(--z5)]" : "border border-muted-foreground/60"}`} />
+      <span className={`h-1.5 w-1.5 rounded-[1px] ${on ? "bg-kind shadow-[0_0_6px_var(--kind)]" : "border border-muted-foreground/60"}`} />
       {label}
       <span className="opacity-60">{count}</span>
     </button>
