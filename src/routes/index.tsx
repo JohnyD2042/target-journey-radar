@@ -138,7 +138,7 @@ function Index() {
             </div>
           )}
         </div>
-        <Presets items={["СберИнвестиции", "Финам"]} onPick={(v) => { setAnalyst(v); setQ(""); }} />
+        <Presets items={["СберИнвестиции", "Финам"]} wide="Т-инвестиции" onPick={(v) => { setAnalyst(v); setQ(""); }} />
         </div>
         <label className="flex min-w-0 flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Акция / инструмент</span>
@@ -174,7 +174,7 @@ function Index() {
               </div>
             )}
           </div>
-          <Presets items={["OZON", "Новатэк"]} onPick={(v) => commitTicker(exactHit(v) || v)} />
+          <Presets items={["OZON", "Новатэк"]} wide="Яндекс" onPick={(v) => commitTicker(exactHit(v) || v)} />
         </label>
        </div>
       </div>
@@ -211,12 +211,15 @@ function Index() {
   );
 }
 
-function Presets({ items, onPick }: { items: string[]; onPick: (v: string) => void }) {
+function Presets({ items, wide, onPick }: { items: string[]; wide?: string; onPick: (v: string) => void }) {
+  const chip = "rounded-full border bg-card px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {items.map((v) => (
-        <button key={v} type="button" onClick={() => onPick(v)} className="rounded-full border bg-card px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground">{v}</button>
+        <button key={v} type="button" onClick={() => onPick(v)} className={chip}>{v}</button>
       ))}
+      {/* third hint only where there is room for it */}
+      {wide && <button type="button" onClick={() => onPick(wide)} className={`hidden md:inline-flex ${chip}`}>{wide}</button>}
     </div>
   );
 }
