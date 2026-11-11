@@ -47,3 +47,13 @@ export function yScale(yMin: number, yMax: number, ph: number) {
   const k = ph / (yMax - bottom || 1);
   return { k, contentH: (yMax - yMin) * k };
 }
+
+/** Y range fitted to the ideas on screen: always includes 0, adds 10% headroom, spans at least 20 p.p., never exceeds the API range. */
+export function fitYRange(yields: number[], apiMin: number, apiMax: number) {
+  if (!yields.length) return { yMin: apiMin, yMax: apiMax };
+  let lo = Math.min(0, ...yields), hi = Math.max(0, ...yields);
+  const pad = (hi - lo) * 0.1;
+  lo = lo < 0 ? lo - pad : 0; hi += pad;
+  if (hi - lo < 20) hi = lo + 20;
+  return { yMin: Math.max(apiMin, lo), yMax: Math.min(Math.max(apiMax, 0), hi) };
+}

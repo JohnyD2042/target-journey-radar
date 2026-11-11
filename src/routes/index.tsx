@@ -1,3 +1,4 @@
+import { fitYRange } from "@/lib/map-view";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -71,6 +72,7 @@ function Index() {
 
   const ideas = data?.ideas ?? [];
   const shown = useMemo(() => (zone ? ideas.filter((i) => zoneOf(i) === zone) : ideas), [ideas, zone]);
+  const yRange = useMemo(() => fitYRange(shown.map((i) => i.yieldPct), data?.yieldMin ?? 0, data?.yieldMax ?? 0), [shown, data]);
   const analysts = (data?.analysts ?? []).filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   const tqn = tq.trim().toLowerCase();
   const instruments = (data?.instruments ?? []).filter((x) => !tqn || x.ticker.toLowerCase().includes(tqn) || x.name.toLowerCase().includes(tqn)).slice(0, 30);
@@ -185,8 +187,8 @@ function Index() {
           {data && ideas.length > 0 ? (
             <FlightChart
               ideas={shown}
-              yieldMin={data.yieldMin}
-              yieldMax={data.yieldMax}
+              yieldMin={yRange.yMin}
+              yieldMax={yRange.yMax}
               zoneCounts={data.counts}
               onSelect={setSel}
               selectedId={sel?.id != null ? String(sel.id) : undefined}

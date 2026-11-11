@@ -51,3 +51,19 @@ describe("wheelHitsEdge", () => {
     expect(wheelHitsEdge({ k: 1, x: 0, y: 0 }, { k: 1, x: 0, y: 0 }, true)).toBe(false);
   });
 });
+
+import { fitYRange } from "@/lib/map-view";
+describe("adaptive Y range", () => {
+  it("fits filtered ideas from -10 to +30 instead of the full API range", () => {
+    expect(fitYRange([-10, 5, 30], -60, 80)).toEqual({ yMin: -14, yMax: 34 });
+  });
+  it("keeps the zero line when all ideas are positive", () => {
+    expect(fitYRange([10, 30], -60, 80).yMin).toBe(0);
+  });
+  it("spans at least 20 p.p. for a single idea", () => {
+    expect(fitYRange([5], -60, 80)).toEqual({ yMin: 0, yMax: 20 });
+  });
+  it("never exceeds the API range", () => {
+    expect(fitYRange([-60, 80], -60, 80)).toEqual({ yMin: -60, yMax: 80 });
+  });
+});
