@@ -92,7 +92,7 @@ export const ZONES: Record<Zone, { name: string; short: string; hint: string }> 
 };
 
 export type Kind = "stock" | "etf" | "futures";
-export const KINDS: [Kind, string][] = [["stock", "Акции"], ["etf", "БПИФ"], ["futures", "Фьючерсы"]];
+export const KINDS: [Kind, string][] = [["stock", "Акции"], ["etf", "БПИФы"], ["futures", "Фьючерсы"]];
 export const kindOf = (i: Idea): Kind | null =>
   i.assetType === "stock" ? "stock" : i.assetType === "etf" ? "etf" : i.assetType?.startsWith("futures") ? "futures" : null;
 export interface Filters { period: Period; book: Book; analyst: string; ticker: string; kind?: Kind | "" }

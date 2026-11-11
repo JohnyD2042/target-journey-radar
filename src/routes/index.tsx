@@ -188,7 +188,7 @@ function Index() {
             )}
           </div>
           <Presets items={["OZON", "Новатэк"]} wide="Яндекс" onPick={(v) => commitTicker(exactHit(v) || v)}>
-            <Annunciator label="БПИФ" count={data?.kinds?.etf ?? 0} on={kind === "etf"} onClick={() => toggleKind("etf")} />
+            <Annunciator label="БПИФы" count={data?.kinds?.etf ?? 0} on={kind === "etf"} onClick={() => toggleKind("etf")} />
             {kind && kind !== "etf" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => setKind("")} />}
           </Presets>
         </label>
