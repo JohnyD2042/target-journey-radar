@@ -73,3 +73,13 @@ describe("LIVE in the air", () => {
     expect(liveInAir([idea({ opened: "2026-11-01", status: "closed", stage: "liftoff", yieldPct: 12 })])).toBe(0);
   });
 });
+
+describe("instrument type", () => {
+  const set = { ...all, ideas: [idea({ opened: "2026-11-01", assetType: "stock" }), idea({ opened: "2026-11-01", assetType: "etf", ticker: "TMOS" }), idea({ opened: "2026-11-01", assetType: "futures_commodities", ticker: "BR" })] } as FlightResponse;
+  const f = (kind: "" | "etf" | "stock" | "futures") => ({ period: "all" as const, book: "all" as const, analyst: "", ticker: "", kind });
+  it("ETF keeps only etf ideas and counts every type", () => {
+    const r = applyFilters(set, f("etf"));
+    expect(r.ideas.map((i) => i.ticker)).toEqual(["TMOS"]);
+    expect(r.kinds).toEqual({ stock: 1, etf: 1, futures: 1 });
+  });
+});

@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart, ZoneGlyph, ZONE_ICON, ZONE_TEXT } from "@/components/FlightChart";
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
 import { TabloLogo } from "@/components/TabloLogo";
-import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
+import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, KINDS, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -55,10 +55,12 @@ function Index() {
 
   // the API is asked only after an exact instrument is chosen: list click, Enter, or an exactly typed ticker/name
   const [ticker, setTicker] = useState("");
+  const [kind, setKind] = useState<Kind | "">("");
+  const toggleKind = (k: Kind) => setKind(kind === k ? "" : k);
   // any header filter change drops the secondary zone highlight: the whole map shows again
-  useEffect(() => { setZone(null); }, [period, book, analyst, ticker]);
+  useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind]);
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
-  const filters = { period, book, analyst: analyst ?? "", ticker };
+  const filters = { period, book, analyst: analyst ?? "", ticker, kind };
   // one full download, refreshed at most every 15 minutes; all filtering is local
   const { data: full, isError, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ["flight", "full"],
@@ -68,7 +70,7 @@ function Index() {
     refetchInterval: 15 * 60_000,
     refetchOnWindowFocus: false,
   });
-  const data = useMemo(() => (full ? applyFilters(full, filters) : undefined), [full, period, book, analyst, ticker]);
+  const data = useMemo(() => (full ? applyFilters(full, filters) : undefined), [full, period, book, analyst, ticker, kind]);
 
   const ideas = data?.ideas ?? [];
   const shown = useMemo(() => (zone ? ideas.filter((i) => zoneOf(i) === zone) : ideas), [ideas, zone]);
@@ -165,8 +167,17 @@ function Index() {
               className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
             />
             {tq && <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={(e) => { e.preventDefault(); commitTicker(""); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground" aria-label="Очистить">✕</button>}
-            {tFocus && instruments.length > 0 && (
-              <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover text-sm shadow-xl">
+            {tFocus && (
+              <div className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-md border bg-popover text-sm shadow-xl">
+                <div className="border-b px-3 py-2">
+                  <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">── Тип инструмента ──</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {KINDS.map(([k, l]) => (
+                      <Annunciator key={k} label={l} count={data?.kinds?.[k] ?? 0} on={kind === k} onClick={() => toggleKind(k)} mouseDown />
+                    ))}
+                  </div>
+                </div>
+                {!instruments.length && <div className="px-3 py-2 text-muted-foreground">Ничего не нашли</div>}
                 {instruments.map((x) => (
                   <button key={x.ticker} type="button" onMouseDown={() => { commitTicker(x.ticker); setTFocus(false); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
                     <span className="min-w-0 truncate"><span className="font-mono font-semibold">{x.ticker}</span> <span className="text-muted-foreground">{x.name}</span></span>
@@ -176,7 +187,10 @@ function Index() {
               </div>
             )}
           </div>
-          <Presets items={["OZON", "Новатэк"]} wide="Яндекс" onPick={(v) => commitTicker(exactHit(v) || v)} />
+          <Presets items={["OZON", "Новатэк"]} wide="Яндекс" onPick={(v) => commitTicker(exactHit(v) || v)}>
+            <Annunciator label="ETF" count={data?.kinds?.etf ?? 0} on={kind === "etf"} onClick={() => toggleKind("etf")} />
+            {kind && kind !== "etf" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => setKind("")} />}
+          </Presets>
         </label>
        </div>
       </div>
@@ -213,7 +227,30 @@ function Index() {
   );
 }
 
-function Presets({ items, wide, onPick }: { items: string[]; wide?: string; onPick: (v: string) => void }) {
+/** cockpit annunciator: square key with a lamp, mono caps — an instrument-type mode, not a single ticker */
+function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; count: number; on: boolean; onClick: () => void; mouseDown?: boolean }) {
+  const off = count === 0 && !on;
+  const act = (e: React.MouseEvent) => { e.preventDefault(); onClick(); };
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      disabled={off}
+      title={off ? "Идей этого типа пока нет" : undefined}
+      onMouseDown={mouseDown ? act : (e) => e.preventDefault()}
+      onClick={mouseDown ? undefined : act}
+      className={`inline-flex items-center gap-1.5 rounded-[3px] border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+        on ? "border-z5 bg-z5/10 text-z5 shadow-[0_0_8px_-2px_var(--z5)]" : off ? "cursor-not-allowed border-dashed opacity-40 text-muted-foreground" : "border-border bg-background text-muted-foreground hover:border-z5/60 hover:text-foreground"
+      }`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-[1px] ${on ? "bg-z5 shadow-[0_0_6px_var(--z5)]" : "border border-muted-foreground/60"}`} />
+      {label}
+      <span className="opacity-60">{count}</span>
+    </button>
+  );
+}
+
+function Presets({ items, wide, onPick, children }: { items: string[]; wide?: string; onPick: (v: string) => void; children?: React.ReactNode }) {
   const chip = "rounded-full border bg-card px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -222,6 +259,8 @@ function Presets({ items, wide, onPick }: { items: string[]; wide?: string; onPi
       ))}
       {/* third hint only where there is room for it */}
       {wide && <button type="button" onClick={() => onPick(wide)} className={`hidden md:inline-flex ${chip}`}>{wide}</button>}
+      {children && <span className="mx-0.5 h-3.5 w-px bg-border" aria-hidden="true" />}
+      {children}
     </div>
   );
 }

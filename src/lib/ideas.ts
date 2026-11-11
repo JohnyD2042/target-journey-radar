@@ -26,6 +26,8 @@ export interface Idea {
   basket?: boolean;
   /** portfolio idea title; a single-ticker idea is described by name */
   title?: string;
+  /** instrument type from the API: stock, etf, futures_commodities, index, ... */
+  assetType?: string;
   drivers?: string[];
   url?: string | null;
 }
@@ -40,6 +42,8 @@ export interface FlightResponse {
   periods: Record<Period, number>;
   analysts: { name: string; count: number }[];
   instruments: { ticker: string; name: string; count: number }[];
+  /** ideas per instrument type (filled locally) */
+  kinds?: Record<Kind, number>;
   ideas: Idea[];
 }
 
@@ -87,7 +91,11 @@ export const ZONES: Record<Zone, { name: string; short: string; hint: string }> 
   5: { name: "Достигли цели", short: "1X Цель", hint: "закрыты по цели" },
 };
 
-export interface Filters { period: Period; book: Book; analyst: string; ticker: string }
+export type Kind = "stock" | "etf" | "futures";
+export const KINDS: [Kind, string][] = [["stock", "Акции"], ["etf", "ETF"], ["futures", "Фьючерсы"]];
+export const kindOf = (i: Idea): Kind | null =>
+  i.assetType === "stock" ? "stock" : i.assetType === "etf" ? "etf" : i.assetType?.startsWith("futures") ? "futures" : null;
+export interface Filters { period: Period; book: Book; analyst: string; ticker: string; kind?: Kind | "" }
 type RawIdea = Idea & { opened?: string };
 
 const DAY = 86_400_000;
@@ -114,14 +122,17 @@ export function applyFilters(all: FlightResponse, f: Filters): FlightResponse {
     (skip === "period" || inPeriod(i, f.period, all.asOf)) &&
     (skip === "book" || inBook(i, f.book)) &&
     (skip === "analyst" || byAnalyst(i, f.analyst)) &&
-    (skip === "ticker" || byTicker(i, f.ticker));
+    (skip === "ticker" || byTicker(i, f.ticker)) &&
+    (skip === "kind" || !f.kind || kindOf(i) === f.kind);
 
   const ideas = src.filter((i) => ok(i));
   const periods: Record<Period, number> = { all: 0, month: 0, week: 0 };
   const counts = { all: 0, active: 0, closed: 0, cold: 0, liftoff: 0, cruise: 0, approach: 0, landed: 0 } as Record<Book | Stage, number>;
   const an = new Map<string, number>();
   const ins = new Map<string, { ticker: string; name: string; count: number }>();
+  const kinds: Record<Kind, number> = { stock: 0, etf: 0, futures: 0 };
   for (const i of src) {
+    if (ok(i, "kind")) { const k = kindOf(i); if (k) kinds[k]++; }
     if (ok(i, "period")) for (const p of ["all", "month", "week"] as Period[]) if (inPeriod(i, p, all.asOf)) periods[p]++;
     if (ok(i, "book")) { counts.all++; counts[i.status]++; }
     if (ok(i, "analyst")) an.set(i.analyst, (an.get(i.analyst) ?? 0) + 1);
@@ -143,6 +154,7 @@ export function applyFilters(all: FlightResponse, f: Filters): FlightResponse {
     periods,
     analysts: [...an].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
     instruments: [...ins.values()].sort((a, b) => b.count - a.count || a.ticker.localeCompare(b.ticker)),
+    kinds,
     ideas,
   };
 }
