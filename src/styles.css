@@ -39,6 +39,8 @@
   --color-z5: var(--z5);
   --color-grid: var(--grid);
   --color-kind: var(--kind);
+  --color-kind-hi: var(--kind-hi);
+  --color-kind-lo: var(--kind-lo);
 }
 
 :root {
@@ -70,9 +72,12 @@
   --z4: oklch(0.7 0.16 295);
   --z5: oklch(0.84 0.16 85);
   --grid: oklch(0.4 0.03 250 / 0.5);
-  /* annunciator accent: FMS magenta — the colour of an active leg on a flight-system screen,
-     deliberately far from amber (zone 5), green (long), red (short) and every zone band */
-  --kind: oklch(0.76 0.19 345);
+  /* annunciator accent: machined-graphite key with a platinum legend.
+     Achromatic on purpose — every hue is already taken (amber = goal zone and logo,
+     graphite/cyan/cobalt/indigo = zone bands, green = long, red = short) */
+  --kind: oklch(0.88 0.02 220);
+  --kind-hi: oklch(0.45 0.03 230);
+  --kind-lo: oklch(0.26 0.035 240);
 }
 
 @layer base {
@@ -129,4 +134,13 @@
 @utility runway-dash { animation: dash-move 3s linear infinite; }
 @utility ping { transform-box: fill-box; transform-origin: center; animation: ping-ring 1.4s ease-out infinite; }
 @utility ping-slow { transform-box: fill-box; transform-origin: center; animation: ping-ring 2.6s ease-out infinite; }
+
+/* lit instrument key: brushed-graphite plate, top highlight, soft platinum glow */
+@utility kind-on {
+  background-image: linear-gradient(180deg, var(--kind-hi), var(--kind-lo));
+  box-shadow:
+    inset 0 1px 0 oklch(0.95 0.02 220 / 0.35),
+    inset 0 -1px 0 oklch(0.1 0.02 240 / 0.6),
+    0 0 10px -4px var(--kind);
+}
 

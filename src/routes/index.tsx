@@ -240,7 +240,7 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
       onMouseDown={mouseDown ? act : (e) => e.preventDefault()}
       onClick={mouseDown ? undefined : act}
       className={`inline-flex items-center gap-1.5 rounded-[3px] border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
-        on ? "border-kind bg-kind/10 text-kind shadow-[0_0_8px_-2px_var(--kind)]" : off ? "cursor-not-allowed border-dashed opacity-40 text-muted-foreground" : "border-border bg-background text-muted-foreground hover:border-kind/60 hover:text-foreground"
+        on ? "kind-on border-kind/60 text-kind" : off ? "cursor-not-allowed border-dashed opacity-40 text-muted-foreground" : "border-border bg-background text-muted-foreground hover:border-kind/60 hover:text-foreground"
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-[1px] ${on ? "bg-kind shadow-[0_0_6px_var(--kind)]" : "border border-muted-foreground/60"}`} />
