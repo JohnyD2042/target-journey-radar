@@ -153,7 +153,7 @@ function Index() {
             </div>
           )}
         </div>
-        <Presets items={["СберИнвестиции"]} wide="Т-инвестиции" onPick={(v) => { setAnalyst(v); setQ(""); }}>
+        <Presets items={["СберИнвестиции"]} wide="Финам" onPick={(v) => { setAnalyst(v); setQ(""); }}>
           <Annunciator label="Профучастники" count={data?.atypes?.institutional ?? 0} on={atype === "institutional"} onClick={() => toggleAtype("institutional")} />
           {atype && atype !== "institutional" && <Annunciator label={ANALYST_TYPES.find(([k]) => k === atype)![1]} count={data?.atypes?.[atype] ?? 0} on onClick={() => setAtype("")} />}
         </Presets>
