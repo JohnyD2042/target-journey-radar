@@ -83,3 +83,26 @@ describe("instrument type", () => {
     expect(r.kinds).toEqual({ stock: 1, etf: 1, futures: 1 });
   });
 });
+
+describe("analyst type", () => {
+  const set = { ...all, ideas: [
+    idea({ opened: "2026-11-01", analyst: "Проф", analystType: "institutional" }),
+    idea({ opened: "2026-11-01", analyst: "Блог", analystType: "finfluencer", ticker: "TMOS" }),
+    idea({ opened: "2026-11-01", analyst: "Ещё", analystType: "institutional", ticker: "LKOH" }),
+  ] } as FlightResponse;
+  const f = (atype: "" | "institutional" | "finfluencer") => ({ period: "all" as const, book: "all" as const, analyst: "", ticker: "", atype });
+
+  it("Профучастники keeps only institutional ideas and counts both kinds", () => {
+    const r = applyFilters(set, f("institutional"));
+    expect(r.ideas.map((i) => i.ticker)).toEqual(["GAZP", "LKOH"]);
+    expect(r.atypes).toEqual({ institutional: 2, finfluencer: 1 });
+  });
+  it("Финфлюенсеры keeps only finfluencer ideas", () => {
+    expect(applyFilters(set, f("finfluencer")).ideas.map((i) => i.ticker)).toEqual(["TMOS"]);
+  });
+  it("the author list narrows to the chosen kind and carries its type", () => {
+    const r = applyFilters(set, f("finfluencer"));
+    expect(r.analysts.map((a) => a.name)).toEqual(["Блог"]);
+    expect(r.analysts[0]?.type).toBe("finfluencer");
+  });
+});

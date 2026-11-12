@@ -9,6 +9,8 @@ export interface Idea {
   ticker: string;
   name: string;
   analyst: string;
+  /** author kind from the API: institutional | finfluencer */
+  analystType?: AnalystType;
   strategy: "лонг" | "шорт";
   status: "active" | "closed";
   openedLabel: string;
@@ -40,10 +42,12 @@ export interface FlightResponse {
   yieldMax: number;
   counts: Record<Book | Stage, number>;
   periods: Record<Period, number>;
-  analysts: { name: string; count: number }[];
+  analysts: { name: string; count: number; type?: AnalystType }[];
   instruments: { ticker: string; name: string; count: number }[];
   /** ideas per instrument type (filled locally) */
   kinds?: Record<Kind, number>;
+  /** ideas per analyst type (filled locally) */
+  atypes?: Record<AnalystType, number>;
   ideas: Idea[];
 }
 
@@ -95,7 +99,15 @@ export type Kind = "stock" | "etf" | "futures";
 export const KINDS: [Kind, string][] = [["stock", "Акции"], ["etf", "БПИФы"], ["futures", "Фьючерсы"]];
 export const kindOf = (i: Idea): Kind | null =>
   i.assetType === "stock" ? "stock" : i.assetType === "etf" ? "etf" : i.assetType?.startsWith("futures") ? "futures" : null;
-export interface Filters { period: Period; book: Book; analyst: string; ticker: string; kind?: Kind | "" }
+
+/** the only two analyst kinds the API sends */
+export type AnalystType = "institutional" | "finfluencer";
+/** front-end names for the API kinds: institutional -> Профучастники, finfluencer -> Финфлюенсеры */
+export const ANALYST_TYPES: [AnalystType, string][] = [["institutional", "Профучастники"], ["finfluencer", "Финфлюенсеры"]];
+export const analystTypeOf = (i: Idea): AnalystType | null =>
+  i.analystType === "institutional" ? "institutional" : i.analystType === "finfluencer" ? "finfluencer" : null;
+
+export interface Filters { period: Period; book: Book; analyst: string; ticker: string; kind?: Kind | ""; atype?: AnalystType | "" }
 type RawIdea = Idea & { opened?: string };
 
 const DAY = 86_400_000;
@@ -123,19 +135,27 @@ export function applyFilters(all: FlightResponse, f: Filters): FlightResponse {
     (skip === "book" || inBook(i, f.book)) &&
     (skip === "analyst" || byAnalyst(i, f.analyst)) &&
     (skip === "ticker" || byTicker(i, f.ticker)) &&
-    (skip === "kind" || !f.kind || kindOf(i) === f.kind);
+    (skip === "kind" || !f.kind || kindOf(i) === f.kind) &&
+    (skip === "atype" || !f.atype || analystTypeOf(i) === f.atype);
 
   const ideas = src.filter((i) => ok(i));
   const periods: Record<Period, number> = { all: 0, month: 0, week: 0 };
   const counts = { all: 0, active: 0, closed: 0, cold: 0, liftoff: 0, cruise: 0, approach: 0, landed: 0 } as Record<Book | Stage, number>;
-  const an = new Map<string, number>();
+  const an = new Map<string, { name: string; count: number; type?: AnalystType }>();
   const ins = new Map<string, { ticker: string; name: string; count: number }>();
   const kinds: Record<Kind, number> = { stock: 0, etf: 0, futures: 0 };
+  const atypes: Record<AnalystType, number> = { institutional: 0, finfluencer: 0 };
   for (const i of src) {
     if (ok(i, "kind")) { const k = kindOf(i); if (k) kinds[k]++; }
+    if (ok(i, "atype")) { const t = analystTypeOf(i); if (t) atypes[t]++; }
     if (ok(i, "period")) for (const p of ["all", "month", "week"] as Period[]) if (inPeriod(i, p, all.asOf)) periods[p]++;
     if (ok(i, "book")) { counts.all++; counts[i.status]++; }
-    if (ok(i, "analyst")) an.set(i.analyst, (an.get(i.analyst) ?? 0) + 1);
+    if (ok(i, "analyst")) {
+      const t = analystTypeOf(i);
+      const e = an.get(i.analyst) ?? (t ? { name: i.analyst, count: 0, type: t } : { name: i.analyst, count: 0 });
+      e.count++;
+      an.set(i.analyst, e);
+    }
     if (ok(i, "ticker")) {
       // portfolio ideas are not listed as their own row: each ticker inside counts towards that stock
       const basket = i.basket === true;
@@ -152,9 +172,10 @@ export function applyFilters(all: FlightResponse, f: Filters): FlightResponse {
     ...all,
     counts,
     periods,
-    analysts: [...an].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+    analysts: [...an.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
     instruments: [...ins.values()].sort((a, b) => b.count - a.count || a.ticker.localeCompare(b.ticker)),
     kinds,
+    atypes,
     ideas,
   };
 }

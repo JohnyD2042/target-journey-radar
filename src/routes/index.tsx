@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart, ZoneGlyph, ZONE_ICON, ZONE_TEXT } from "@/components/FlightChart";
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
 import { TabloLogo } from "@/components/TabloLogo";
-import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, KINDS, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
+import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, ANALYST_TYPES, KINDS, type AnalystType, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -57,10 +57,13 @@ function Index() {
   const [ticker, setTicker] = useState("");
   const [kind, setKind] = useState<Kind | "">("");
   const toggleKind = (k: Kind) => setKind(kind === k ? "" : k);
+  // analyst kind: institutional -> Профучастники, finfluencer -> Финфлюенсеры
+  const [atype, setAtype] = useState<AnalystType | "">("");
+  const toggleAtype = (t: AnalystType) => setAtype(atype === t ? "" : t);
   // any header filter change drops the secondary zone highlight: the whole map shows again
-  useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind]);
+  useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind, atype]);
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
-  const filters = { period, book, analyst: analyst ?? "", ticker, kind };
+  const filters = { period, book, analyst: analyst ?? "", ticker, kind, atype };
   // one full download, refreshed at most every 15 minutes; all filtering is local
   const { data: full, isError, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ["flight", "full"],
@@ -70,7 +73,7 @@ function Index() {
     refetchInterval: 15 * 60_000,
     refetchOnWindowFocus: false,
   });
-  const data = useMemo(() => (full ? applyFilters(full, filters) : undefined), [full, period, book, analyst, ticker, kind]);
+  const data = useMemo(() => (full ? applyFilters(full, filters) : undefined), [full, period, book, analyst, ticker, kind, atype]);
 
   const ideas = data?.ideas ?? [];
   const shown = useMemo(() => (zone ? ideas.filter((i) => zoneOf(i) === zone) : ideas), [ideas, zone]);
@@ -132,6 +135,14 @@ function Index() {
           )}
           {focus && !analyst && (
             <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover text-sm shadow-xl">
+              <div className="border-b px-3 py-2">
+                <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">── Тип аналитика ──</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {ANALYST_TYPES.map(([k, l]) => (
+                    <Annunciator key={k} label={l} count={data?.atypes?.[k] ?? 0} on={atype === k} onClick={() => toggleAtype(k)} mouseDown />
+                  ))}
+                </div>
+              </div>
               <button onMouseDown={() => { setAnalyst(null); setQ(""); }} className="flex w-full justify-between px-3 py-2 text-left text-muted-foreground hover:bg-accent">Все аналитики</button>
               {analysts.map((a) => (
                 <button key={a.name} onMouseDown={() => { setAnalyst(a.name); setQ(""); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
@@ -142,7 +153,10 @@ function Index() {
             </div>
           )}
         </div>
-        <Presets items={["СберИнвестиции", "Финам"]} wide="Т-инвестиции" onPick={(v) => { setAnalyst(v); setQ(""); }} />
+        <Presets items={["СберИнвестиции"]} wide="Т-инвестиции" onPick={(v) => { setAnalyst(v); setQ(""); }}>
+          <Annunciator label="Профучастники" count={data?.atypes?.institutional ?? 0} on={atype === "institutional"} onClick={() => toggleAtype("institutional")} />
+          {atype && atype !== "institutional" && <Annunciator label={ANALYST_TYPES.find(([k]) => k === atype)![1]} count={data?.atypes?.[atype] ?? 0} on onClick={() => setAtype("")} />}
+        </Presets>
         </div>
         <label className="flex min-w-0 flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Инструмент</span>
