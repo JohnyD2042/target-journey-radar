@@ -145,7 +145,7 @@ function Index() {
         <Presets items={["СберИнвестиции", "Финам"]} wide="Т-инвестиции" onPick={(v) => { setAnalyst(v); setQ(""); }} />
         </div>
         <label className="flex min-w-0 flex-col gap-1">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Акция / инструмент</span>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Инструмент</span>
           <div className="relative">
             <input
               value={tq}
@@ -188,8 +188,8 @@ function Index() {
             )}
           </div>
           <Presets items={["OZON", "Новатэк"]} wide="Яндекс" onPick={(v) => commitTicker(exactHit(v) || v)}>
-            <Annunciator label="БПИФы" count={data?.kinds?.etf ?? 0} on={kind === "etf"} onClick={() => toggleKind("etf")} />
-            {kind && kind !== "etf" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => setKind("")} />}
+            <Annunciator label="Акции" count={data?.kinds?.stock ?? 0} on={kind === "stock"} onClick={() => toggleKind("stock")} />
+            {kind && kind !== "stock" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => setKind("")} />}
           </Presets>
         </label>
        </div>
