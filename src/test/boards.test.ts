@@ -13,7 +13,7 @@ describe("Набирают высоту", () => {
     const b = idea({ yieldPct: 30, opened: "2026-10-25" }); // 20 days → 1.5%/day
     const r = topClimbers([a, b], "2026-11-14");
     expect(r.map((c) => c.idea)).toEqual([b, a]);
-    expect(r[0].perDay).toBe(1.5);
+    expect(r[0]!.perDay).toBe(1.5);
   });
   it("keeps only active, positive, opened within 30 days", () => {
     const r = topClimbers([
@@ -34,8 +34,8 @@ describe("Пунктуальность аналитиков", () => {
   it("rate = (landed + approach) / total", () => {
     const list = [idea({ stage: "landed" }), idea({ stage: "approach" }), idea({ stage: "cold", yieldPct: -1 }), idea({ stage: "cruise" })];
     const [p] = topPunctual(list);
-    expect(p.onTarget).toBe(2);
-    expect(p.rate).toBe(50);
-    expect(p.positive).toBe(3);
+    expect(p!.onTarget).toBe(2);
+    expect(p!.rate).toBe(50);
+    expect(p!.positive).toBe(3);
   });
 });
