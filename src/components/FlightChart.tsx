@@ -105,7 +105,7 @@ export const ZONE_TEXT: Record<Zone, string> = {
   5: "Идеи, закрытые по целевой цене. Зона помогает узнать имена лучших аналитиков и оценить перформанс идей.",
 };
 
-type Props = { ideas: Idea[]; yieldMin: number; yieldMax: number; zoneCounts: Record<string, number>; onSelect: (i: Idea) => void; selectedId?: string | undefined; activeZone?: Zone | "notarget" | null; onZoneChange: (zone: Zone) => void };
+type Props = { ideas: Idea[]; yieldMin: number; yieldMax: number; zoneCounts: Record<string, number>; onSelect: (i: Idea) => void; onDeselect?: () => void; selectedId?: string | undefined; activeZone?: Zone | "notarget" | null; onZoneChange: (zone: Zone) => void };
 
 export function FlightChart(props: Props) {
   // animated map is client-only: avoids SSR/hydration mismatch of per-frame values
@@ -115,7 +115,7 @@ export function FlightChart(props: Props) {
   return <FlightMap {...props} />;
 }
 
-function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId, activeZone, onZoneChange }: Props) {
+function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, onDeselect, selectedId, activeZone, onZoneChange }: Props) {
   const [help, setHelp] = useState<Zone | null>(null);
   const [helpHover, setHelpHover] = useState<Zone | null>(null);
   useEffect(() => {
@@ -330,6 +330,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
         onPointerUp={(e) => { endPointer(e.pointerId); setTimeout(() => (drag.current = null)); }}
         onPointerCancel={(e) => { endPointer(e.pointerId); drag.current = null; }}
         onPointerLeave={() => { if (!drag.current?.moved) drag.current = null; }}
+        onClick={() => { if (!drag.current?.moved) onDeselect?.(); }}
       >
         <svg width={size.w} height={size.h} className="block">
           <defs>
@@ -392,7 +393,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
                     className="cursor-pointer"
                     onPointerEnter={(e) => { const n = node(String(i.id)); if (e.pointerType === "mouse") setHover({ idea: i, x: n.x + pad.l, y: n.y + pad.t }); }}
                     onPointerLeave={() => setHover(null)}
-                    onClick={() => !drag.current?.moved && onSelect(i)}
+                    onClick={(e) => { e.stopPropagation(); if (!drag.current?.moved) onSelect(i); }}
                   >
                     <circle r={14} fill="transparent" />
                     <circle r={10} fill={`var(--z${z})`} opacity={0.16} />

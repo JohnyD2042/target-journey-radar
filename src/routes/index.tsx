@@ -1,6 +1,6 @@
 import { fitYRange } from "@/lib/map-view";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart, ZoneGlyph, ZONE_ICON, ZONE_TEXT } from "@/components/FlightChart";
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
@@ -52,6 +52,10 @@ function Index() {
   const [tFocus, setTFocus] = useState(false);
   const [zone, setZone] = useState<Zone | null>(null);
   const [sel, setSel] = useState<Idea | null>(null);
+  // clicking empty map space closes the card after a short beat; picking a plane cancels the pending close
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pickIdea = (i: Idea) => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } setSel(i); };
+  const scheduleClose = () => { if (closeTimer.current) clearTimeout(closeTimer.current); closeTimer.current = setTimeout(() => { closeTimer.current = null; setSel(null); }, 500); };
 
   // the API is asked only after an exact instrument is chosen: list click, Enter, or an exactly typed ticker/name
   const [ticker, setTicker] = useState("");
@@ -218,7 +222,8 @@ function Index() {
               yieldMin={yRange.yMin}
               yieldMax={yRange.yMax}
               zoneCounts={data.counts}
-              onSelect={setSel}
+              onSelect={pickIdea}
+              onDeselect={scheduleClose}
               selectedId={sel?.id != null ? String(sel.id) : undefined}
               activeZone={zone}
               onZoneChange={(z) => setZone(zone === z ? null : z)}
