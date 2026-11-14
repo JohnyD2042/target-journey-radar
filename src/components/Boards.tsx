@@ -5,16 +5,18 @@ import { ZoneGlyph } from "@/components/FlightChart";
 
 const pct = (v: number, d = 1) => `${v > 0 ? "+" : ""}${v.toFixed(d).replace(".", ",")}%`;
 const shareInt = (a: number, b: number) => `${Math.round((a / b) * 100)}%`;
+const ideaColumns = "grid-cols-[minmax(0,1fr)_minmax(88px,0.45fr)] gap-x-3";
+const analystColumns = "grid-cols-[minmax(0,1fr)_64px_88px] gap-x-4 lg:gap-x-6";
 
 function Board({ title, sub, head, children }: { title: string; sub: string; head: string[]; children: React.ReactNode }) {
   return (
     <section className="min-w-0 overflow-hidden rounded-lg border bg-card/60">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b px-3 py-3">
+      <header className="flex h-18 flex-col items-start justify-center gap-1 border-b px-3 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
         <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">{title}</h2>
         <span className="font-mono text-[10px] whitespace-nowrap text-muted-foreground">{sub}</span>
       </header>
-      <div className={`grid ${head.length === 2 ? "grid-cols-[minmax(0,1fr)_88px]" : "grid-cols-[minmax(0,1fr)_auto_auto]"} gap-x-3 border-b px-3 py-1.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground`}>
-        {head.map((h, k) => <span key={h} className={k ? "text-right" : ""}>{h}</span>)}
+      <div className={`grid h-8 items-center ${head.length === 2 ? ideaColumns : analystColumns} border-b px-3 font-mono text-[9px] uppercase tracking-wider text-muted-foreground`}>
+        {head.map((h, k) => <span key={h} className={head.length === 3 && k ? "text-right" : ""}>{h}</span>)}
       </div>
       <ol className="divide-y">{children}</ol>
     </section>
@@ -29,7 +31,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
       <Board title="Бодрый старт" sub="Идеи за 30 дней с лучшей тягой" head={["Идея", "Прибыль/день"]}>
         {climbers.map(({ idea: i, perDay }) => (
           <li key={i.id}>
-            <Button variant="ghost" onClick={() => onPick(i)} className="grid h-auto w-full grid-cols-[minmax(0,1fr)_88px] items-center gap-x-3 whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40">
+            <Button variant="ghost" onClick={() => onPick(i)} className={`grid h-15 w-full ${ideaColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} title={isLong(i) ? "Лонг" : "Шорт"} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
@@ -38,7 +40,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
                 </span>
                 <span className="mt-1 block truncate pl-[22px] text-[11px] text-muted-foreground">{i.analyst}</span>
               </span>
-              <span className="text-right font-mono text-sm font-semibold text-z5" title="Тяга = доходность идеи / количество дней с даты старта" aria-label={`Тяга ${pct(perDay, 2)} в день`}>
+              <span className="text-left font-mono text-sm font-semibold text-z5" title="Тяга = доходность идеи / количество дней с даты старта" aria-label={`Тяга ${pct(perDay, 2)} в день`}>
                 {pct(perDay, 2)}
               </span>
             </Button>
@@ -49,7 +51,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
       <Board title="Пунктуальность аналитиков" sub="за всё время" head={["Аналитик", "В плюсе", "Цель + посадка"]}>
         {punctual.map((p, k) => (
           <li key={p.name}>
-            <Button variant="ghost" onClick={() => onAnalystPick(p.name)} aria-label={`Показать идеи аналитика ${p.name}`} className="grid h-auto w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 whitespace-normal rounded-none px-4 py-2.5 text-left font-normal hover:bg-muted/40">
+            <Button variant="ghost" onClick={() => onAnalystPick(p.name)} aria-label={`Показать идеи аналитика ${p.name}`} className={`grid h-15 w-full ${analystColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
             <span className="flex min-w-0 items-center gap-2">
               <span className="w-4 shrink-0 font-mono text-[11px] text-muted-foreground">{k + 1}</span>
               <span className="min-w-0 truncate py-1 text-sm" title={p.name}>{p.name}</span>
