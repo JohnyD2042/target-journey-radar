@@ -1,4 +1,4 @@
-import { Binoculars, Radar } from "lucide-react";
+import { CircleGauge, Radar } from "lucide-react";
 import { topClimbers, topPunctual } from "@/lib/boards";
 import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ const daysWord = (n: number) => {
   if (t >= 2 && t <= 4 && (h < 10 || h >= 20)) return "дня";
   return "дней";
 };
-const ideaColumns = "grid-cols-[minmax(0,1fr)_54px_minmax(76px,0.42fr)] gap-x-2.5";
+const ideaColumns = "grid-cols-[minmax(0,1fr)_58px_minmax(88px,0.42fr)] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
 
 function Board({ title, sub, icon, cols, head, children }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode }) {
@@ -27,7 +27,7 @@ function Board({ title, sub, icon, cols, head, children }: { title: string; sub:
         <span className="font-mono text-[10px] whitespace-nowrap text-muted-foreground">{sub}</span>
       </header>
       <div className={`grid h-9 items-center ${cols} border-b px-3 font-mono text-[9px] uppercase leading-tight tracking-wider text-muted-foreground`}>
-        {head.map((h, k) => <span key={h} className={k ? "text-right" : ""}>{h}</span>)}
+        {head.map((h, k) => <span key={k} className={k ? "text-right" : ""}>{h}</span>)}
       </div>
       <ol className="divide-y">{children}</ol>
     </section>
@@ -42,9 +42,9 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
       <Board
         title="Бодрый старт"
         sub="Идеи за 30 дней с лучшей тягой"
-        icon={<Binoculars size={15} strokeWidth={1.75} />}
+        icon={<CircleGauge size={15} strokeWidth={1.75} />}
         cols={ideaColumns}
-        head={["Идея", "Дней", "Прибыль/день"]}
+        head={["Идея", "", "Прибыль/день"]}
       >
         {climbers.map(({ idea: i, days, perDay }) => (
           <li key={i.id}>
@@ -60,7 +60,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
               <span className="text-right font-mono text-[11px] font-light tabular-nums text-muted-foreground" title="Возраст идеи: дней с даты старта" aria-label={`Идее ${days} ${daysWord(days)}`}>
                 {days} {daysWord(days)}
               </span>
-              <span className="text-left font-mono text-sm font-semibold text-z5" title="Тяга = доходность идеи / количество дней с даты старта" aria-label={`Тяга ${pct(perDay, 2)} в день`}>
+              <span className="text-right font-mono text-sm font-semibold text-z5" title="Тяга = доходность идеи / количество дней с даты старта" aria-label={`Тяга ${pct(perDay, 2)} в день`}>
                 {pct(perDay, 2)}
               </span>
             </Button>
