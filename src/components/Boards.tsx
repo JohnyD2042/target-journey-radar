@@ -1,4 +1,4 @@
-import { topClimbers, topPunctual, thrustEngines } from "@/lib/boards";
+import { topClimbers, topPunctual } from "@/lib/boards";
 import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
 
@@ -25,26 +25,20 @@ export function Boards({ ideas, asOf, onPick }: { ideas: Idea[]; asOf: string; o
   const punctual = topPunctual(ideas);
   return (
     <div className="mx-4 mb-6 grid max-w-[1060px] items-start gap-4 md:mx-6 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
-      <Board title="Бодрый старт" sub="Идеи за 30 дней с лучшей тягой" head={["Рейс / Идея", "Тяга"]}>
+      <Board title="Бодрый старт" sub="Идеи за 30 дней с лучшей тягой" head={["Рейс / Идея", "Тяга, % / день"]}>
         {climbers.map(({ idea: i, perDay }) => (
           <li key={i.id}>
             <Button variant="ghost" onClick={() => onPick(i)} className="grid h-auto w-full grid-cols-[minmax(0,1fr)_88px] items-center gap-x-3 whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40">
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isLong(i) ? "bg-long" : "bg-short"}`} />
+                  <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} title={isLong(i) ? "Лонг" : "Шорт"} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
                   <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{i.ticker}</span>
                   <span className="min-w-0 truncate text-xs text-muted-foreground" title={ideaTitle(i)}>{ideaTitle(i)}</span>
                 </span>
-                <span className="mt-1 block truncate pl-3 text-[11px] text-muted-foreground">{i.analyst}</span>
+                <span className="mt-1 block truncate pl-[22px] text-[11px] text-muted-foreground">{i.analyst}</span>
               </span>
-              <span className="flex flex-wrap justify-end gap-1 text-z5" title={`Тяга: ${pct(perDay, 2)} в день · ${thrustEngines(perDay)} двигателей`} aria-label={`Тяга ${pct(perDay, 2)} в день, двигателей: ${thrustEngines(perDay)}`}>
-                {Array.from({ length: thrustEngines(perDay) }, (_, k) => (
-                  <svg key={k} viewBox="0 0 24 24" className="!h-4 !w-4" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                    <path d="M8 5h9l3 3v8l-3 3H8zM8 5C3 5 3 19 8 19M17 6v12M4 9H1m3 3H0m4 3H1" strokeLinejoin="round" strokeLinecap="round" />
-                    <ellipse cx="8" cy="12" rx="2.5" ry="5" />
-                    <path d="M8 9v6m-1.5-3h3" />
-                  </svg>
-                ))}
+              <span className="text-right font-mono text-sm font-semibold text-z5" title="Тяга = доходность идеи / количество дней с даты старта" aria-label={`Тяга ${pct(perDay, 2)} в день`}>
+                {pct(perDay, 2)}
               </span>
             </Button>
           </li>
