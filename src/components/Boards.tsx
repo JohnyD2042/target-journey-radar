@@ -21,7 +21,7 @@ function Board({ title, sub, head, children }: { title: string; sub: string; hea
   );
 }
 
-export function Boards({ ideas, asOf, onPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void }) {
+export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void }) {
   const climbers = topClimbers(ideas, asOf);
   const punctual = topPunctual(ideas);
   return (
@@ -46,12 +46,14 @@ export function Boards({ ideas, asOf, onPick }: { ideas: Idea[]; asOf: string; o
         ))}
         {climbers.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Пока нет свежих идей в плюсе</li>}
       </Board>
-      <Board title="Пунктуальность аналитиков" sub="за всё время · > 3 идей" head={["Аналитик", "В плюсе", "Цель + посадка"]}>
+      <Board title="Пунктуальность аналитиков" sub="за всё время" head={["Аналитик", "В плюсе", "Цель + посадка"]}>
         {punctual.map((p, k) => (
           <li key={p.name} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 px-4 py-2.5">
             <span className="flex min-w-0 items-center gap-2">
               <span className="w-4 shrink-0 font-mono text-[11px] text-muted-foreground">{k + 1}</span>
-              <span className="min-w-0 truncate text-sm">{p.name}</span>
+              <Button variant="ghost" onClick={() => onAnalystPick(p.name)} className="h-auto min-w-0 justify-start truncate px-0 py-1 text-left text-sm font-normal" title={p.name}>
+                <span className="truncate">{p.name}</span>
+              </Button>
             </span>
             <span className="text-right font-mono">
               <span className="flex items-center justify-end gap-1 text-sm" title="Доля идей с положительной доходностью">

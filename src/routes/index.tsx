@@ -75,6 +75,24 @@ function Index() {
   // analyst kind: institutional -> Профучастники, finfluencer -> Финфлюенсеры
   const [atype, setAtype] = useState<AnalystType | "">("");
   const toggleAtype = (t: AnalystType) => setAtype(atype === t ? "" : t);
+  const pickBoardAnalyst = (name: string) => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+    setSel(null);
+    setBoardPick(null);
+    setPeriod("all");
+    setBook("all");
+    setTicker("");
+    setTq("");
+    setKind("");
+    setAtype("");
+    setAnalyst(name);
+    setQ("");
+    setFocus(false);
+    setTFocus(false);
+    setZone(null);
+    setMapVisit((v) => v + 1);
+    mapStart.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  };
   // any header filter change drops the secondary zone highlight: the whole map shows again
   useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind, atype]);
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
@@ -255,7 +273,7 @@ function Index() {
           {sel && <Card idea={sel} onClose={() => setSel(null)} />}
         </div>
       </div>
-      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickBoardIdea} />}
+      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickBoardIdea} onAnalystPick={pickBoardAnalyst} />}
       <Legend />
 
     </div>
