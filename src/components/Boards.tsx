@@ -1,16 +1,17 @@
 import { topClimbers, topPunctual } from "@/lib/boards";
 import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
+import { ZoneGlyph } from "@/components/FlightChart";
 
 const pct = (v: number, d = 1) => `${v > 0 ? "+" : ""}${v.toFixed(d).replace(".", ",")}%`;
-const share = (a: number, b: number) => `${((a / b) * 100).toFixed(1).replace(".", ",")}%`;
+const shareInt = (a: number, b: number) => `${Math.round((a / b) * 100)}%`;
 
 function Board({ title, sub, head, children }: { title: string; sub: string; head: string[]; children: React.ReactNode }) {
   return (
     <section className="min-w-0 overflow-hidden rounded-lg border bg-card/60">
       <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b px-3 py-3">
         <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">{title}</h2>
-        <span className="font-mono text-[10px] text-muted-foreground">{sub}</span>
+        <span className="font-mono text-[10px] whitespace-nowrap text-muted-foreground">{sub}</span>
       </header>
       <div className={`grid ${head.length === 2 ? "grid-cols-[minmax(0,1fr)_88px]" : "grid-cols-[minmax(0,1fr)_auto_auto]"} gap-x-3 border-b px-3 py-1.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground`}>
         {head.map((h, k) => <span key={h} className={k ? "text-right" : ""}>{h}</span>)}
@@ -25,7 +26,7 @@ export function Boards({ ideas, asOf, onPick }: { ideas: Idea[]; asOf: string; o
   const punctual = topPunctual(ideas);
   return (
     <div className="mx-4 mb-6 grid max-w-[1060px] items-start gap-4 md:mx-6 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
-      <Board title="Бодрый старт" sub="Идеи за 30 дней с лучшей тягой" head={["Рейс / Идея", "Тяга, % / день"]}>
+      <Board title="Бодрый старт" sub="Идеи за 30 дней с лучшей тягой" head={["Идея", "Прибыль/день"]}>
         {climbers.map(({ idea: i, perDay }) => (
           <li key={i.id}>
             <Button variant="ghost" onClick={() => onPick(i)} className="grid h-auto w-full grid-cols-[minmax(0,1fr)_88px] items-center gap-x-3 whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40">
@@ -45,23 +46,24 @@ export function Boards({ ideas, asOf, onPick }: { ideas: Idea[]; asOf: string; o
         ))}
         {climbers.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Пока нет свежих идей в плюсе</li>}
       </Board>
-      <Board title="Пунктуальность аналитиков" sub="за всё время, > 3 идей" head={["Аналитик", "В плюсе", "Цель + посадка"]}>
+      <Board title="Пунктуальность аналитиков" sub="за всё время · > 3 идей" head={["Аналитик", "В плюсе", "Цель + посадка"]}>
         {punctual.map((p, k) => (
           <li key={p.name} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 px-4 py-2.5">
             <span className="flex min-w-0 items-center gap-2">
               <span className="w-4 shrink-0 font-mono text-[11px] text-muted-foreground">{k + 1}</span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm">{p.name}</span>
-                <span className="block font-mono text-[10px] text-muted-foreground">всего идей: {p.total}</span>
+              <span className="min-w-0 truncate text-sm">{p.name}</span>
+            </span>
+            <span className="text-right font-mono">
+              <span className="flex items-center justify-end gap-1 text-sm" title="Доля идей с положительной доходностью">
+                <ZoneGlyph rot={-30} small /> {shareInt(p.positive, p.total)}
               </span>
+              <span className="block text-[10px] text-muted-foreground">{p.positive} / {p.total}</span>
             </span>
             <span className="text-right font-mono">
-              <span className="block text-sm">{p.positive}<span className="text-muted-foreground"> / {p.total}</span></span>
-              <span className="block text-[10px] text-muted-foreground">{share(p.positive, p.total)}</span>
-            </span>
-            <span className="text-right font-mono">
-              <span className="block rounded bg-[var(--z5)]/15 px-2 py-0.5 text-sm font-semibold text-[var(--z5)]">{share(p.onTarget, p.total)}</span>
-              <span className="block text-[10px] text-muted-foreground">{p.onTarget} идей</span>
+              <span className="flex items-center justify-end gap-1 text-sm font-semibold text-[var(--z5)]" title="Доля идей, достигших цели или на посадке">
+                <ZoneGlyph rot={0} ground flag small /> {shareInt(p.onTarget, p.total)}
+              </span>
+              <span className="block text-[10px] text-muted-foreground">{p.onTarget} / {p.total}</span>
             </span>
           </li>
         ))}
