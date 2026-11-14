@@ -25,7 +25,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
   const climbers = topClimbers(ideas, asOf);
   const punctual = topPunctual(ideas);
   return (
-    <div className="mx-4 mb-6 grid max-w-[1060px] items-start gap-4 md:mx-6 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
+    <div className="mx-4 mb-6 grid max-w-[1060px] items-start gap-4 md:mx-6 md:grid-cols-2">
       <Board title="Бодрый старт" sub="Идеи за 30 дней с лучшей тягой" head={["Идея", "Прибыль/день"]}>
         {climbers.map(({ idea: i, perDay }) => (
           <li key={i.id}>

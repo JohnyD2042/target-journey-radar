@@ -273,8 +273,8 @@ function Index() {
           {sel && <Card idea={sel} onClose={() => setSel(null)} />}
         </div>
       </div>
-      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickBoardIdea} onAnalystPick={pickBoardAnalyst} />}
       <Legend />
+      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickBoardIdea} onAnalystPick={pickBoardAnalyst} />}
 
     </div>
   );
@@ -339,7 +339,7 @@ function Status({ asOf, fetchedAt, isError }: { asOf?: string | undefined; fetch
 
 function Legend() {
   return (
-    <details className="group mx-4 mb-10 rounded-xl border bg-card/60 md:mx-6">
+    <details className="group mx-4 mb-4 rounded-xl border bg-card/60 md:mx-6">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 md:px-5 [&::-webkit-details-marker]:hidden">
         <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Легенда карты</span>
         <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
