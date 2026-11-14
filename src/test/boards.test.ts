@@ -21,6 +21,11 @@ describe("Набирают высоту", () => {
     ], "2026-11-14");
     expect(r).toHaveLength(0);
   });
+  it("reports the age in days used by the thrust formula", () => {
+    const r = topClimbers([idea({ yieldPct: 10, opened: "2026-11-04" })], "2026-11-14");
+    expect(r[0]?.days).toBe(10);
+    expect(r[0]?.perDay).toBe(1);
+  });
   it("shows at most 5", () => {
     expect(topClimbers(Array.from({ length: 8 }, () => idea({})), "2026-11-14")).toHaveLength(5);
   });
