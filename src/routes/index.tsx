@@ -211,7 +211,7 @@ function Index() {
 
       {/* Scene */}
       <div className="flex flex-col pb-8 lg:flex-row">
-        <div className="relative mb-4 h-[480px] p-2 lg:flex-1 md:h-[680px] md:p-4">
+        <div className="relative mb-4 h-[480px] p-0 lg:flex-1 min-[640px]:p-2 md:h-[680px] md:p-4">
           {data && ideas.length > 0 ? (
             <FlightChart
               ideas={shown}
@@ -224,7 +224,7 @@ function Index() {
               onZoneChange={(z) => setZone(zone === z ? null : z)}
             />
           ) : (
-            <div className="map-bg flex h-full w-full items-center justify-center rounded-xl border text-sm text-muted-foreground">
+            <div className="map-bg flex h-full w-full items-center justify-center text-sm text-muted-foreground min-[640px]:rounded-xl min-[640px]:border">
               {isError ? "Не удалось загрузить данные. Попробуйте обновить страницу." : data ? "По выбранным фильтрам идей нет" : "Загружаем идеи…"}
             </div>
           )}

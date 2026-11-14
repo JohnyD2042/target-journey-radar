@@ -8,6 +8,8 @@ import { BasketTag, IdeaPath, SideTag } from "@/components/IdeaPath";
 
 // left strip carries the rotated "доходность" caption, bottom strip the "путь до целевой цены" one
 const PAD = { l: 70, r: 12, t: 100, b: 54 };
+// on a phone the caption is dropped: the left strip keeps only the Y ticks, so the map itself gets the screen
+const PAD_SM = { l: 42, r: 8, t: 80, b: 54 };
 const BANDS: { z: Zone; from: number; to: number }[] = [
   { z: 1, from: 0, to: 0.13 },
   { z: 2, from: 0.13, to: 0.13 + 0.2 * 0.74 },
@@ -143,7 +145,8 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
   }, []);
 
   // on a phone the legend is shorter, so the plot takes the freed strip at the top
-  const pad = size.w < 640 ? { ...PAD, t: 80 } : PAD;
+  const mobile = size.w < 640;
+  const pad = mobile ? PAD_SM : PAD;
   const pw = Math.max(1, size.w - pad.l - pad.r);
   const ph = Math.max(1, size.h - pad.t - pad.b);
 
@@ -291,7 +294,7 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
     <div className="relative h-full w-full select-none">
       <div
         ref={wrap}
-        className="map-bg absolute inset-0 overflow-hidden rounded-xl border touch-none"
+        className="map-bg absolute inset-0 overflow-hidden touch-none min-[640px]:rounded-xl min-[640px]:border"
         aria-label="Карта инвестиционных идей"
         data-map-view={`${view.k},${view.x},${view.y}`}
         style={{ cursor: "grab" }}
@@ -437,18 +440,21 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, selectedId
               <text x={sx(0.87 * pw)} y={depY + 30} textAnchor="middle" className="font-mono text-[10px] font-semibold" fill="var(--primary)">1X ЦЕЛЬ</text>
             )}
 
-            {/* axis captions: quiet mono labels sitting in the padding, outside the plot itself */}
-            <text
-              x={-pad.l + 13}
-              y={ph / 2}
-              transform={`rotate(-90 ${-pad.l + 13} ${ph / 2})`}
-              textAnchor="middle"
-              className="font-mono text-[9px] uppercase tracking-[0.18em]"
-              fill="var(--muted-foreground)"
-              opacity={0.7}
-            >
-              Доходность
-            </text>
+            {/* axis captions: quiet mono labels sitting in the padding, outside the plot itself.
+                the Y one is dropped on a phone — there the strip is too narrow to spare for it */}
+            {!mobile && (
+              <text
+                x={-pad.l + 13}
+                y={ph / 2}
+                transform={`rotate(-90 ${-pad.l + 13} ${ph / 2})`}
+                textAnchor="middle"
+                className="font-mono text-[9px] uppercase tracking-[0.18em]"
+                fill="var(--muted-foreground)"
+                opacity={0.7}
+              >
+                Доходность
+              </text>
+            )}
             <text
               x={pw / 2}
               y={ph + 42}
