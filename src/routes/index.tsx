@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart, ZoneGlyph, ZONE_ICON, ZONE_TEXT } from "@/components/FlightChart";
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
+import { Boards } from "@/components/Boards";
 import { TabloLogo } from "@/components/TabloLogo";
 import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, ANALYST_TYPES, KINDS, type AnalystType, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
@@ -240,6 +241,7 @@ function Index() {
           {sel && <Card idea={sel} onClose={() => setSel(null)} />}
         </div>
       </div>
+      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickIdea} />}
       <Legend />
 
     </div>
