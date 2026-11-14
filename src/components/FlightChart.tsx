@@ -212,13 +212,16 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, onDeselect
     return out;
   }, [yMin, yMax, ph, view, yK]);
 
-  const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
+  const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean; ly?: number } | null>(null);
   // active touch points + two-finger pinch state
   const pts = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ start: MapView; m0: { x: number; y: number }; d0: number } | null>(null);
   const endPointer = (id: number) => {
     pts.current.delete(id);
     if (pts.current.size < 2) pinch.current = null;
+    // pinch ended with one finger still down: continue dragging from where it is now, not from (0,0)
+    const rest = [...pts.current.values()][0];
+    if (rest && drag.current) drag.current = { x: rest.x, y: rest.y, vx: viewRef.current.x, vy: viewRef.current.y, moved: true, ly: rest.y };
   };
 
   // airports
@@ -294,10 +297,10 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, onDeselect
     <div className="relative h-full w-full select-none">
       <div
         ref={wrap}
-        className="map-bg absolute inset-0 overflow-hidden touch-none min-[640px]:rounded-xl min-[640px]:border"
+        className="map-bg absolute inset-0 overflow-hidden min-[640px]:rounded-xl min-[640px]:border"
         aria-label="Карта инвестиционных идей"
         data-map-view={`${view.k},${view.x},${view.y}`}
-        style={{ cursor: "grab" }}
+        style={{ cursor: "grab", touchAction: view.k === 1 ? "pan-y" : "none" }}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -324,7 +327,11 @@ function FlightMap({ ideas, yieldMin, yieldMax, zoneCounts, onSelect, onDeselect
           if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 3) d.moved = true;
           if (d.moved) {
             e.currentTarget.setPointerCapture(e.pointerId);
+            const before = viewRef.current.y;
             updateView({ k: viewRef.current.k, x: d.vx + e.clientX - d.x, y: d.vy + e.clientY - d.y });
+            // finger drag hit the map's top/bottom edge: hand the rest of the motion to the page
+            if (e.pointerType === "touch" && Math.abs(viewRef.current.y - before) < 0.5 && d.ly != null) window.scrollBy(0, d.ly - e.clientY);
+            d.ly = e.clientY;
           }
         }}
         onPointerUp={(e) => { endPointer(e.pointerId); setTimeout(() => (drag.current = null)); }}
