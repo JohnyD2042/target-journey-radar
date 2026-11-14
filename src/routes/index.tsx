@@ -53,9 +53,19 @@ function Index() {
   const [tFocus, setTFocus] = useState(false);
   const [zone, setZone] = useState<Zone | null>(null);
   const [sel, setSel] = useState<Idea | null>(null);
+  const mapStart = useRef<HTMLDivElement>(null);
+  const [boardPick, setBoardPick] = useState<Idea | null>(null);
+  const [mapVisit, setMapVisit] = useState(0);
   // clicking empty map space closes the card after a short beat; picking a plane cancels the pending close
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pickIdea = (i: Idea) => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } setSel(i); };
+  const pickBoardIdea = (i: Idea) => {
+    pickIdea(i);
+    setBoardPick(i);
+    setZone(null);
+    setMapVisit((v) => v + 1);
+    mapStart.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  };
   const scheduleClose = () => { if (closeTimer.current) clearTimeout(closeTimer.current); closeTimer.current = setTimeout(() => { closeTimer.current = null; setSel(null); }, 500); };
 
   // the API is asked only after an exact instrument is chosen: list click, Enter, or an exactly typed ticker/name
@@ -81,7 +91,10 @@ function Index() {
   const data = useMemo(() => (full ? applyFilters(full, filters) : undefined), [full, period, book, analyst, ticker, kind, atype]);
 
   const ideas = data?.ideas ?? [];
-  const shown = useMemo(() => (zone ? ideas.filter((i) => zoneOf(i) === zone) : ideas), [ideas, zone]);
+  const shown = useMemo(() => {
+    const filtered = zone ? ideas.filter((i) => zoneOf(i) === zone) : ideas;
+    return boardPick && !filtered.some((i) => i.id === boardPick.id) ? [...filtered, boardPick] : filtered;
+  }, [ideas, zone, boardPick]);
   const yRange = useMemo(() => fitYRange(shown.map((i) => i.yieldPct), data?.yieldMin ?? 0, data?.yieldMax ?? 0), [shown, data]);
   const analysts = (data?.analysts ?? []).filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   const tqn = tq.trim().toLowerCase();
@@ -216,9 +229,10 @@ function Index() {
 
       {/* Scene */}
       <div className="flex flex-col pb-8 lg:flex-row">
-        <div className="relative mb-4 h-[480px] p-0 lg:flex-1 min-[640px]:p-2 md:h-[680px] md:p-4">
-          {data && ideas.length > 0 ? (
+        <div ref={mapStart} className="relative mb-4 h-[480px] p-0 lg:flex-1 min-[640px]:p-2 md:h-[680px] md:p-4">
+          {data && shown.length > 0 ? (
             <FlightChart
+              key={mapVisit}
               ideas={shown}
               yieldMin={yRange.yMin}
               yieldMax={yRange.yMax}
@@ -241,7 +255,7 @@ function Index() {
           {sel && <Card idea={sel} onClose={() => setSel(null)} />}
         </div>
       </div>
-      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickIdea} />}
+      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickBoardIdea} />}
       <Legend />
 
     </div>
