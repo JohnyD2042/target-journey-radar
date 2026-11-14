@@ -48,12 +48,11 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
       </Board>
       <Board title="Пунктуальность аналитиков" sub="за всё время" head={["Аналитик", "В плюсе", "Цель + посадка"]}>
         {punctual.map((p, k) => (
-          <li key={p.name} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 px-4 py-2.5">
+          <li key={p.name}>
+            <Button variant="ghost" onClick={() => onAnalystPick(p.name)} aria-label={`Показать идеи аналитика ${p.name}`} className="grid h-auto w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 whitespace-normal rounded-none px-4 py-2.5 text-left font-normal hover:bg-muted/40">
             <span className="flex min-w-0 items-center gap-2">
               <span className="w-4 shrink-0 font-mono text-[11px] text-muted-foreground">{k + 1}</span>
-              <Button variant="ghost" onClick={() => onAnalystPick(p.name)} className="h-auto min-w-0 justify-start truncate px-0 py-1 text-left text-sm font-normal" title={p.name}>
-                <span className="truncate">{p.name}</span>
-              </Button>
+              <span className="min-w-0 truncate py-1 text-sm" title={p.name}>{p.name}</span>
             </span>
             <span className="text-right font-mono">
               <span className="flex items-center justify-end gap-1 text-sm" title="Доля идей с положительной доходностью">
@@ -67,6 +66,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
               </span>
               <span className="block text-[10px] text-muted-foreground">{p.onTarget} / {p.total}</span>
             </span>
+            </Button>
           </li>
         ))}
       </Board>
