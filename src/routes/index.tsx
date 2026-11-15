@@ -309,11 +309,11 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
       title={off ? "Идей этого типа пока нет" : undefined}
       onMouseDown={mouseDown ? act : (e) => e.preventDefault()}
       onClick={mouseDown ? undefined : act}
-      className={`inline-flex items-center gap-1.5 rounded-[3px] border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
         on ? "kind-on border-kind/60 text-kind" : off ? "cursor-not-allowed border-dashed opacity-40 text-muted-foreground" : "border-border bg-background text-muted-foreground hover:border-kind/60 hover:text-foreground"
       }`}
     >
-      <span className={`h-1.5 w-1.5 rounded-[1px] ${on ? "bg-kind shadow-[0_0_6px_var(--kind)]" : "border border-muted-foreground/60"}`} />
+      <span className={`h-2 w-2 rounded-[1px] ${on ? "bg-kind shadow-[0_0_6px_var(--kind)]" : "border border-muted-foreground/60"}`} />
       {label}
       <span className="opacity-60">{count}</span>
     </button>
@@ -321,7 +321,7 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
 }
 
 function Presets({ items, wide, onPick, children }: { items: string[]; wide?: string; onPick: (v: string) => void; children?: React.ReactNode }) {
-  const chip = "rounded-full border bg-card px-2.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
+  const chip = "rounded-full border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {items.map((v) => (

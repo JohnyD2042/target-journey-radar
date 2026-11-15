@@ -13,10 +13,21 @@ const daysWord = (n: number) => {
   if (t >= 2 && t <= 4 && (h < 10 || h >= 20)) return "дня";
   return "дней";
 };
-const ideaColumns = "grid-cols-[minmax(0,1fr)_58px_minmax(88px,0.42fr)] gap-x-2.5";
+const ideaColumns = "grid-cols-[minmax(0,1fr)_52px_28px_minmax(80px,0.4fr)] gap-x-2 sm:grid-cols-[minmax(0,1fr)_58px_80px_minmax(88px,0.42fr)]";
 const upsideColumns = "grid-cols-[minmax(0,1fr)_92px_68px] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
 const darkColumns = "grid-cols-[minmax(0,1fr)_46px_82px] gap-x-2.5";
+
+/** phase cell: zone glyph + name (name hidden on narrow screens) */
+function Phase({ idea: i }: { idea: Idea }) {
+  const z = i.stage === "liftoff" ? 2 : 3;
+  return (
+    <span className="flex items-center justify-end gap-1 whitespace-nowrap font-mono text-[11px]" style={{ color: `var(--z${z})` }} title={z === 2 ? "Взлёт" : "В полёте"}>
+      <ZoneGlyph rot={ZONE_ICON[z].rot} small />
+      <span className="hidden sm:inline">{z === 2 ? "Взлёт" : "В полёте"}</span>
+    </span>
+  );
+}
 
 function Board({ title, sub, icon, cols, head, children }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode }) {
   return (
@@ -45,10 +56,10 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
     <div className="mx-4 mb-6 grid max-w-[1600px] items-start gap-4 md:mx-6 md:grid-cols-2">
       <Board
         title="Бодрый старт"
-        sub="Новые идеи с лучшей тягой"
+        sub="Новые идеи, которые быстро набирают высоту"
         icon={<CircleGauge size={15} strokeWidth={1.75} />}
         cols={ideaColumns}
-        head={["Идея", "Возраст", "Прибыль/день"]}
+        head={["Идея", "Возраст", "Фаза", "Прибыль/день"]}
       >
         {climbers.map(({ idea: i, days, perDay }) => (
           <li key={i.id}>
@@ -64,6 +75,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
               <span className="text-right font-mono text-[11px] font-light tabular-nums text-muted-foreground" title="Возраст идеи: дней с даты старта" aria-label={`Идее ${days} ${daysWord(days)}`}>
                 {days} {daysWord(days)}
               </span>
+              <Phase idea={i} />
               <span className="text-right font-mono text-sm font-semibold text-z5" title="Тяга = доходность идеи / количество дней с даты старта" aria-label={`Тяга ${pct(perDay, 2)} в день`}>
                 {pct(perDay, 2)}
               </span>
@@ -71,36 +83,6 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
           </li>
         ))}
         {climbers.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Пока нет свежих идей в плюсе</li>}
-      </Board>
-      <Board
-        title="Пунктуальность аналитиков"
-        sub="за всё время"
-        icon={<Radar size={15} strokeWidth={1.75} />}
-        cols={analystColumns}
-        head={["Аналитик", "идей в плюсе", "цель или почти"]}
-      >
-        {punctual.map((p, k) => (
-          <li key={p.name}>
-            <Button variant="ghost" onClick={() => onAnalystPick(p.name)} aria-label={`Показать идеи аналитика ${p.name}`} className={`grid h-15 w-full ${analystColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="w-4 shrink-0 font-mono text-[11px] text-muted-foreground">{k + 1}</span>
-              <span className="min-w-0 truncate py-1 text-sm" title={p.name}>{p.name}</span>
-            </span>
-            <span className="text-right font-mono">
-              <span className="flex items-center justify-end gap-1 text-sm" title="Доля идей с положительной доходностью">
-                <ZoneGlyph rot={-30} small /> {shareInt(p.positive, p.total)}
-              </span>
-              <span className="block text-[10px] text-muted-foreground">{p.positive} / {p.total}</span>
-            </span>
-            <span className="text-right font-mono">
-              <span className="flex items-center justify-end gap-1 text-sm font-semibold text-[var(--z5)]" title="Доля идей, достигших цели или на посадке">
-                <ZoneGlyph rot={0} ground flag small /> {shareInt(p.onTarget, p.total)}
-              </span>
-              <span className="block text-[10px] text-muted-foreground">{p.onTarget} / {p.total}</span>
-            </span>
-            </Button>
-          </li>
-        ))}
       </Board>
       <Board
         title="Максимальный апсайд"
@@ -133,8 +115,8 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         {upside.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих идей</li>}
       </Board>
       <Board
-        title="Тёмные лошадки"
-        sub="Активы, которые снова вернулись на радар аналитиков перерыва"
+        title="Новые герои"
+        sub="Новые имена и неожиданные возвращения"
         icon={<ScanEye size={15} strokeWidth={1.75} />}
         cols={darkColumns}
         head={["Актив", "Идей", "Ср. апсайд"]}
@@ -155,6 +137,36 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
           </li>
         ))}
         {darkHorses.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих активов</li>}
+      </Board>
+      <Board
+        title="Пунктуальность аналитиков"
+        sub="Точность прогнозов за всё время"
+        icon={<Radar size={15} strokeWidth={1.75} />}
+        cols={analystColumns}
+        head={["Аналитик", "идей в плюсе", "цель или почти"]}
+      >
+        {punctual.map((p, k) => (
+          <li key={p.name}>
+            <Button variant="ghost" onClick={() => onAnalystPick(p.name)} aria-label={`Показать идеи аналитика ${p.name}`} className={`grid h-15 w-full ${analystColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="w-4 shrink-0 font-mono text-[11px] text-muted-foreground">{k + 1}</span>
+              <span className="min-w-0 truncate py-1 text-sm" title={p.name}>{p.name}</span>
+            </span>
+            <span className="text-right font-mono">
+              <span className="flex items-center justify-end gap-1 text-sm" title="Доля идей с положительной доходностью">
+                <ZoneGlyph rot={-30} small /> {shareInt(p.positive, p.total)}
+              </span>
+              <span className="block text-[10px] text-muted-foreground">{p.positive} / {p.total}</span>
+            </span>
+            <span className="text-right font-mono">
+              <span className="flex items-center justify-end gap-1 text-sm font-semibold text-[var(--z5)]" title="Доля идей, достигших цели или на посадке">
+                <ZoneGlyph rot={0} ground flag small /> {shareInt(p.onTarget, p.total)}
+              </span>
+              <span className="block text-[10px] text-muted-foreground">{p.onTarget} / {p.total}</span>
+            </span>
+            </Button>
+          </li>
+        ))}
       </Board>
     </div>
   );
