@@ -20,12 +20,12 @@ const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
 function Board({ title, sub, icon, cols, head, children }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode }) {
   return (
     <section className="min-w-0 overflow-hidden rounded-lg border bg-card/60">
-      <header className="flex h-18 flex-col items-start justify-center gap-1 border-b px-3 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+      <header className="flex h-18 flex-col items-start justify-center gap-1 border-b px-3">
         <h2 className="flex items-center gap-1.5 font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">
           <span className="shrink-0 opacity-80">{icon}</span>
           {title}
         </h2>
-        <span className="font-mono text-[10px] whitespace-nowrap text-muted-foreground">{sub}</span>
+        <span className="font-mono text-[10px] leading-tight text-muted-foreground">{sub}</span>
       </header>
       <div className={`grid h-9 items-center ${cols} border-b px-3 font-mono text-[9px] uppercase leading-tight tracking-wider text-muted-foreground`}>
         {head.map((h, k) => <span key={k} className={k ? "text-right" : ""}>{h}</span>)}
@@ -102,7 +102,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
       </Board>
       <Board
         title="Максимальный апсайд"
-        sub="Активные идеи на взлёте и в полёте"
+        sub="Активные идеи с максимальным потенциалом роста"
         icon={<ArrowUp size={15} strokeWidth={1.75} />}
         cols={upsideColumns}
         head={["Идея", "Фаза", "Апсайд"]}
@@ -123,7 +123,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
                 <span className="flex items-center justify-end gap-1 font-mono text-[11px]" style={{ color: `var(--z${z})` }}>
                   <ZoneGlyph rot={ZONE_ICON[z].rot} small /> {z === 2 ? "Взлёт" : "В полёте"}
                 </span>
-                <span className="text-right font-mono text-sm font-semibold text-z5">{pct(i.toTargetPct ?? 0)}</span>
+                <span className="text-right font-mono text-sm font-semibold text-z5">{pct(i.toTargetPct ?? 0, 0)}</span>
               </Button>
             </li>
           );
