@@ -160,7 +160,7 @@ function Index() {
       </header>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 items-start gap-3 px-4 py-3 md:grid-cols-2 md:px-6 xl:grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)] xl:gap-x-5">
+      <div className="grid grid-cols-1 items-start gap-3 px-4 py-3 md:grid-cols-2 md:px-6 min-[1500px]:grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)] min-[1500px]:gap-x-5">
        <div className="contents">
         <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Дата старта идей</span>
