@@ -160,7 +160,7 @@ function Index() {
       </header>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 items-start gap-3 px-4 py-3 md:grid-cols-2 md:px-6 min-[1500px]:grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)] min-[1500px]:gap-x-5">
+      <div className="grid grid-cols-1 items-start gap-3 px-4 py-3 md:grid-cols-2 md:px-6 xl:grid-cols-[auto_auto_minmax(0,1fr)_minmax(0,1fr)] xl:gap-x-5">
        <div className="contents">
         <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Дата старта идей</span>
@@ -309,7 +309,7 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
       title={off ? "Идей этого типа пока нет" : undefined}
       onMouseDown={mouseDown ? act : (e) => e.preventDefault()}
       onClick={mouseDown ? undefined : act}
-      className={`inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider xl:gap-1 xl:px-1.5 xl:py-1 xl:text-[10px] xl:tracking-normal transition-colors ${
         on ? "kind-on border-kind/60 text-kind" : off ? "cursor-not-allowed border-dashed opacity-40 text-muted-foreground" : "border-border bg-background text-muted-foreground hover:border-kind/60 hover:text-foreground"
       }`}
     >
@@ -321,7 +321,7 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
 }
 
 function Presets({ items, wide, onPick, children }: { items: string[]; wide?: string; onPick: (v: string) => void; children?: React.ReactNode }) {
-  const chip = "rounded-full border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
+  const chip = "rounded-full border bg-card px-3 py-1.5 text-xs xl:px-2 xl:py-1 text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {items.map((v) => (
