@@ -1,5 +1,5 @@
-import { ArrowUp, CircleGauge, Radar } from "lucide-react";
-import { topClimbers, topPunctual, topUpside } from "@/lib/boards";
+import { ArrowUp, CircleGauge, Radar, ScanEye } from "lucide-react";
+import { topClimbers, topPunctual, topUpside, topDarkHorses } from "@/lib/boards";
 import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
 import { ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
@@ -16,6 +16,7 @@ const daysWord = (n: number) => {
 const ideaColumns = "grid-cols-[minmax(0,1fr)_58px_minmax(88px,0.42fr)] gap-x-2.5";
 const upsideColumns = "grid-cols-[minmax(0,1fr)_92px_68px] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
+const darkColumns = "grid-cols-[minmax(0,1fr)_46px_82px] gap-x-2.5";
 
 function Board({ title, sub, icon, cols, head, children }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode }) {
   return (
@@ -35,12 +36,13 @@ function Board({ title, sub, icon, cols, head, children }: { title: string; sub:
   );
 }
 
-export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void }) {
+export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void; onTickerPick: (ticker: string) => void }) {
   const climbers = topClimbers(ideas, asOf);
   const punctual = topPunctual(ideas);
   const upside = topUpside(ideas);
+  const darkHorses = topDarkHorses(ideas, asOf);
   return (
-    <div className="mx-4 mb-6 grid max-w-[1060px] items-start gap-4 md:mx-6 md:grid-cols-2 xl:max-w-[1600px] xl:grid-cols-3">
+    <div className="mx-4 mb-6 grid max-w-[1600px] items-start gap-4 md:mx-6 md:grid-cols-2">
       <Board
         title="Бодрый старт"
         sub="Новые идеи с лучшей тягой"
@@ -129,6 +131,30 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
           );
         })}
         {upside.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих идей</li>}
+      </Board>
+      <Board
+        title="Тёмные лошадки"
+        sub="Активы, которые снова вернулись на радар аналитиков перерыва"
+        icon={<ScanEye size={15} strokeWidth={1.75} />}
+        cols={darkColumns}
+        head={["Актив", "Идей", "Ср. апсайд"]}
+      >
+        {darkHorses.map((asset) => (
+          <li key={asset.ticker}>
+            <Button variant="ghost" onClick={() => onTickerPick(asset.ticker)} aria-label={`Показать активные идеи ${asset.ticker}`} className={`grid h-15 w-full ${darkColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+              <span className="min-w-0">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{asset.ticker}</span>
+                  <span className="min-w-0 truncate text-xs text-muted-foreground" title={asset.name}>{asset.name}</span>
+                </span>
+                <span className="mt-1 block truncate text-[11px] text-muted-foreground" title={asset.analysts.join(", ")}>{asset.analysts.join(", ")}</span>
+              </span>
+              <span className="text-right font-mono text-sm tabular-nums" title="Активные идеи, открытые за последние 60 дней">{asset.count}</span>
+              <span className="text-right font-mono text-sm font-semibold text-z5" title="Средний апсайд активных идей с целевой ценой за последние 60 дней">{asset.averageUpside == null ? "—" : pct(asset.averageUpside, 0)}</span>
+            </Button>
+          </li>
+        ))}
+        {darkHorses.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих активов</li>}
       </Board>
     </div>
   );

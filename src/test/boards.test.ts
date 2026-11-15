@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { topClimbers, topPunctual, thrustEngines, topUpside } from "@/lib/boards";
+import { topClimbers, topPunctual, thrustEngines, topUpside, topDarkHorses } from "@/lib/boards";
 import type { Idea } from "@/lib/ideas";
 
 const idea = (o: Partial<Idea> & { opened?: string }): Idea => ({
@@ -66,5 +66,46 @@ describe("Максимальный апсайд", () => {
     const r = topUpside([a, b, idea({ stage: "approach", toTargetPct: 90 }), idea({ stage: "cold", toTargetPct: 99 }),
       idea({ stage: "cruise", toTargetPct: 80, status: "closed" }), idea({ stage: "liftoff", toTargetPct: 70, noTarget: true })]);
     expect(r).toEqual([b, a]);
+  });
+});
+
+describe("Тёмные лошадки", () => {
+  const asOf = "2026-11-15T01:37:00Z";
+  const openedAgo = (days: number) => new Date(Date.parse("2026-11-15") - days * 86_400_000).toISOString();
+  it("includes active openings through day 60, excluding closed and future ideas", () => {
+    const r = topDarkHorses([idea({ opened: openedAgo(60) }), idea({ status: "closed", opened: openedAgo(1) }), idea({ opened: openedAgo(-1) })], asOf);
+    expect(r[0]?.count).toBe(1);
+  });
+  it("blocks a ticker for any opening from 61 through 150 days, even closed", () => {
+    for (const days of [61, 100, 150]) {
+      expect(topDarkHorses([idea({ opened: openedAgo(1) }), idea({ status: "closed", opened: openedAgo(days) })], asOf)).toEqual([]);
+    }
+  });
+  it("keeps first appearances and histories older than 150 days", () => {
+    const r = topDarkHorses([idea({ ticker: "NEW", opened: openedAgo(1) }), idea({ ticker: "OLD", opened: openedAgo(1) }), idea({ ticker: "OLD", opened: openedAgo(151) })], asOf);
+    expect(r.map((x) => x.ticker).sort()).toEqual(["NEW", "OLD"]);
+    expect(r.find((x) => x.ticker === "OLD")?.count).toBe(1);
+  });
+  it("counts only active ideas and lists their distinct authors", () => {
+    const r = topDarkHorses([idea({ analyst: "A" }), idea({ analyst: "A" }), idea({ analyst: "B" }), idea({ analyst: "Closed", status: "closed" })], asOf);
+    expect(r[0]?.count).toBe(3);
+    expect(r[0]?.analysts).toEqual(["A", "B"]);
+  });
+  it("averages only recent active ideas with a target", () => {
+    const r = topDarkHorses([idea({ toTargetPct: 20 }), idea({ toTargetPct: 60 }), idea({ noTarget: true, toTargetPct: 500 }), idea({ status: "closed", toTargetPct: 900 })], asOf);
+    expect(r[0]?.averageUpside).toBe(40);
+    expect(r[0]?.count).toBe(3);
+    expect(topDarkHorses([idea({ noTarget: true })], asOf)[0]?.averageUpside).toBeNull();
+  });
+  it("orders by active count and returns five tickers at most", () => {
+    const rows = Array.from({ length: 7 }, (_, k) => idea({ ticker: `T${k}`, toTargetPct: k }));
+    rows.push(idea({ ticker: "T0", toTargetPct: 0 }));
+    const r = topDarkHorses(rows, asOf);
+    expect(r).toHaveLength(5);
+    expect(r[0]?.ticker).toBe("T0");
+    expect(r[0]?.count).toBe(2);
+  });
+  it("uses portfolio members as tickers without counting one idea twice", () => {
+    expect(topDarkHorses([idea({ ticker: "X, X, Y", basket: true })], asOf).map((x) => x.count)).toEqual([1, 1]);
   });
 });

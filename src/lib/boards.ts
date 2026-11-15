@@ -48,3 +48,39 @@ export function topUpside(ideas: Idea[], n = 5): Idea[] {
     .sort((a, b) => (b.toTargetPct ?? 0) - (a.toTargetPct ?? 0))
     .slice(0, n);
 }
+
+export interface DarkHorse { ticker: string; name: string; count: number; analysts: string[]; averageUpside: number | null }
+/** Dormancy uses all openings; the recent count/authors use only currently active ideas. */
+export function topDarkHorses(ideas: Idea[], asOf: string, n = 5): DarkHorse[] {
+  const now = Date.parse(asOf.slice(0, 10));
+  if (!Number.isFinite(now)) return [];
+  const dormantBlock = new Set<string>();
+  const recent = new Map<string, { name: string; ideas: Map<Idea["id"], Idea> }>();
+  for (const i of ideas as Raw[]) {
+    if (!i.opened) continue;
+    const age = (now - Date.parse(i.opened.slice(0, 10))) / DAY;
+    if (!Number.isFinite(age) || age < 0 || age > 150) continue;
+    const tickers = [...new Set((i.basket ? i.ticker.split(/[,;\s]+/) : [i.ticker]).map((t) => t.trim()).filter(Boolean))];
+    for (const ticker of tickers) {
+      if (age > 60) { dormantBlock.add(ticker); continue; }
+      if (i.status !== "active") continue;
+      const entry = recent.get(ticker) ?? { name: "", ideas: new Map<Idea["id"], Idea>() };
+      if (!i.basket && !entry.name) entry.name = i.name;
+      entry.ideas.set(i.id, i);
+      recent.set(ticker, entry);
+    }
+  }
+  return [...recent.entries()]
+    .filter(([ticker]) => !dormantBlock.has(ticker))
+    .map(([ticker, entry]) => {
+      const active = [...entry.ideas.values()];
+      const upside = active.filter((i) => !i.noTarget && i.target != null && i.toTargetPct != null && Number.isFinite(i.toTargetPct));
+      return {
+        ticker, name: entry.name, count: active.length,
+        analysts: [...new Set(active.map((i) => i.analyst))],
+        averageUpside: upside.length ? upside.reduce((sum, i) => sum + (i.toTargetPct ?? 0), 0) / upside.length : null,
+      };
+    })
+    .sort((a, b) => b.count - a.count || (b.averageUpside ?? -Infinity) - (a.averageUpside ?? -Infinity) || a.ticker.localeCompare(b.ticker))
+    .slice(0, n);
+}

@@ -96,6 +96,23 @@ function Index() {
   // any header filter change drops the secondary zone highlight: the whole map shows again
   useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind, atype]);
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
+  const pickBoardTicker = (value: string) => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+    setSel(null);
+    setBoardPick(null);
+    setPeriod("all");
+    setBook("active");
+    setAnalyst(null);
+    setQ("");
+    setKind("");
+    setAtype("");
+    commitTicker(value);
+    setFocus(false);
+    setTFocus(false);
+    setZone(null);
+    setMapVisit((v) => v + 1);
+    mapStart.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  };
   const filters = { period, book, analyst: analyst ?? "", ticker, kind, atype };
   // one full download, refreshed at most every 15 minutes; all filtering is local
   const { data: full, isError, isFetching, dataUpdatedAt } = useQuery({
@@ -274,7 +291,7 @@ function Index() {
         </div>
       </div>
       <Legend />
-      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickBoardIdea} onAnalystPick={pickBoardAnalyst} />}
+      {full && <Boards ideas={full.ideas} asOf={full.asOf} onPick={pickBoardIdea} onAnalystPick={pickBoardAnalyst} onTickerPick={pickBoardTicker} />}
 
     </div>
   );

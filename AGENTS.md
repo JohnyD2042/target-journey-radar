@@ -13,4 +13,5 @@
 - Render zone labels and counts inside the map, outside its pan/zoom transform; navigation and reset must not remove the overview.
 - Board selections scroll to the map wrapper and reset its viewport; include a selected board idea in the rendered set even when header filters exclude it, so its plane and details remain visible.
 - Analyst board selections use the header analyst filter and clear other filters and pinned ideas, so the map shows the author's entire history without unrelated planes.
+- Compute ticker boards in the browser-safe boards module from the full API dataset; ticker selections clear other filters and pins and select active status, so dormant-asset navigation shows current ideas.
 - Flight data is fetched once in full from the external /flight API (src/lib/ideas.ts, refresh ≤ every 15 min); filters and counters are applied locally via applyFilters, but yield, zones (stage) and the full Y range come from the API — never compute them locally; the chart only narrows its Y axis to the shown ideas via fitYRange.
