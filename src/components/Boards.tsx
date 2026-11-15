@@ -1,4 +1,5 @@
-import { ArrowUp, CircleGauge, Radar, ScanEye } from "lucide-react";
+import { useState } from "react";
+import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, ScanEye } from "lucide-react";
 import { topClimbers, topPunctual, topUpside, topDarkHorses } from "@/lib/boards";
 import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
@@ -18,9 +19,12 @@ const upsideColumns = "grid-cols-[minmax(0,1fr)_92px_68px] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
 const darkColumns = "grid-cols-[minmax(0,1fr)_46px_82px] gap-x-2.5";
 
-function Board({ title, sub, icon, cols, head, children, leftHead = false }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode; leftHead?: boolean }) {
+const SHORT = 5;
+const LONG = 10;
+
+function Board({ title, sub, icon, cols, head, children, leftHead = false, className = "", more }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode; leftHead?: boolean; className?: string; more?: { open: boolean; total: number; onToggle: () => void } }) {
   return (
-    <section className="min-w-0 overflow-hidden rounded-lg border bg-card/60">
+    <section className={`min-w-0 overflow-hidden rounded-lg border bg-card/60 ${className}`}>
       <header className="flex h-18 flex-col items-start justify-center gap-1 border-b px-3">
         <h2 className="flex items-center gap-1.5 font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">
           <span className="shrink-0 opacity-80">{icon}</span>
@@ -32,18 +36,33 @@ function Board({ title, sub, icon, cols, head, children, leftHead = false }: { t
         {head.map((h, k) => <span key={k} className={!leftHead && k ? "text-right" : ""}>{h}</span>)}
       </div>
       <ol className="divide-y">{children}</ol>
+      {more && more.total > SHORT && (
+        <Button variant="ghost" onClick={more.onToggle} aria-expanded={more.open} className="h-10 w-full gap-1.5 rounded-none border-t font-mono text-[11px] uppercase tracking-wider text-muted-foreground hover:bg-muted/40 hover:text-foreground">
+          {more.open ? <><ChevronUp size={14} /> Свернуть до {SHORT} строк</> : <><ChevronDown size={14} /> Показать топ-{Math.min(LONG, more.total)}</>}
+        </Button>
+      )}
     </section>
   );
 }
 
 export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void; onTickerPick: (ticker: string) => void }) {
-  const climbers = topClimbers(ideas, asOf);
+  const [open, setOpen] = useState({ climbers: false, upside: false, dark: false });
+  const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const allClimbers = topClimbers(ideas, asOf, LONG);
   const punctual = topPunctual(ideas);
-  const upside = topUpside(ideas);
-  const darkHorses = topDarkHorses(ideas, asOf);
+  const allUpside = topUpside(ideas, LONG);
+  const allDark = topDarkHorses(ideas, asOf, LONG);
+  const climbers = allClimbers.slice(0, open.climbers ? LONG : SHORT);
+  const upside = allUpside.slice(0, open.upside ? LONG : SHORT);
+  const darkHorses = allDark.slice(0, open.dark ? LONG : SHORT);
+  // Two independent columns on desktop: expanding a board only shifts the board below it.
+  // On mobile the columns dissolve (contents) and order keeps the reading sequence.
   return (
-    <div className="mx-4 mb-6 grid max-w-[1600px] items-start gap-4 md:mx-6 md:grid-cols-2">
+    <div className="mx-4 mb-6 flex max-w-[1600px] flex-col gap-4 md:mx-6 md:grid md:grid-cols-2 md:items-start">
+      <div className="contents md:flex md:min-w-0 md:flex-col md:gap-4">
       <Board
+        className="order-1 md:order-none"
+        more={{ open: open.climbers, total: allClimbers.length, onToggle: toggle("climbers") }}
         title="Бодрый старт"
         sub="Новые идеи, которые быстро набирают высоту"
         icon={<CircleGauge size={15} strokeWidth={1.75} />}
@@ -77,6 +96,36 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         {climbers.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Пока нет свежих идей в плюсе</li>}
       </Board>
       <Board
+        className="order-3 md:order-none"
+        more={{ open: open.dark, total: allDark.length, onToggle: toggle("dark") }}
+        title="Новые герои"
+        sub="Новые имена и неожиданные возвращения"
+        icon={<ScanEye size={15} strokeWidth={1.75} />}
+        cols={darkColumns}
+        head={["Актив", "Идей", "Ср. апсайд"]}
+      >
+        {darkHorses.map((asset) => (
+          <li key={asset.ticker}>
+            <Button variant="ghost" onClick={() => onTickerPick(asset.ticker)} aria-label={`Показать активные идеи ${asset.ticker}`} className={`grid h-15 w-full ${darkColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+              <span className="min-w-0">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{asset.ticker}</span>
+                  <span className="min-w-0 truncate text-sm" title={asset.name}>{asset.name}</span>
+                </span>
+                <span className="mt-1 block truncate text-[11px] text-muted-foreground" title={asset.analysts.join(", ")}>{asset.analysts.join(", ")}</span>
+              </span>
+              <span className="text-right font-mono text-sm tabular-nums" title="Активные идеи, открытые за последние 60 дней">{asset.count}</span>
+              <span className="text-right font-mono text-sm font-semibold text-z5" title="Средний апсайд активных идей с целевой ценой за последние 60 дней">{asset.averageUpside == null ? "—" : pct(asset.averageUpside, 0)}</span>
+            </Button>
+          </li>
+        ))}
+        {darkHorses.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих активов</li>}
+      </Board>
+      </div>
+      <div className="contents md:flex md:min-w-0 md:flex-col md:gap-4">
+      <Board
+        className="order-2 md:order-none"
+        more={{ open: open.upside, total: allUpside.length, onToggle: toggle("upside") }}
         title="Максимальный апсайд"
         sub="Активные идеи с максимальным потенциалом роста"
         icon={<ArrowUp size={15} strokeWidth={1.75} />}
@@ -107,30 +156,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         {upside.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих идей</li>}
       </Board>
       <Board
-        title="Новые герои"
-        sub="Новые имена и неожиданные возвращения"
-        icon={<ScanEye size={15} strokeWidth={1.75} />}
-        cols={darkColumns}
-        head={["Актив", "Идей", "Ср. апсайд"]}
-      >
-        {darkHorses.map((asset) => (
-          <li key={asset.ticker}>
-            <Button variant="ghost" onClick={() => onTickerPick(asset.ticker)} aria-label={`Показать активные идеи ${asset.ticker}`} className={`grid h-15 w-full ${darkColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
-              <span className="min-w-0">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{asset.ticker}</span>
-                  <span className="min-w-0 truncate text-sm" title={asset.name}>{asset.name}</span>
-                </span>
-                <span className="mt-1 block truncate text-[11px] text-muted-foreground" title={asset.analysts.join(", ")}>{asset.analysts.join(", ")}</span>
-              </span>
-              <span className="text-right font-mono text-sm tabular-nums" title="Активные идеи, открытые за последние 60 дней">{asset.count}</span>
-              <span className="text-right font-mono text-sm font-semibold text-z5" title="Средний апсайд активных идей с целевой ценой за последние 60 дней">{asset.averageUpside == null ? "—" : pct(asset.averageUpside, 0)}</span>
-            </Button>
-          </li>
-        ))}
-        {darkHorses.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих активов</li>}
-      </Board>
-      <Board
+        className="order-4 md:order-none"
         title="Пунктуальность аналитиков"
         sub="Точность прогнозов за всё время"
         icon={<Radar size={15} strokeWidth={1.75} />}
@@ -160,6 +186,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
           </li>
         ))}
       </Board>
+      </div>
     </div>
   );
 }
