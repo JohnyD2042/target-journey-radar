@@ -22,15 +22,40 @@ const darkColumns = "grid-cols-[minmax(0,1fr)_46px_82px] gap-x-2.5";
 const SHORT = 5;
 const LONG = 10;
 
+/** Same chevron as the map legend: flat when collapsed, flipped when the board is open. */
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function Board({ title, sub, icon, cols, head, children, leftHead = false, className = "", more }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode; leftHead?: boolean; className?: string; more?: { open: boolean; total: number; onToggle: () => void } }) {
+  const expandable = !!more && more.total > SHORT;
   return (
     <section className={`min-w-0 overflow-hidden rounded-lg border bg-card/60 ${className}`}>
-      <header className="flex h-18 flex-col items-start justify-center gap-1 border-b px-3">
-        <h2 className="flex items-center gap-1.5 font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">
-          <span className="shrink-0 opacity-80">{icon}</span>
-          {title}
-        </h2>
-        <span className="font-mono text-[10px] leading-tight text-muted-foreground">{sub}</span>
+      <header className="h-18 border-b">
+        {expandable ? (
+          <h2>
+            <Button variant="ghost" onClick={more.onToggle} aria-expanded={more.open} className={`h-18 w-full flex-col items-start justify-center gap-1 whitespace-normal rounded-none px-3 py-0 text-left hover:bg-muted/40 ${more.open ? "bg-muted/20" : ""}`}>
+              <span className="flex w-full items-center gap-1.5 font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">
+                <span className="shrink-0 opacity-80">{icon}</span>
+                <span className="min-w-0 truncate">{title}</span>
+                <span className="ml-auto pl-2"><Chevron open={more.open} /></span>
+              </span>
+              <span className="font-mono text-[10px] leading-tight text-muted-foreground">{sub}</span>
+            </Button>
+          </h2>
+        ) : (
+          <div className="flex h-18 flex-col items-start justify-center gap-1 px-3">
+            <h2 className="flex items-center gap-1.5 font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">
+              <span className="shrink-0 opacity-80">{icon}</span>
+              {title}
+            </h2>
+            <span className="font-mono text-[10px] leading-tight text-muted-foreground">{sub}</span>
+          </div>
+        )}
       </header>
       <div className={`grid h-9 items-center ${cols} border-b px-3 font-mono text-[9px] uppercase leading-tight tracking-wider text-muted-foreground`}>
         {head.map((h, k) => <span key={k} className={!leftHead && k ? "text-right" : ""}>{h}</span>)}
