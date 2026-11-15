@@ -40,3 +40,11 @@ export function topPunctual(ideas: Idea[], n = 5): Punctual[] {
     .sort((a, b) => b.rate - a.rate || b.total - a.total)
     .slice(0, n);
 }
+
+/** «Максимальный апсайд»: active ideas in liftoff or cruise with a target; top by remaining upside (toTargetPct) */
+export function topUpside(ideas: Idea[], n = 5): Idea[] {
+  return ideas
+    .filter((i) => i.status === "active" && !i.noTarget && i.toTargetPct != null && (i.stage === "liftoff" || i.stage === "cruise"))
+    .sort((a, b) => (b.toTargetPct ?? 0) - (a.toTargetPct ?? 0))
+    .slice(0, n);
+}

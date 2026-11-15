@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { topClimbers, topPunctual, thrustEngines } from "@/lib/boards";
+import { topClimbers, topPunctual, thrustEngines, topUpside } from "@/lib/boards";
 import type { Idea } from "@/lib/ideas";
 
 const idea = (o: Partial<Idea> & { opened?: string }): Idea => ({
@@ -56,5 +56,15 @@ describe("Пунктуальность аналитиков", () => {
     expect(p?.onTarget).toBe(2);
     expect(p?.rate).toBe(50);
     expect(p?.positive).toBe(3);
+  });
+});
+
+describe("Максимальный апсайд", () => {
+  it("keeps active liftoff/cruise ideas with a target, sorted by upside", () => {
+    const a = idea({ stage: "liftoff", toTargetPct: 20 });
+    const b = idea({ stage: "cruise", toTargetPct: 50 });
+    const r = topUpside([a, b, idea({ stage: "approach", toTargetPct: 90 }), idea({ stage: "cold", toTargetPct: 99 }),
+      idea({ stage: "cruise", toTargetPct: 80, status: "closed" }), idea({ stage: "liftoff", toTargetPct: 70, noTarget: true })]);
+    expect(r).toEqual([b, a]);
   });
 });

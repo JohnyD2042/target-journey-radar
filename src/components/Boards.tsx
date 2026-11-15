@@ -1,8 +1,8 @@
-import { CircleGauge, Radar } from "lucide-react";
-import { topClimbers, topPunctual } from "@/lib/boards";
+import { ArrowUp, CircleGauge, Radar } from "lucide-react";
+import { topClimbers, topPunctual, topUpside } from "@/lib/boards";
 import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
-import { ZoneGlyph } from "@/components/FlightChart";
+import { ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
 
 const pct = (v: number, d = 1) => `${v > 0 ? "+" : ""}${v.toFixed(d).replace(".", ",")}%`;
 const shareInt = (a: number, b: number) => `${Math.round((a / b) * 100)}%`;
@@ -14,6 +14,7 @@ const daysWord = (n: number) => {
   return "дней";
 };
 const ideaColumns = "grid-cols-[minmax(0,1fr)_58px_minmax(88px,0.42fr)] gap-x-2.5";
+const upsideColumns = "grid-cols-[minmax(0,1fr)_92px_68px] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
 
 function Board({ title, sub, icon, cols, head, children }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode }) {
@@ -37,14 +38,15 @@ function Board({ title, sub, icon, cols, head, children }: { title: string; sub:
 export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void }) {
   const climbers = topClimbers(ideas, asOf);
   const punctual = topPunctual(ideas);
+  const upside = topUpside(ideas);
   return (
-    <div className="mx-4 mb-6 grid max-w-[1060px] items-start gap-4 md:mx-6 md:grid-cols-2">
+    <div className="mx-4 mb-6 grid max-w-[1060px] items-start gap-4 md:mx-6 md:grid-cols-2 xl:max-w-[1600px] xl:grid-cols-3">
       <Board
         title="Бодрый старт"
-        sub="Идеи за 30 дней с лучшей тягой"
+        sub="Новые идеи с лучшей тягой"
         icon={<CircleGauge size={15} strokeWidth={1.75} />}
         cols={ideaColumns}
-        head={["Идея", "", "Прибыль/день"]}
+        head={["Идея", "Возраст", "Прибыль/день"]}
       >
         {climbers.map(({ idea: i, days, perDay }) => (
           <li key={i.id}>
@@ -97,6 +99,36 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick }: { ideas: Idea[]; 
             </Button>
           </li>
         ))}
+      </Board>
+      <Board
+        title="Максимальный апсайд"
+        sub="Активные идеи на взлёте и в полёте"
+        icon={<ArrowUp size={15} strokeWidth={1.75} />}
+        cols={upsideColumns}
+        head={["Идея", "Фаза", "Апсайд"]}
+      >
+        {upside.map((i) => {
+          const z = i.stage === "liftoff" ? 2 : 3;
+          return (
+            <li key={i.id}>
+              <Button variant="ghost" onClick={() => onPick(i)} className={`grid h-15 w-full ${upsideColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+                <span className="min-w-0">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
+                    <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{i.ticker}</span>
+                    <span className="min-w-0 truncate text-xs text-muted-foreground" title={ideaTitle(i)}>{ideaTitle(i)}</span>
+                  </span>
+                  <span className="mt-1 block truncate pl-[22px] text-[11px] text-muted-foreground">{i.analyst}</span>
+                </span>
+                <span className="flex items-center justify-end gap-1 font-mono text-[11px]" style={{ color: `var(--z${z})` }}>
+                  <ZoneGlyph rot={ZONE_ICON[z].rot} small /> {z === 2 ? "Взлёт" : "В полёте"}
+                </span>
+                <span className="text-right font-mono text-sm font-semibold text-z5">{pct(i.toTargetPct ?? 0)}</span>
+              </Button>
+            </li>
+          );
+        })}
+        {upside.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих идей</li>}
       </Board>
     </div>
   );
