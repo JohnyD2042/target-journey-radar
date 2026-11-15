@@ -13,7 +13,7 @@ const daysWord = (n: number) => {
   if (t >= 2 && t <= 4 && (h < 10 || h >= 20)) return "дня";
   return "дней";
 };
-const ideaColumns = "grid-cols-[minmax(0,1fr)_52px_28px_minmax(80px,0.4fr)] gap-x-2 sm:grid-cols-[minmax(0,1fr)_58px_80px_minmax(88px,0.42fr)]";
+const ideaColumns = "grid-cols-[minmax(0,1fr)_52px_86px_minmax(80px,0.38fr)] gap-x-3";
 const upsideColumns = "grid-cols-[minmax(0,1fr)_92px_68px] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
 const darkColumns = "grid-cols-[minmax(0,1fr)_46px_82px] gap-x-2.5";
@@ -24,7 +24,7 @@ function Phase({ idea: i }: { idea: Idea }) {
   return (
     <span className="flex items-center justify-end gap-1 whitespace-nowrap font-mono text-[11px]" style={{ color: `var(--z${z})` }} title={z === 2 ? "Взлёт" : "В полёте"}>
       <ZoneGlyph rot={ZONE_ICON[z].rot} small />
-      <span className="hidden sm:inline">{z === 2 ? "Взлёт" : "В полёте"}</span>
+      <span>{z === 2 ? "Взлёт" : "В полёте"}</span>
     </span>
   );
 }
