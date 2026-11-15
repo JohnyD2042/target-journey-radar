@@ -68,7 +68,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} title={isLong(i) ? "Лонг" : "Шорт"} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
                   <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{i.ticker}</span>
-                  <span className="min-w-0 truncate text-xs text-muted-foreground" title={ideaTitle(i)}>{ideaTitle(i)}</span>
+                  <span className="min-w-0 truncate text-sm" title={ideaTitle(i)}>{ideaTitle(i)}</span>
                 </span>
                 <span className="mt-1 block truncate pl-[22px] text-[11px] text-muted-foreground">{i.analyst}</span>
               </span>
@@ -100,7 +100,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
                     <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{i.ticker}</span>
-                    <span className="min-w-0 truncate text-xs text-muted-foreground" title={ideaTitle(i)}>{ideaTitle(i)}</span>
+                    <span className="min-w-0 truncate text-sm" title={ideaTitle(i)}>{ideaTitle(i)}</span>
                   </span>
                   <span className="mt-1 block truncate pl-[22px] text-[11px] text-muted-foreground">{i.analyst}</span>
                 </span>
@@ -127,7 +127,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{asset.ticker}</span>
-                  <span className="min-w-0 truncate text-xs text-muted-foreground" title={asset.name}>{asset.name}</span>
+                  <span className="min-w-0 truncate text-sm" title={asset.name}>{asset.name}</span>
                 </span>
                 <span className="mt-1 block truncate text-[11px] text-muted-foreground" title={asset.analysts.join(", ")}>{asset.analysts.join(", ")}</span>
               </span>
