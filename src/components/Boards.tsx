@@ -13,12 +13,12 @@ const daysWord = (n: number) => {
   if (t >= 2 && t <= 4 && (h < 10 || h >= 20)) return "дня";
   return "дней";
 };
-const ideaColumns = "grid-cols-[minmax(0,1fr)_58px_54px_68px] gap-x-2 sm:grid-cols-[minmax(0,1fr)_68px_50px_80px] sm:gap-x-2.5";
+const ideaColumns = "grid-cols-[minmax(0,1fr)_58px_52px_60px] gap-x-2 sm:grid-cols-[minmax(0,215px)_1fr_1fr_1fr] sm:gap-x-4";
 const upsideColumns = "grid-cols-[minmax(0,1fr)_92px_68px] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
 const darkColumns = "grid-cols-[minmax(0,1fr)_46px_82px] gap-x-2.5";
 
-function Board({ title, sub, icon, cols, head, children }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode }) {
+function Board({ title, sub, icon, cols, head, children, leftHead = false }: { title: string; sub: string; icon: React.ReactNode; cols: string; head: string[]; children: React.ReactNode; leftHead?: boolean }) {
   return (
     <section className="min-w-0 overflow-hidden rounded-lg border bg-card/60">
       <header className="flex h-18 flex-col items-start justify-center gap-1 border-b px-3">
@@ -29,7 +29,7 @@ function Board({ title, sub, icon, cols, head, children }: { title: string; sub:
         <span className="font-mono text-[10px] leading-tight text-muted-foreground">{sub}</span>
       </header>
       <div className={`grid h-9 items-center ${cols} border-b px-3 font-mono text-[9px] uppercase leading-tight tracking-wider text-muted-foreground`}>
-        {head.map((h, k) => <span key={k} className={k ? "text-right" : ""}>{h}</span>)}
+        {head.map((h, k) => <span key={k} className={!leftHead && k ? "text-right" : ""}>{h}</span>)}
       </div>
       <ol className="divide-y">{children}</ol>
     </section>
@@ -48,7 +48,8 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         sub="Новые идеи, которые быстро набирают высоту"
         icon={<CircleGauge size={15} strokeWidth={1.75} />}
         cols={ideaColumns}
-        head={["Идея", "Доходность", "Возраст", "Прибыль/день"]}
+        head={["Идея", "Текущая прибыль", "Возраст", "Прибыль/день"]}
+        leftHead
       >
         {climbers.map(({ idea: i, days, perDay }) => (
           <li key={i.id}>
@@ -61,13 +62,13 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
                 </span>
                 <span className="mt-1 block truncate pl-[22px] text-[11px] text-muted-foreground">{i.analyst}</span>
               </span>
-              <span className="text-right font-mono text-sm font-semibold tabular-nums text-z5" title="Текущая доходность идеи" aria-label={`Доходность ${pct(i.yieldPct)}`}>
+              <span className="font-mono text-sm font-semibold tabular-nums text-z5" title="Текущая доходность идеи" aria-label={`Доходность ${pct(i.yieldPct)}`}>
                 {pct(i.yieldPct)}
               </span>
-              <span className="text-right font-mono text-[11px] font-light tabular-nums text-muted-foreground" title="Возраст идеи: дней с даты старта" aria-label={`Идее ${days} ${daysWord(days)}`}>
+              <span className="font-mono text-[11px] font-light tabular-nums text-muted-foreground" title="Возраст идеи: дней с даты старта" aria-label={`Идее ${days} ${daysWord(days)}`}>
                 {days} {daysWord(days)}
               </span>
-              <span className="text-right font-mono text-sm font-medium tabular-nums text-foreground" title="Прибыль в день = доходность идеи / количество дней с даты старта" aria-label={`Прибыль в день ${pct(perDay, 2)}`}>
+              <span className="font-mono text-sm font-medium tabular-nums text-foreground" title="Прибыль в день = доходность идеи / количество дней с даты старта" aria-label={`Прибыль в день ${pct(perDay, 2)}`}>
                 {pct(perDay, 2)}
               </span>
             </Button>
