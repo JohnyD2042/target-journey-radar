@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Crosshair, Radar, ScanEye } from "lucide-react";
+import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, ScanEye, Telescope } from "lucide-react";
 import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable } from "@/lib/boards";
 import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
@@ -153,7 +153,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         more={{ open: open.kpd, total: allKpd.length, onToggle: toggle("kpd") }}
         title="КПД аналитики"
         sub="Активы, которые лучше всего поддаются прогнозированию"
-        icon={<Crosshair size={15} strokeWidth={1.75} />}
+        icon={<Telescope size={15} strokeWidth={1.75} />}
         cols={analystColumns}
         head={["Актив", "идей в плюсе", "Ср. прибыль"]}
       >
