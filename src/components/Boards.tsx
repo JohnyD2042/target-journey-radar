@@ -230,7 +230,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         sub="Идеи, которые скоро закроются"
         icon={<Route size={15} strokeWidth={1.75} />}
         cols={arrivalColumns}
-        head={["Идея", "Доходность", "Причина"]}
+        head={["Идея", "Текущая прибыль", "Причина"]}
       >
         {arrivals.map(({ idea: i, reason, days }) => (
           <li key={i.id}>
