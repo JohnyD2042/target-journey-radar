@@ -139,6 +139,18 @@ describe("topArrivals", () => {
   it("treats upside of exactly 3% as not qualifying", () => {
     expect(topArrivals([mk(1, { toTargetPct: 3 })], asOf)).toEqual([]);
   });
+  it("includes expiry in 0, 1, 2 days only, ordered nearest first", () => {
+    const r = topArrivals([
+      mk(1, { expectedEnd: "2026-11-19" }),
+      mk(2, { expectedEnd: "2026-11-17" }),
+      mk(3, { expectedEnd: "2026-11-18" }),
+      mk(4, { expectedEnd: "2026-11-20" }),
+      mk(5, { expectedEnd: "2026-11-16" }),
+    ], asOf);
+    expect(r.map((a) => [a.idea.id, a.reason, a.days])).toEqual([
+      [2, "expiring", 0], [3, "expiring", 1], [1, "expiring", 2],
+    ]);
+  });
   it("stop-loss outranks upside and fills up to the limit", () => {
     const r = topArrivals([mk(1, { yieldPct: -30 }), mk(2, { toTargetPct: 2 }), mk(3, { toTargetPct: 1 })], asOf, 2);
     expect(r.map((a) => a.idea.id)).toEqual([1, 3]);
