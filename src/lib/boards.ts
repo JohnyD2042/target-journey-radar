@@ -84,3 +84,26 @@ export function topDarkHorses(ideas: Idea[], asOf: string, n = 5): DarkHorse[] {
     .sort((a, b) => b.count - a.count || (b.averageUpside ?? -Infinity) - (a.averageUpside ?? -Infinity) || a.ticker.localeCompare(b.ticker))
     .slice(0, n);
 }
+
+export interface Predictable { ticker: string; name: string; total: number; positive: number; rate: number; averageYield: number }
+/** «КПД аналитики»: tickers with ≥ 3 ideas of any status (basket ideas count for each ticker inside); rate = share with yield > 0 */
+export function topPredictable(ideas: Idea[], n = 5): Predictable[] {
+  const m = new Map<string, { name: string; list: Idea[] }>();
+  for (const i of ideas) {
+    const tickers = [...new Set((i.basket ? i.ticker.split(/[,;\s]+/) : [i.ticker]).map((t) => t.trim()).filter(Boolean))];
+    for (const t of tickers) {
+      const e = m.get(t) ?? { name: "", list: [] };
+      if (!i.basket && !e.name) e.name = i.name;
+      e.list.push(i);
+      m.set(t, e);
+    }
+  }
+  return [...m.entries()]
+    .filter(([, e]) => e.list.length >= 3)
+    .map(([ticker, e]) => {
+      const positive = e.list.filter((i) => i.yieldPct > 0).length;
+      return { ticker, name: e.name, total: e.list.length, positive, rate: (positive / e.list.length) * 100, averageYield: e.list.reduce((s, i) => s + i.yieldPct, 0) / e.list.length };
+    })
+    .sort((a, b) => b.rate - a.rate || b.total - a.total || b.averageYield - a.averageYield || a.ticker.localeCompare(b.ticker))
+    .slice(0, n);
+}

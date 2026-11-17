@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, ScanEye } from "lucide-react";
-import { topClimbers, topPunctual, topUpside, topDarkHorses } from "@/lib/boards";
+import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Crosshair, Radar, ScanEye } from "lucide-react";
+import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable } from "@/lib/boards";
 import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
 import { ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
@@ -71,12 +71,14 @@ function Board({ title, sub, icon, cols, head, children, leftHead = false, class
 }
 
 export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void; onTickerPick: (ticker: string) => void }) {
-  const [open, setOpen] = useState({ climbers: false, upside: false, dark: false });
+  const [open, setOpen] = useState({ climbers: false, upside: false, dark: false, kpd: false });
   const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
   const allClimbers = topClimbers(ideas, asOf, LONG);
   const punctual = topPunctual(ideas);
   const allUpside = topUpside(ideas, LONG);
   const allDark = topDarkHorses(ideas, asOf, LONG);
+  const allKpd = topPredictable(ideas, LONG);
+  const kpd = allKpd.slice(0, open.kpd ? LONG : SHORT);
   const climbers = allClimbers.slice(0, open.climbers ? LONG : SHORT);
   const upside = allUpside.slice(0, open.upside ? LONG : SHORT);
   const darkHorses = allDark.slice(0, open.dark ? LONG : SHORT);
@@ -146,6 +148,32 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         ))}
         {darkHorses.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих активов</li>}
       </Board>
+      <Board
+        className="order-4 md:order-none"
+        more={{ open: open.kpd, total: allKpd.length, onToggle: toggle("kpd") }}
+        title="КПД аналитики"
+        sub="Активы, которые лучше всего поддаются прогнозированию"
+        icon={<Crosshair size={15} strokeWidth={1.75} />}
+        cols={analystColumns}
+        head={["Актив", "идей в плюсе", "Ср. прибыль"]}
+      >
+        {kpd.map((a) => (
+          <li key={a.ticker}>
+            <Button variant="ghost" onClick={() => onTickerPick(a.ticker)} aria-label={`Показать идеи ${a.ticker}`} className={`grid h-15 w-full ${analystColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{a.ticker}</span>
+                <span className="min-w-0 truncate text-sm" title={a.name}>{a.name}</span>
+              </span>
+              <span className="text-right font-mono">
+                <span className="block text-sm" title="Доля идей с положительной доходностью">{shareInt(a.positive, a.total)}</span>
+                <span className="block text-[10px] text-muted-foreground">{a.positive} / {a.total}</span>
+              </span>
+              <span className="text-right font-mono text-sm font-semibold text-z5" title="Средняя доходность всех идей по активу">{pct(a.averageYield)}</span>
+            </Button>
+          </li>
+        ))}
+        {kpd.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих активов</li>}
+      </Board>
       </div>
       <div className="contents md:flex md:min-w-0 md:flex-col md:gap-4">
       <Board
@@ -181,7 +209,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         {upside.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих идей</li>}
       </Board>
       <Board
-        className="order-4 md:order-none"
+        className="order-5 md:order-none"
         title="Пунктуальность аналитиков"
         sub="Точность прогнозов за всё время"
         icon={<Radar size={15} strokeWidth={1.75} />}
