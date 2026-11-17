@@ -287,7 +287,7 @@ function Index() {
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
             <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span>
           </div>
-          {sel && <Card idea={sel} onClose={() => setSel(null)} onOthers={(t) => { setSel(null); commitTicker(t); }} />}
+          {sel && <Card idea={sel} onClose={() => setSel(null)} onOthers={(t) => pickBoardTicker(t, "all")} />}
         </div>
       </div>
       <Legend />
