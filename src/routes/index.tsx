@@ -287,7 +287,7 @@ function Index() {
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
             <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span>
           </div>
-          {sel && <Card idea={sel} onClose={() => setSel(null)} />}
+          {sel && <Card idea={sel} onClose={() => setSel(null)} onOthers={(t) => { setSel(null); commitTicker(t); }} />}
         </div>
       </div>
       <Legend />
@@ -400,7 +400,7 @@ function Legend() {
   );
 }
 
-function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
+function Card({ idea: i, onClose, onOthers }: { idea: Idea; onClose: () => void; onOthers?: (ticker: string) => void }) {
   const z = zoneOf(i);
   const r = i.yieldPct;
   const Col = ({ k, v, sub, align }: { k: string; v: string; sub: React.ReactNode; align: string }) => (
@@ -470,8 +470,12 @@ function Card({ idea: i, onClose }: { idea: Idea; onClose: () => void }) {
         </a>
       )}
       <div className="mt-2 flex items-center gap-1.5 text-[10px]">
-        <span className="rounded-full px-1.5 py-px" style={{ color: `var(--z${z})`, border: `1px solid var(--z${z})` }}>{ZONES[z].name}</span>
+        {i.status === "active" && <span className="rounded-full px-1.5 py-px" style={{ color: `var(--z${z})`, border: `1px solid var(--z${z})` }}>{ZONES[z].name}</span>}
         {i.status === "active" && <span className="rounded-full border border-long/60 px-1.5 py-px text-long">Активна</span>}
+        {/* single-ticker ideas only: same as searching the instrument */}
+        {!isBasket(i) && onOthers && (
+          <button type="button" onClick={() => onOthers(i.ticker)} className="rounded-full border border-foreground/70 px-1.5 py-px text-foreground transition-colors hover:bg-foreground hover:text-background">Другие идеи</button>
+        )}
       </div>
       {i.status === "closed" && (
         <div
