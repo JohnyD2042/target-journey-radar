@@ -34,7 +34,7 @@ function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, 
         <button
           key={k}
           onClick={() => onChange(k)}
-          className={`flex-1 whitespace-nowrap rounded px-3 py-1.5 transition-colors ${value === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          className={`flex-1 whitespace-nowrap rounded px-3 py-2 md:py-1.5 xl:px-2 transition-colors ${value === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
           {l} <span className="ml-1 font-mono text-[11px] opacity-70">{counts?.[k] ?? "·"}</span>
         </button>
@@ -309,7 +309,7 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
       title={off ? "Идей этого типа пока нет" : undefined}
       onMouseDown={mouseDown ? act : (e) => e.preventDefault()}
       onClick={mouseDown ? undefined : act}
-      className={`inline-flex items-center gap-1.5 rounded-[3px] border px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-wider xl:gap-1 xl:px-1.5 xl:py-1 xl:text-[10px] xl:tracking-normal transition-colors ${
+      className={`inline-flex min-h-9 items-center gap-1.5 rounded-[3px] border px-3 py-2 font-mono text-xs uppercase tracking-wider md:min-h-0 md:px-2.5 md:py-1.5 md:text-[11px] xl:tracking-normal transition-colors ${
         on ? "kind-on border-kind/60 text-kind" : off ? "cursor-not-allowed border-dashed opacity-40 text-muted-foreground" : "border-border bg-background text-muted-foreground hover:border-kind/60 hover:text-foreground"
       }`}
     >
@@ -321,16 +321,16 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
 }
 
 function Presets({ items, wide, onPick, children }: { items: string[]; wide?: string; onPick: (v: string) => void; children?: React.ReactNode }) {
-  const chip = "rounded-full border bg-card px-3 py-1.5 text-xs xl:px-2 xl:py-1 text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
+  const chip = "min-h-9 rounded-full border bg-card px-3.5 py-2 text-sm md:min-h-0 md:px-3 md:py-1.5 md:text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-2 md:gap-1.5">
+      {children}
+      {children && <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />}
       {items.map((v) => (
         <button key={v} type="button" onClick={() => onPick(v)} className={chip}>{v}</button>
       ))}
       {/* third hint only where there is room for it */}
-      {wide && <button type="button" onClick={() => onPick(wide)} className={`hidden md:inline-flex ${chip}`}>{wide}</button>}
-      {children && <span className="mx-0.5 h-3.5 w-px bg-border" aria-hidden="true" />}
-      {children}
+      {wide && <button type="button" onClick={() => onPick(wide)} className={`hidden md:inline-flex xl:hidden min-[1500px]:inline-flex ${chip}`}>{wide}</button>}
     </div>
   );
 }
