@@ -3,6 +3,7 @@ import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, Route, ScanEye, Te
 import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable, topArrivals } from "@/lib/boards";
 import { ideaTitle, isLong, type Book, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
+import { ScrambleTitle } from "@/components/ScrambleTitle";
 import { ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
 
 const pct = (v: number, d = 1) => `${v > 0 ? "+" : ""}${v.toFixed(d).replace(".", ",")}%`;
@@ -42,7 +43,7 @@ function Board({ title, sub, icon, cols, head, children, leftHead = false, class
             <Button variant="ghost" onClick={more.onToggle} aria-expanded={more.open} className={`h-18 w-full flex-col items-start justify-center gap-1 whitespace-normal rounded-none px-3 py-0 text-left hover:bg-muted/40 ${more.open ? "bg-muted/20" : ""}`}>
               <span className="flex w-full items-center gap-1.5 font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">
                 <span className="shrink-0 opacity-80">{icon}</span>
-                <span className="min-w-0 truncate">{title}</span>
+                <ScrambleTitle text={title} replay={more.open} />
                 <span className="ml-auto pl-2"><Chevron open={more.open} /></span>
               </span>
               <span className="font-mono text-[10px] leading-tight text-muted-foreground">{sub}</span>
@@ -52,7 +53,7 @@ function Board({ title, sub, icon, cols, head, children, leftHead = false, class
           <div className="flex h-18 flex-col items-start justify-center gap-1 px-3">
             <h2 className="flex items-center gap-1.5 font-mono text-sm font-semibold uppercase tracking-wider text-[var(--z5)]">
               <span className="shrink-0 opacity-80">{icon}</span>
-              {title}
+              <ScrambleTitle text={title} />
             </h2>
             <span className="font-mono text-[10px] leading-tight text-muted-foreground">{sub}</span>
           </div>
@@ -152,7 +153,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         {darkHorses.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих активов</li>}
       </Board>
       <Board
-        className="order-4 md:order-none"
+        className="order-5 md:order-none"
         more={{ open: open.kpd, total: allKpd.length, onToggle: toggle("kpd") }}
         title="КПД аналитики"
         sub="Активы, которые лучше всего поддаются прогнозированию"
@@ -212,38 +213,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         {upside.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих идей</li>}
       </Board>
       <Board
-        className="order-5 md:order-none"
-        title="Пунктуальность аналитиков"
-        sub="Точность прогнозов за всё время"
-        icon={<Radar size={15} strokeWidth={1.75} />}
-        cols={analystColumns}
-        head={["Аналитик", "идей в плюсе", "цель или почти"]}
-      >
-        {punctual.map((p, k) => (
-          <li key={p.name}>
-            <Button variant="ghost" onClick={() => onAnalystPick(p.name)} aria-label={`Показать идеи аналитика ${p.name}`} className={`grid h-15 w-full ${analystColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="w-4 shrink-0 font-mono text-[11px] text-muted-foreground">{k + 1}</span>
-              <span className="min-w-0 truncate py-1 text-sm" title={p.name}>{p.name}</span>
-            </span>
-            <span className="text-right font-mono">
-              <span className="flex items-center justify-end gap-1 text-sm" title="Доля идей с положительной доходностью">
-                <ZoneGlyph rot={-30} small /> {shareInt(p.positive, p.total)}
-              </span>
-              <span className="block text-[10px] text-muted-foreground">{p.positive} / {p.total}</span>
-            </span>
-            <span className="text-right font-mono">
-              <span className="flex items-center justify-end gap-1 text-sm font-semibold text-[var(--z5)]" title="Доля идей, достигших цели или на посадке">
-                <ZoneGlyph rot={0} ground flag small /> {shareInt(p.onTarget, p.total)}
-              </span>
-              <span className="block text-[10px] text-muted-foreground">{p.onTarget} / {p.total}</span>
-            </span>
-            </Button>
-          </li>
-        ))}
-      </Board>
-      <Board
-        className="order-6 md:order-none"
+        className="order-4 md:order-none"
         more={{ open: open.arrivals, total: allArrivals.length, onToggle: toggle("arrivals") }}
         title="Прибытие"
         sub="Идеи, которые скоро закроются"
@@ -273,6 +243,37 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
           </li>
         ))}
         {arrivals.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих идей</li>}
+      </Board>
+      <Board
+        className="order-6 md:order-none"
+        title="Пунктуальность аналитиков"
+        sub="Точность прогнозов за всё время"
+        icon={<Radar size={15} strokeWidth={1.75} />}
+        cols={analystColumns}
+        head={["Аналитик", "идей в плюсе", "цель или почти"]}
+      >
+        {punctual.map((p, k) => (
+          <li key={p.name}>
+            <Button variant="ghost" onClick={() => onAnalystPick(p.name)} aria-label={`Показать идеи аналитика ${p.name}`} className={`grid h-15 w-full ${analystColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="w-4 shrink-0 font-mono text-[11px] text-muted-foreground">{k + 1}</span>
+              <span className="min-w-0 truncate py-1 text-sm" title={p.name}>{p.name}</span>
+            </span>
+            <span className="text-right font-mono">
+              <span className="flex items-center justify-end gap-1 text-sm" title="Доля идей с положительной доходностью">
+                <ZoneGlyph rot={-30} small /> {shareInt(p.positive, p.total)}
+              </span>
+              <span className="block text-[10px] text-muted-foreground">{p.positive} / {p.total}</span>
+            </span>
+            <span className="text-right font-mono">
+              <span className="flex items-center justify-end gap-1 text-sm font-semibold text-[var(--z5)]" title="Доля идей, достигших цели или на посадке">
+                <ZoneGlyph rot={0} ground flag small /> {shareInt(p.onTarget, p.total)}
+              </span>
+              <span className="block text-[10px] text-muted-foreground">{p.onTarget} / {p.total}</span>
+            </span>
+            </Button>
+          </li>
+        ))}
       </Board>
       </div>
     </div>
