@@ -132,7 +132,7 @@ describe("topArrivals", () => {
   const mk = (id: number, o: Record<string, unknown>) => ({ id, ticker: `T${id}`, name: "n", analyst: "a", strategy: "лонг", status: "active", yieldPct: 1, noTarget: false, toTargetPct: 50, stage: "cruise", ...o }) as never;
   const asOf = "2026-11-17";
   it("orders landing → expiring → stop-loss → upside<3%, skips closed", () => {
-    const r = topArrivals([mk(1, { yieldPct: -30 }), mk(2, { expectedEnd: "2026-11-18" }), mk(3, { toTargetPct: 2 }), mk(4, { stage: "approach" }), mk(5, { stage: "approach", status: "closed" })], asOf);
+    const r = topArrivals([mk(1, { yieldPct: -35 }), mk(2, { expectedEnd: "2026-11-18" }), mk(3, { toTargetPct: 2 }), mk(4, { stage: "approach" }), mk(5, { stage: "approach", status: "closed" })], asOf);
     expect(r.map((a) => [a.idea.id, a.reason])).toEqual([[4, "landing"], [2, "expiring"], [1, "stoploss"], [3, "upside"]]);
     expect(r[1]?.days).toBe(1);
   });
@@ -152,7 +152,7 @@ describe("topArrivals", () => {
     ]);
   });
   it("stop-loss outranks upside and fills up to the limit", () => {
-    const r = topArrivals([mk(1, { yieldPct: -30 }), mk(2, { toTargetPct: 2 }), mk(3, { toTargetPct: 1 })], asOf, 2);
+    const r = topArrivals([mk(1, { yieldPct: -35 }), mk(9, { yieldPct: -25 }), mk(2, { toTargetPct: 2 }), mk(3, { toTargetPct: 1 })], asOf, 2);
     expect(r.map((a) => a.idea.id)).toEqual([1, 3]);
   });
 });
