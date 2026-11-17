@@ -116,6 +116,6 @@ describe("topPredictable", () => {
   it("needs ≥3 ideas, counts baskets, ranks by share in plus", () => {
     const r = topPredictable([mk(1, "A", 5), mk(2, "A", 3), mk(3, "A, B", 1, true), mk(4, "B", -1), mk(5, "B", 2), mk(6, "C", 9)]);
     expect(r.map((x) => [x.ticker, x.positive, x.total])).toEqual([["A", 3, 3], ["B", 2, 3]]);
-    expect(r[0].averageYield).toBe(3);
+    expect(r[0]?.averageYield).toBe(3);
   });
 });
