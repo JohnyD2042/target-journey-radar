@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, ScanEye, Telescope } from "lucide-react";
 import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable } from "@/lib/boards";
-import { ideaTitle, isLong, type Idea } from "@/lib/ideas";
+import { ideaTitle, isLong, type Book, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
 import { ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
 
@@ -70,7 +70,7 @@ function Board({ title, sub, icon, cols, head, children, leftHead = false, class
   );
 }
 
-export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void; onTickerPick: (ticker: string) => void }) {
+export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void; onTickerPick: (ticker: string, book: Book) => void }) {
   const [open, setOpen] = useState({ climbers: false, upside: false, dark: false, kpd: false });
   const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
   const allClimbers = topClimbers(ideas, asOf, LONG);
@@ -133,7 +133,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
       >
         {darkHorses.map((asset) => (
           <li key={asset.ticker}>
-            <Button variant="ghost" onClick={() => onTickerPick(asset.ticker)} aria-label={`Показать активные идеи ${asset.ticker}`} className={`grid h-15 w-full ${darkColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+            <Button variant="ghost" onClick={() => onTickerPick(asset.ticker, "active")} aria-label={`Показать активные идеи ${asset.ticker}`} className={`grid h-15 w-full ${darkColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{asset.ticker}</span>
@@ -159,7 +159,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
       >
         {kpd.map((a) => (
           <li key={a.ticker}>
-            <Button variant="ghost" onClick={() => onTickerPick(a.ticker)} aria-label={`Показать идеи ${a.ticker}`} className={`grid h-15 w-full ${analystColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+            <Button variant="ghost" onClick={() => onTickerPick(a.ticker, "all")} aria-label={`Показать идеи ${a.ticker}`} className={`grid h-15 w-full ${analystColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
               <span className="flex min-w-0 items-center gap-1.5">
                 <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{a.ticker}</span>
                 <span className="min-w-0 truncate text-sm" title={a.name}>{a.name}</span>

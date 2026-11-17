@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Boards } from "@/components/Boards";
 import type { Idea } from "@/lib/ideas";
@@ -54,5 +54,25 @@ describe("Раскрытие таблицы по заголовку", () => {
   it("leaves the punctuation board without any toggle", () => {
     renderBoards(eight);
     expect(header("Пунктуальность")).toBeNull();
+  });
+});
+
+describe("Статус идей при переходе из таблицы", () => {
+  it("КПД selects all statuses for the asset, including closed ideas", () => {
+    const onTickerPick = vi.fn();
+    render(<Boards ideas={[
+      idea({ id: 1, ticker: "SPBE", status: "active" }),
+      idea({ id: 2, ticker: "SPBE", status: "closed" }),
+      idea({ id: 3, ticker: "SPBE", status: "closed" }),
+    ]} asOf={AS_OF} onPick={() => {}} onAnalystPick={() => {}} onTickerPick={onTickerPick} />);
+    fireEvent.click(screen.getByRole("button", { name: "Показать идеи SPBE" }));
+    expect(onTickerPick).toHaveBeenCalledExactlyOnceWith("SPBE", "all");
+  });
+
+  it("Новые герои still selects only active ideas", () => {
+    const onTickerPick = vi.fn();
+    render(<Boards ideas={[idea({ ticker: "SPBE" })]} asOf={AS_OF} onPick={() => {}} onAnalystPick={() => {}} onTickerPick={onTickerPick} />);
+    fireEvent.click(screen.getByRole("button", { name: "Показать активные идеи SPBE" }));
+    expect(onTickerPick).toHaveBeenCalledExactlyOnceWith("SPBE", "active");
   });
 });

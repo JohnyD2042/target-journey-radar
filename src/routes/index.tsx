@@ -96,12 +96,12 @@ function Index() {
   // any header filter change drops the secondary zone highlight: the whole map shows again
   useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind, atype]);
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
-  const pickBoardTicker = (value: string) => {
+  const pickBoardTicker = (value: string, status: Book) => {
     if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
     setSel(null);
     setBoardPick(null);
     setPeriod("all");
-    setBook("active");
+    setBook(status);
     setAnalyst(null);
     setQ("");
     setKind("");
