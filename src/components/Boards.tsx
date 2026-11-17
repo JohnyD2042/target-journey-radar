@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, ScanEye, Telescope } from "lucide-react";
-import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable } from "@/lib/boards";
+import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, PlaneLanding, Radar, ScanEye, Telescope, Timer, TrendingDown } from "lucide-react";
+import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable, topArrivals } from "@/lib/boards";
 import { ideaTitle, isLong, type Book, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
 import { ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
@@ -17,6 +17,7 @@ const daysWord = (n: number) => {
 const ideaColumns = "grid-cols-[minmax(0,1fr)_58px_52px_60px] gap-x-2 sm:grid-cols-[minmax(0,215px)_1fr_1fr_1fr] sm:gap-x-4";
 const upsideColumns = "grid-cols-[minmax(0,1fr)_92px_68px] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
+const arrivalColumns = "grid-cols-[minmax(0,1fr)_64px_92px] gap-x-3";
 const darkColumns = "grid-cols-[minmax(0,1fr)_46px_82px] gap-x-2.5";
 
 const SHORT = 5;
@@ -71,13 +72,15 @@ function Board({ title, sub, icon, cols, head, children, leftHead = false, class
 }
 
 export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { ideas: Idea[]; asOf: string; onPick: (i: Idea) => void; onAnalystPick: (name: string) => void; onTickerPick: (ticker: string, book: Book) => void }) {
-  const [open, setOpen] = useState({ climbers: false, upside: false, dark: false, kpd: false });
+  const [open, setOpen] = useState({ climbers: false, upside: false, dark: false, kpd: false, arrivals: false });
   const toggle = (k: keyof typeof open) => () => setOpen((o) => ({ ...o, [k]: !o[k] }));
   const allClimbers = topClimbers(ideas, asOf, LONG);
   const punctual = topPunctual(ideas);
   const allUpside = topUpside(ideas, LONG);
   const allDark = topDarkHorses(ideas, asOf, LONG);
   const allKpd = topPredictable(ideas, LONG);
+  const allArrivals = topArrivals(ideas, asOf, LONG);
+  const arrivals = allArrivals.slice(0, open.arrivals ? LONG : SHORT);
   const kpd = allKpd.slice(0, open.kpd ? LONG : SHORT);
   const climbers = allClimbers.slice(0, open.climbers ? LONG : SHORT);
   const upside = allUpside.slice(0, open.upside ? LONG : SHORT);
@@ -238,6 +241,38 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
             </Button>
           </li>
         ))}
+      </Board>
+      <Board
+        className="order-6 md:order-none"
+        more={{ open: open.arrivals, total: allArrivals.length, onToggle: toggle("arrivals") }}
+        title="Прибытие"
+        sub="Идеи, которые скоро закроются"
+        icon={<PlaneLanding size={15} strokeWidth={1.75} />}
+        cols={arrivalColumns}
+        head={["Идея", "Доходность", "Причина"]}
+      >
+        {arrivals.map(({ idea: i, reason, days }) => (
+          <li key={i.id}>
+            <Button variant="ghost" onClick={() => onPick(i)} className={`grid h-15 w-full ${arrivalColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
+              <span className="min-w-0">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
+                  <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{i.ticker}</span>
+                  <span className="min-w-0 truncate text-sm" title={ideaTitle(i)}>{ideaTitle(i)}</span>
+                </span>
+                <span className="mt-1 block truncate pl-[22px] text-[11px] text-muted-foreground">{i.analyst}</span>
+              </span>
+              <span className={`text-right font-mono text-sm font-semibold ${i.yieldPct >= 0 ? "text-z5" : "text-short"}`}>{pct(i.yieldPct)}</span>
+              <span className="flex items-center justify-end gap-1 text-right font-mono text-[11px]">
+                {reason === "landing" && <span className="flex items-center gap-1" style={{ color: "var(--z4)" }}><ZoneGlyph rot={ZONE_ICON[4].rot} small /> Посадка</span>}
+                {reason === "upside" && <span className="text-z5">Апсайд &lt;5%</span>}
+                {reason === "expiring" && <span className="flex items-center gap-1"><Timer size={12} /> {days} {daysWord(days ?? 0)}</span>}
+                {reason === "stoploss" && <span className="flex items-center gap-1 text-short" title="Доходность ниже −20%: риск закрытия по стоп-лоссу"><TrendingDown size={12} /> Стоп-лосс</span>}
+              </span>
+            </Button>
+          </li>
+        ))}
+        {arrivals.length === 0 && <li className="px-4 py-6 text-xs text-muted-foreground">Нет подходящих идей</li>}
       </Board>
       </div>
     </div>

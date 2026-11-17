@@ -112,3 +112,25 @@ export function topPredictable(ideas: Idea[], n = 5): Predictable[] {
     .sort((a, b) => b.rate - a.rate || b.total - a.total || b.averageYield - a.averageYield || a.ticker.localeCompare(b.ticker))
     .slice(0, n);
 }
+
+export type ArrivalReason = "landing" | "upside" | "expiring" | "stoploss";
+export interface Arrival { idea: Idea; reason: ArrivalReason; days?: number }
+/** «Прибытие»: active ideas only; priority landing (approach) → upside < 5% → nearest expectedEnd (≤ 30 days) → yield < −20% (stop-loss proxy, the API has no stop level); first n rows */
+export function topArrivals(ideas: Idea[], asOf: string, n = 10): Arrival[] {
+  const now = Date.parse(asOf.slice(0, 10));
+  const active = ideas.filter((i) => i.status === "active");
+  const out: Arrival[] = [];
+  const seen = new Set<Idea["id"]>();
+  const add = (list: Arrival[]) => { for (const a of list) { if (out.length >= n) return; if (seen.has(a.idea.id)) continue; seen.add(a.idea.id); out.push(a); } };
+  add(active.filter((i) => i.stage === "approach").map((idea) => ({ idea, reason: "landing" as const })));
+  add(active.filter((i) => !i.noTarget && i.toTargetPct != null && i.toTargetPct >= 0 && i.toTargetPct < 5)
+    .sort((a, b) => (a.toTargetPct ?? 0) - (b.toTargetPct ?? 0)).map((idea) => ({ idea, reason: "upside" as const })));
+  add(active.flatMap((idea) => {
+    const end = (idea as Idea & { expectedEnd?: string | null }).expectedEnd;
+    if (!end || !Number.isFinite(now)) return [];
+    const days = Math.round((Date.parse(end.slice(0, 10)) - now) / DAY);
+    return days >= 0 && days <= 30 ? [{ idea, reason: "expiring" as const, days }] : [];
+  }).sort((a, b) => a.days - b.days));
+  add(active.filter((i) => i.yieldPct < -20).sort((a, b) => a.yieldPct - b.yieldPct).map((idea) => ({ idea, reason: "stoploss" as const })));
+  return out;
+}
