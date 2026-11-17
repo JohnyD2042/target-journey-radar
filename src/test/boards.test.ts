@@ -61,11 +61,18 @@ describe("Пунктуальность аналитиков", () => {
 
 describe("Максимальный апсайд", () => {
   it("keeps active liftoff/cruise ideas with a target, sorted by upside", () => {
-    const a = idea({ stage: "liftoff", toTargetPct: 20 });
-    const b = idea({ stage: "cruise", toTargetPct: 50 });
+    const a = idea({ ticker: "AAA", stage: "liftoff", toTargetPct: 20 });
+    const b = idea({ ticker: "BBB", stage: "cruise", toTargetPct: 50 });
     const r = topUpside([a, b, idea({ stage: "approach", toTargetPct: 90 }), idea({ stage: "cold", toTargetPct: 99 }),
       idea({ stage: "cruise", toTargetPct: 80, status: "closed" }), idea({ stage: "liftoff", toTargetPct: 70, noTarget: true })]);
     expect(r).toEqual([b, a]);
+  });
+  it("keeps one row per ticker — the idea with the highest upside", () => {
+    const low = idea({ ticker: "KZOS", stage: "cruise", toTargetPct: 30 });
+    const high = idea({ ticker: "KZOS", stage: "liftoff", toTargetPct: 55 });
+    const other = idea({ ticker: "SBER", stage: "cruise", toTargetPct: 40 });
+    const r = topUpside([low, high, other]);
+    expect(r).toEqual([high, other]);
   });
 });
 

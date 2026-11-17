@@ -41,10 +41,15 @@ export function topPunctual(ideas: Idea[], n = 5): Punctual[] {
     .slice(0, n);
 }
 
-/** «Максимальный апсайд»: active ideas in liftoff or cruise with a target; top by remaining upside (toTargetPct) */
+/** «Максимальный апсайд»: active ideas in liftoff or cruise with a target; one row per ticker — its highest-upside idea; top by remaining upside (toTargetPct) */
 export function topUpside(ideas: Idea[], n = 5): Idea[] {
-  return ideas
-    .filter((i) => i.status === "active" && !i.noTarget && i.toTargetPct != null && (i.stage === "liftoff" || i.stage === "cruise"))
+  const best = new Map<string, Idea>();
+  for (const i of ideas) {
+    if (i.status !== "active" || i.noTarget || i.toTargetPct == null || (i.stage !== "liftoff" && i.stage !== "cruise")) continue;
+    const cur = best.get(i.ticker);
+    if (!cur || (i.toTargetPct ?? 0) > (cur.toTargetPct ?? 0)) best.set(i.ticker, i);
+  }
+  return [...best.values()]
     .sort((a, b) => (b.toTargetPct ?? 0) - (a.toTargetPct ?? 0))
     .slice(0, n);
 }
