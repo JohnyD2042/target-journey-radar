@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, PlaneLanding, Radar, ScanEye, Telescope, Timer, TrendingDown } from "lucide-react";
+import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, Route, ScanEye, Telescope, Timer, TrendingDown } from "lucide-react";
 import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable, topArrivals } from "@/lib/boards";
 import { ideaTitle, isLong, type Book, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
@@ -247,7 +247,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         more={{ open: open.arrivals, total: allArrivals.length, onToggle: toggle("arrivals") }}
         title="Прибытие"
         sub="Идеи, которые скоро закроются"
-        icon={<PlaneLanding size={15} strokeWidth={1.75} />}
+        icon={<Route size={15} strokeWidth={1.75} />}
         cols={arrivalColumns}
         head={["Идея", "Доходность", "Причина"]}
       >
@@ -265,7 +265,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
               <span className={`text-right font-mono text-sm font-semibold ${i.yieldPct >= 0 ? "text-z5" : "text-short"}`}>{pct(i.yieldPct)}</span>
               <span className="flex items-center justify-end gap-1 text-right font-mono text-[11px]">
                 {reason === "landing" && <span className="flex items-center gap-1" style={{ color: "var(--z4)" }}><ZoneGlyph rot={ZONE_ICON[4].rot} small /> Посадка</span>}
-                {reason === "upside" && <span className="text-z5">Апсайд &lt;5%</span>}
+                {reason === "upside" && <span className="text-z5">Апсайд &lt;3%</span>}
                 {reason === "expiring" && <span className="flex items-center gap-1"><Timer size={12} /> {days} {daysWord(days ?? 0)}</span>}
                 {reason === "stoploss" && <span className="flex items-center gap-1 text-short" title="Доходность ниже −20%: риск закрытия по стоп-лоссу"><TrendingDown size={12} /> Стоп-лосс</span>}
               </span>
