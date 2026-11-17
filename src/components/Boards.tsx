@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, Route, ScanEye, Telescope, Timer, TrendingDown } from "lucide-react";
+import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, Route, ScanEye, Telescope, Timer } from "lucide-react";
 import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable, topArrivals } from "@/lib/boards";
 import { ideaTitle, isLong, type Book, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,17 @@ const upsideColumns = "grid-cols-[minmax(0,1fr)_92px_68px] gap-x-2.5";
 const analystColumns = "grid-cols-[minmax(0,1fr)_72px_86px] gap-x-3 lg:gap-x-5";
 const arrivalColumns = "grid-cols-[minmax(0,1fr)_64px_92px] gap-x-3";
 const darkColumns = "grid-cols-[minmax(0,1fr)_46px_82px] gap-x-2.5";
+
+/** Parachute: evacuation from a losing idea (stop-loss). */
+function Parachute({ size = 12 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 10a9 7 0 0 1 18 0c-1.5-1-3-1-4.5 0-1.5-1-3-1-4.5 0-1.5-1-3-1-4.5 0-1.5-1-3-1-4.5 0Z" />
+      <path d="M3 10l9 9 9-9M7.5 10l4.5 9 4.5-9" />
+      <rect x="10.5" y="19" width="3" height="3" rx="0.5" />
+    </svg>
+  );
+}
 
 const SHORT = 5;
 const LONG = 10;
@@ -237,7 +248,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
                 {reason === "landing" && <span className="flex items-center gap-1" style={{ color: "var(--z4)" }}><ZoneGlyph rot={ZONE_ICON[4].rot} small /> Посадка</span>}
                 {reason === "upside" && <span className="text-z5">Апсайд &lt;3%</span>}
                 {reason === "expiring" && <span className="flex items-center gap-1"><Timer size={12} /> {days} {daysWord(days ?? 0)}</span>}
-                {reason === "stoploss" && <span className="flex items-center gap-1 text-short" title="Доходность ниже −20%: риск закрытия по стоп-лоссу"><TrendingDown size={12} /> Стоп-лосс</span>}
+                {reason === "stoploss" && <span className="flex items-center gap-1 text-short" title="Доходность ниже −30%: риск закрытия по стоп-лоссу"><Parachute size={12} /> Стоп-лосс</span>}
               </span>
             </Button>
           </li>
