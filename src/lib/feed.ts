@@ -14,7 +14,7 @@ export interface FeedEvent {
   ticker?: string;
   /** upside or result, shown at the right end of the line */ value?: string;
   /** company / instrument / portfolio name, shown at the left end */ name?: string;
-  /** state of the idea: взлёт / в полёте / посадка / закрыта ... */ status?: string;
+  /** state of the idea: взлёт / в полёте / посадка / закрыта ... */ status?: string | undefined;
 }
 
 const plural = (k: number) => (k % 10 === 1 && k % 100 !== 11 ? "идея" : k % 10 >= 2 && k % 10 <= 4 && (k % 100 < 12 || k % 100 > 14) ? "идеи" : "идей");
