@@ -42,7 +42,7 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 20): FeedEvent[] {
       fresh.push({ id: `c${i.id}`, kind: hit ? "target" : "close", idea: i, text: hit ? "цель достигнута" : "идея закрыта", value: `результат ${pct(i.yieldPct)}` });
     } else if (age(i.opened, now) <= 1 && age(i.opened, now) >= 0) {
       const up = !i.noTarget && i.toTargetPct != null ? `апсайд ${pct(((i as Idea & { upsidePct?: number }).upsidePct ?? 0))}` : undefined;
-      fresh.push({ id: `o${i.id}`, kind: "open", idea: i, text: "новая идея", value: up });
+      fresh.push({ id: `o${i.id}`, kind: "open", idea: i, text: "новая идея", ...(up ? { value: up } : {}) });
     }
   }
   fresh.sort((a, b) => Date.parse((b.idea as Raw).closed ?? (b.idea as Raw).opened ?? "") - Date.parse((a.idea as Raw).closed ?? (a.idea as Raw).opened ?? ""));
