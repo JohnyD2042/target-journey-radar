@@ -22,10 +22,11 @@ const pct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1).replace(".", ",")}
 const age = (d: string | null | undefined, now: number) => (d ? Math.round((now - Date.parse(d.slice(0, 10))) / DAY) : Infinity);
 
 /** state of an idea, worded like the map zones */
-const STAGE_STATUS: Record<Stage, string> = { cold: "на земле", liftoff: "взлёт", cruise: "в полёте", approach: "посадка", landed: "цель" };
-function statusOf(i: Idea): string {
-  if (i.status === "closed") return i.stage === "landed" ? "закрыта по цели" : "закрыта";
-  return STAGE_STATUS[i.stage] ?? "на земле";
+// only the four statuses the user named; other stages carry no status
+const STAGE_STATUS: Partial<Record<Stage, string>> = { liftoff: "взлёт", cruise: "в полёте", approach: "посадка" };
+function statusOf(i: Idea): string | undefined {
+  if (i.status === "closed") return "закрыта";
+  return STAGE_STATUS[i.stage];
 }
 
 /** deterministic shuffle so the order looks random but is stable for one snapshot */
@@ -78,12 +79,12 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 20): FeedEvent[] {
   for (const i of [...active].sort((a, b) => a.yieldPct - b.yieldPct).slice(0, 2))
     if (i.yieldPct <= -25) extra.push(ideaEvent({ id: `l${i.id}`, kind: "loss", idea: i, text: "турбулентность", value: `убыток ${pct(i.yieldPct)}` }));
   for (const h of topDarkHorses(ideas, asOf, 2))
-    extra.push({ id: `h${h.ticker}`, kind: "hero", ticker: h.ticker, name: h.name || h.ticker, status: "новый герой", text: `${h.count} ${plural(h.count)} за 60 дней` });
+    extra.push({ id: `h${h.ticker}`, kind: "hero", ticker: h.ticker, name: h.name || h.ticker, text: `${h.count} ${plural(h.count)} за 60 дней` });
 
   const week = raw.filter((i) => age(i.opened, now) >= 0 && age(i.opened, now) <= 7);
   if (week.length >= 3) {
     const shorts = week.filter((i) => i.strategy === "шорт").length;
-    extra.push({ id: "s-short", kind: "stat", status: "поток", text: `За неделю ${week.length} новых ${plural(week.length)} · ${Math.round((shorts / week.length) * 100)}% в шорт` });
+    extra.push({ id: "s-short", kind: "stat", text: `За неделю ${week.length} новых ${plural(week.length)}, ${Math.round((shorts / week.length) * 100)}% в шорт` });
     const by = new Map<string, { count: number; name: string }>();
     for (const i of week) if (!i.basket) {
       const e = by.get(i.ticker) ?? { count: 0, name: i.name };
@@ -93,7 +94,7 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 20): FeedEvent[] {
     }
     const top = [...by].sort((a, b) => b[1].count - a[1].count)[0];
     if (top && top[1].count >= 2)
-      extra.push({ id: `s-${top[0]}`, kind: "stat", ticker: top[0], name: top[1].name || top[0], status: "поток", text: `самый обсуждаемый актив недели: ${top[1].count} ${plural(top[1].count)}` });
+      extra.push({ id: `s-${top[0]}`, kind: "stat", ticker: top[0], name: top[1].name || top[0], text: `самый обсуждаемый актив недели: ${top[1].count} ${plural(top[1].count)}` });
   }
   extra.forEach(push);
   return shuffle(out, asOf);

@@ -7,7 +7,7 @@ const idea = (o: Partial<Idea> & Record<string, unknown>): Idea => ({
   target: 2, yieldPct: 1, toTargetPct: 50, noTarget: false, capturedX: 0, stage: "cruise", opened: "2026-01-01", ...o,
 } as Idea);
 
-const STATES = ["на земле", "взлёт", "в полёте", "посадка", "цель", "закрыта", "закрыта по цели", "новый герой", "поток"];
+const STATES = ["взлёт", "в полёте", "посадка", "закрыта"];
 
 describe("buildFeed", () => {
   it("includes ideas opened or closed within the last day and caps at 20", () => {
@@ -37,7 +37,7 @@ describe("buildFeed", () => {
     for (const e of f) {
       const line = `${e.text} ${e.value ?? ""}`;
       // every line ends with a state word the component prints itself
-      expect(STATES).toContain(e.status);
+      if (e.status !== undefined) expect(STATES).toContain(e.status);
       if (e.idea) {
         // the component prints name + analyst itself, so the text must stay clean
         expect(line).not.toContain(e.idea.ticker);
@@ -51,7 +51,7 @@ describe("buildFeed", () => {
       }
     }
     const closedByTarget = f.find((e) => e.idea?.id === 3);
-    expect(closedByTarget?.status).toBe("закрыта по цели");
+    expect(closedByTarget?.status).toBe("закрыта");
     const closedByStop = f.find((e) => e.idea?.id === 4);
     expect(closedByStop?.status).toBe("закрыта");
   });
@@ -70,6 +70,6 @@ describe("buildFeed", () => {
     expect(byId.get(1)).toBe("взлёт");
     expect(byId.get(2)).toBe("в полёте");
     expect(byId.get(3)).toBe("посадка");
-    expect(byId.get(4)).toBe("на земле");
+    expect(byId.get(4)).toBeUndefined();
   });
 });
