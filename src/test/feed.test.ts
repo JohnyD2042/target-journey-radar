@@ -22,4 +22,25 @@ describe("buildFeed", () => {
     expect(all.some((e) => e.idea?.id === 2 && e.kind === "close")).toBe(true);
     expect(all.some((e) => e.idea?.id === 3)).toBe(false);
   });
+
+  it("names the ticker and the analyst only once per line", () => {
+    const ideas = [
+      idea({ id: 1, ticker: "VKCO", name: "ВККО", analyst: "Риком-Траст", opened: "2026-11-19", yieldPct: 83, strategy: "лонг" }),
+      idea({ id: 2, ticker: "GEMA", name: "Гематрон", analyst: "Финам", opened: "2026-11-19", yieldPct: -40, strategy: "шорт" }),
+      idea({ id: 3, ticker: "BELU", name: "Белая Дамочка", analyst: "СберИнвестиции", status: "closed", closed: "2026-11-19", yieldPct: 12 }),
+    ];
+    const f = buildFeed(ideas, "2026-11-19");
+    expect(f.length).toBeGreaterThan(0);
+    for (const e of f) {
+      const line = `${e.text} ${e.value ?? ""}`;
+      if (e.idea) {
+        // the component prints ticker + analyst itself, so the text must stay clean
+        expect(line).not.toContain(e.idea.ticker);
+        expect(line).not.toContain(e.idea.analyst);
+      } else if (e.ticker) {
+        // summary lines may name the asset by display name instead of ticker, but never twice
+        expect(line.split(e.ticker).length - 1).toBeLessThanOrEqual(1);
+      }
+    }
+  });
 });
