@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Idea } from "@/lib/ideas";
 import type { FeedEvent } from "@/lib/feed";
 
-const TAG: Record<FeedEvent["kind"], string> = {
-  open: "ВЗЛЁТ", close: "ЗАКРЫТА", target: "ЦЕЛЬ", approach: "ПОСАДКА", win: "РЕКОРД", loss: "УБЫТОК", hero: "ГЕРОЙ", stat: "ПОТОК",
-};
+/** colour of the state badge at the right end of the line */
+function statusTone(e: FeedEvent): string {
+  const s = e.status ?? "";
+  if (s === "закрыта по цели" || s === "цель") return "text-long";
+  if (s === "на земле") return "text-short";
+  return "text-muted-foreground";
+}
 
-/** one-line terminal ticker: switches event every 2 s, pauses under the pointer */
+/** one-line terminal ticker: switches event every 3.5 s, pauses under the pointer */
 export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; onIdea: (i: Idea) => void; onTicker: (t: string) => void }) {
   const [n, setN] = useState(0);
   const paused = useRef(false);
@@ -18,6 +22,12 @@ export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; 
   const e = events[n % Math.max(1, events.length)];
   if (!e) return null;
   const side = e.idea ? (e.idea.strategy === "шорт" ? "text-short" : "text-long") : "text-muted-foreground";
+  // company name, analyst and what happened share the truncating middle; upside and state stay whole at the right end
+  // the analyst is dropped on narrow screens so the name and the state never get cut
+  const parts: { node: ReactNode; cls?: string }[] = [];
+  if (e.name) parts.push({ node: <b className="font-semibold">{e.name}</b> });
+  if (e.idea) parts.push({ node: <span className="text-muted-foreground">{e.idea.analyst}</span>, cls: "hidden min-[640px]:inline" });
+  if (e.text) parts.push({ node: <span>{e.text}</span> });
   return (
     <button
       type="button"
@@ -31,10 +41,16 @@ export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; 
       <span key={e.id} className="feed-in flex min-w-0 flex-1 items-center gap-2">
         <span className={`shrink-0 ${side}`}>{e.idea ? "✈" : "◆"}</span>
         {e.idea && <span className={`shrink-0 font-semibold ${side}`}>{e.idea.strategy === "шорт" ? "ШОРТ" : "ЛОНГ"}</span>}
-        <span className="shrink-0 rounded-sm border px-1 text-[10px] text-muted-foreground">{TAG[e.kind]}</span>
-        <span className="truncate text-foreground">
-          {e.idea ? <><b className="font-semibold">{e.idea.ticker}</b><span className="text-muted-foreground"> · {e.idea.analyst} · </span>{e.text}{e.value && <span className={e.idea.yieldPct < 0 && e.kind !== "open" ? "text-short" : "text-long"}> · {e.value}</span>}</> : e.text}
+        <span className="min-w-0 flex-1 truncate text-foreground">
+          {parts.map((p, k) => (
+            <Fragment key={k}>
+              {k > 0 && <span className={`text-muted-foreground ${parts[k]!.cls ?? ""}`}> · </span>}
+              <span className={p.cls ?? ""}>{p.node}</span>
+            </Fragment>
+          ))}
         </span>
+        {e.value && <span className={`shrink-0 ${e.idea && e.idea.yieldPct < 0 && e.kind !== "open" ? "text-short" : "text-long"}`}>{e.value}</span>}
+        {e.status && <span className={`shrink-0 rounded-sm border px-1 text-[10px] uppercase ${statusTone(e)}`}>{e.status}</span>}
       </span>
     </button>
   );
