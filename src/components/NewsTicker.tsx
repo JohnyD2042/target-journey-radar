@@ -12,7 +12,7 @@ export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; 
   const paused = useRef(false);
   useEffect(() => {
     if (events.length < 2) return;
-    const t = setInterval(() => { if (!paused.current) setN((v) => (v + 1) % events.length); }, 2000);
+    const t = setInterval(() => { if (!paused.current) setN((v) => (v + 1) % events.length); }, 3500);
     return () => clearInterval(t);
   }, [events.length]);
   const e = events[n % Math.max(1, events.length)];
@@ -27,14 +27,14 @@ export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; 
       onClick={() => (e.idea ? onIdea(e.idea) : e.ticker && onTicker(e.ticker))}
       className="mx-0 mb-2 flex h-9 w-full items-center gap-2 overflow-hidden border-y bg-card px-3 text-left font-mono text-xs transition-colors hover:border-primary min-[640px]:mx-2 min-[640px]:w-[calc(100%-1rem)] min-[640px]:rounded-md min-[640px]:border md:mx-4 md:w-[calc(100%-2rem)]"
     >
-      <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-muted-foreground">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-long" />
-        {n % events.length + 1}/{events.length}
-      </span>
+      <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-long" />
       <span key={e.id} className="feed-in flex min-w-0 flex-1 items-center gap-2">
         <span className={`shrink-0 ${side}`}>{e.idea ? "✈" : "◆"}</span>
+        {e.idea && <span className={`shrink-0 font-semibold ${side}`}>{e.idea.strategy === "шорт" ? "ШОРТ" : "ЛОНГ"}</span>}
         <span className="shrink-0 rounded-sm border px-1 text-[10px] text-muted-foreground">{TAG[e.kind]}</span>
-        <span className="truncate text-foreground">{e.text}</span>
+        <span className="truncate text-foreground">
+          {e.idea ? <><b className="font-semibold">{e.idea.ticker}</b><span className="text-muted-foreground"> · {e.idea.analyst} · </span>{e.text}{e.value && <span className={e.idea.yieldPct < 0 && e.kind !== "open" ? "text-short" : "text-long"}> · {e.value}</span>}</> : e.text}
+        </span>
       </span>
     </button>
   );

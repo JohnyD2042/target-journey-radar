@@ -5,7 +5,7 @@ const DAY = 86_400_000;
 type Raw = Idea & { opened?: string | null; closed?: string | null };
 
 export type FeedKind = "open" | "close" | "target" | "approach" | "win" | "loss" | "hero" | "stat";
-export interface FeedEvent { id: string; kind: FeedKind; text: string; idea?: Idea; ticker?: string }
+export interface FeedEvent { id: string; kind: FeedKind; text: string; idea?: Idea; ticker?: string; /** upside or result, shown last */ value?: string }
 
 const plural = (k: number) => (k % 10 === 1 && k % 100 !== 11 ? "идея" : k % 10 >= 2 && k % 10 <= 4 && (k % 100 < 12 || k % 100 > 14) ? "идеи" : "идей");
 const pct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1).replace(".", ",")}%`;
@@ -39,10 +39,10 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 20): FeedEvent[] {
   for (const i of raw) {
     if (i.status === "closed" && age(i.closed, now) <= 1) {
       const hit = i.stage === "landed";
-      fresh.push({ id: `c${i.id}`, kind: hit ? "target" : "close", idea: i, text: `${i.ticker} · ${hit ? "цель достигнута" : "идея закрыта"} ${pct(i.yieldPct)} · ${i.analyst}` });
+      fresh.push({ id: `c${i.id}`, kind: hit ? "target" : "close", idea: i, text: hit ? "цель достигнута" : "идея закрыта", value: `результат ${pct(i.yieldPct)}` });
     } else if (age(i.opened, now) <= 1 && age(i.opened, now) >= 0) {
-      const up = !i.noTarget && i.toTargetPct != null ? ` · апсайд ${pct(((i as Idea & { upsidePct?: number }).upsidePct ?? 0))}` : "";
-      fresh.push({ id: `o${i.id}`, kind: "open", idea: i, text: `${i.ticker} · новая идея ${i.strategy === "шорт" ? "в шорт" : "в лонг"}${up} · ${i.analyst}` });
+      const up = !i.noTarget && i.toTargetPct != null ? `апсайд ${pct(((i as Idea & { upsidePct?: number }).upsidePct ?? 0))}` : undefined;
+      fresh.push({ id: `o${i.id}`, kind: "open", idea: i, text: "новая идея", value: up });
     }
   }
   fresh.sort((a, b) => Date.parse((b.idea as Raw).closed ?? (b.idea as Raw).opened ?? "") - Date.parse((a.idea as Raw).closed ?? (a.idea as Raw).opened ?? ""));
@@ -51,11 +51,11 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 20): FeedEvent[] {
   const active = raw.filter((i) => i.status === "active");
   const extra: FeedEvent[] = [];
   for (const i of active.filter((x) => x.stage === "approach").slice(0, 4))
-    extra.push({ id: `a${i.id}`, kind: "approach", idea: i, text: `${i.ticker} · заходит на посадку ${pct(i.yieldPct)} · ${i.analyst}` });
+    extra.push({ id: `a${i.id}`, kind: "approach", idea: i, text: "заходит на посадку", value: `прибыль ${pct(i.yieldPct)}` });
   for (const i of [...active].sort((a, b) => b.yieldPct - a.yieldPct).slice(0, 2))
-    if (i.yieldPct >= 30) extra.push({ id: `w${i.id}`, kind: "win", idea: i, text: `${i.ticker} · рекорд в воздухе ${pct(i.yieldPct)} · ${i.analyst}` });
+    if (i.yieldPct >= 30) extra.push({ id: `w${i.id}`, kind: "win", idea: i, text: "рекорд в воздухе", value: `прибыль ${pct(i.yieldPct)}` });
   for (const i of [...active].sort((a, b) => a.yieldPct - b.yieldPct).slice(0, 2))
-    if (i.yieldPct <= -25) extra.push({ id: `l${i.id}`, kind: "loss", idea: i, text: `${i.ticker} · турбулентность ${pct(i.yieldPct)} · ${i.analyst}` });
+    if (i.yieldPct <= -25) extra.push({ id: `l${i.id}`, kind: "loss", idea: i, text: "турбулентность", value: `убыток ${pct(i.yieldPct)}` });
   for (const h of topDarkHorses(ideas, asOf, 2))
     extra.push({ id: `h${h.ticker}`, kind: "hero", ticker: h.ticker, text: `${h.name || h.ticker} · новый герой: ${h.count} ${plural(h.count)} за 60 дней` });
 
