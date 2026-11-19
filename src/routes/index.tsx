@@ -5,6 +5,8 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { FlightChart, ZoneGlyph, ZONE_ICON, ZONE_TEXT } from "@/components/FlightChart";
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
 import { Boards } from "@/components/Boards";
+import { NewsTicker } from "@/components/NewsTicker";
+import { buildFeed, type FeedEvent } from "@/lib/feed";
 import { TabloLogo } from "@/components/TabloLogo";
 import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, ANALYST_TYPES, KINDS, type AnalystType, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
@@ -123,6 +125,14 @@ function Index() {
     refetchInterval: 15 * 60_000,
     refetchOnWindowFocus: false,
   });
+  // ticker-tape snapshot: rebuilt at most every 12 hours
+  const feedSnap = useRef<{ at: number; events: FeedEvent[] } | null>(null);
+  const feed = useMemo(() => {
+    if (!full) return [];
+    const s = feedSnap.current;
+    if (!s || Date.now() - s.at > 12 * 3_600_000) feedSnap.current = { at: Date.now(), events: buildFeed(full.ideas, full.asOf) };
+    return feedSnap.current?.events ?? [];
+  }, [full]);
   const data = useMemo(() => (full ? applyFilters(full, filters) : undefined), [full, period, book, analyst, ticker, kind, atype]);
 
   const ideas = data?.ideas ?? [];
@@ -262,6 +272,7 @@ function Index() {
        </div>
       </div>
 
+      {feed.length > 0 && <NewsTicker events={feed} onIdea={pickBoardIdea} onTicker={(t) => pickBoardTicker(t, "all")} />}
       {/* Scene */}
       <div className="flex flex-col pb-8 lg:flex-row">
         <div ref={mapStart} className="relative mb-4 h-[480px] p-0 lg:flex-1 min-[640px]:p-2 md:h-[680px] md:p-4">

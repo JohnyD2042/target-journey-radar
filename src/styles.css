@@ -144,3 +144,6 @@
     0 0 10px -4px var(--kind);
 }
 
+@keyframes feed-in { from { transform: translateY(70%); opacity: 0; } to { transform: none; opacity: 1; } }
+.feed-in { animation: feed-in 0.25s ease-out; }
+@media (prefers-reduced-motion: reduce) { .feed-in { animation: none; } }
