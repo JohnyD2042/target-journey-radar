@@ -7,7 +7,7 @@ const idea = (o: Partial<Idea> & Record<string, unknown>): Idea => ({
   target: 2, yieldPct: 1, toTargetPct: 50, noTarget: false, capturedX: 0, stage: "cruise", opened: "2026-01-01", ...o,
 } as Idea);
 
-const STATES = ["взлёт", "в полёте", "посадка", "закрыта"];
+const STATES = ["взлёт", "в полёте", "посадка", "достигли цели", "закрыта", "герой"];
 
 describe("buildFeed", () => {
   it("includes ideas opened or closed within the last day and caps at 20", () => {
@@ -51,7 +51,7 @@ describe("buildFeed", () => {
       }
     }
     const closedByTarget = f.find((e) => e.idea?.id === 3);
-    expect(closedByTarget?.status).toBe("закрыта");
+    expect(closedByTarget?.status).toBe("достигли цели");
     const closedByStop = f.find((e) => e.idea?.id === 4);
     expect(closedByStop?.status).toBe("закрыта");
   });

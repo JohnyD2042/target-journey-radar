@@ -41,7 +41,7 @@ export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; 
             </Fragment>
           ))}
           {e.value && <> <span className={e.idea && e.idea.yieldPct < 0 && e.kind !== "open" ? "text-short" : "text-long"}>{e.value}</span></>}
-          {e.status && <> <span className="text-muted-foreground">{e.status}</span></>}
+          {e.status && <> <span className={`rounded-sm border px-1 text-[10px] uppercase ${e.status === "достигли цели" ? "text-long" : "text-muted-foreground"}`}>{e.status}</span></>}
         </span>
       </span>
     </button>
