@@ -83,7 +83,8 @@ export function topDarkHorses(ideas: Idea[], asOf: string, n = 5): DarkHorse[] {
       return {
         ticker, name: entry.name, count: active.length,
         analysts: [...new Set(active.map((i) => i.analyst))],
-        averageUpside: upside.length ? upside.reduce((sum, i) => sum + (i.toTargetPct ?? 0), 0) / upside.length : null,
+        // API potential is relative to trade direction; aggregate price direction instead.
+        averageUpside: upside.length ? upside.reduce((sum, i) => sum + (i.strategy === "шорт" ? -1 : 1) * (i.toTargetPct ?? 0), 0) / upside.length : null,
       };
     })
     .sort((a, b) => b.count - a.count || (b.averageUpside ?? -Infinity) - (a.averageUpside ?? -Infinity) || a.ticker.localeCompare(b.ticker))

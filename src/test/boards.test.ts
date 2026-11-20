@@ -104,6 +104,21 @@ describe("Тёмные лошадки", () => {
     expect(r[0]?.count).toBe(3);
     expect(topDarkHorses([idea({ noTarget: true })], asOf)[0]?.averageUpside).toBeNull();
   });
+  it("averages long +100% and short −50% to +25%, not +75%", () => {
+    const r = topDarkHorses([
+      idea({ strategy: "лонг", toTargetPct: 100 }),
+      idea({ strategy: "шорт", toTargetPct: 50 }),
+    ], asOf);
+    expect(r[0]?.averageUpside).toBe(25);
+  });
+  it("subtracts ETLN's short potential from its two long potentials", () => {
+    const r = topDarkHorses([
+      idea({ ticker: "ETLN", strategy: "лонг", toTargetPct: 102.39 }),
+      idea({ ticker: "ETLN", strategy: "лонг", toTargetPct: 106.99 }),
+      idea({ ticker: "ETLN", strategy: "шорт", toTargetPct: 31 }),
+    ], asOf);
+    expect(r[0]?.averageUpside).toBeCloseTo(59.46, 2);
+  });
   it("orders by active count and returns five tickers at most", () => {
     const rows = Array.from({ length: 7 }, (_, k) => idea({ ticker: `T${k}`, toTargetPct: k }));
     rows.push(idea({ ticker: "T0", toTargetPct: 0 }));

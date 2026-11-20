@@ -8,7 +8,7 @@ import { Boards } from "@/components/Boards";
 import { NewsTicker } from "@/components/NewsTicker";
 import { buildFeed, type FeedEvent } from "@/lib/feed";
 import { TabloLogo } from "@/components/TabloLogo";
-import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, zoneOf, ANALYST_TYPES, KINDS, type AnalystType, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
+import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, moscowTime, zoneOf, ANALYST_TYPES, KINDS, type AnalystType, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -351,7 +351,7 @@ function Status({ asOf, fetchedAt, isError }: { asOf?: string | undefined; fetch
   // asOf is a calendar day: treat it as fresh until the end of that day (UTC)
   const dayEnd = Date.parse(asOf.slice(0, 10)) + 86_400_000;
   const stale = isError || Date.now() - (asOf.includes("T") ? Date.parse(asOf) : dayEnd) > 86_400_000;
-  const time = fetchedAt ? new Date(fetchedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "";
+  const time = moscowTime(fetchedAt);
   return (
     <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-[11px]" title={stale ? "Данные устарели более чем на сутки" : "Данные актуальны"}>
       <span className="relative flex h-2 w-2">

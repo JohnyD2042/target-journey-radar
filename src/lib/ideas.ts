@@ -87,6 +87,11 @@ export function isoLabel(s: string): string {
   return isNaN(t.getTime()) ? "" : t.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" });
 }
 
+/** Header fetch time is Moscow time regardless of the viewer's timezone. */
+export function moscowTime(timestamp: number): string {
+  return timestamp ? new Date(timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Moscow" }) : "";
+}
+
 export const ZONES: Record<Zone, { name: string; short: string; hint: string }> = {
   1: { name: "Не завелись", short: "На земле", hint: "доходность ниже нуля" },
   2: { name: "Взлёт", short: "0 → 0,2x", hint: "до 20% пути" },
