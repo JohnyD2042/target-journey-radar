@@ -57,6 +57,33 @@ describe("portfolio ideas", () => {
   });
 });
 
+describe("exact instrument selection", () => {
+  const set = { ...all, ideas: [
+    idea({ id: 1, opened: "2026-11-01", ticker: "T", name: "Т-технологии" }),
+    idea({ id: 2, opened: "2026-10-01", ticker: "T", name: "Т-технологии", status: "closed" }),
+    idea({ id: 3, opened: "2026-11-01", ticker: "VTBR", name: "ВТБ" }),
+    idea({ id: 4, opened: "2026-11-01", ticker: "SBER", name: "T в имени", title: "T в описании" }),
+    idea({ id: 5, opened: "2026-11-01", ticker: "SBER; T, LKOH", basket: true }),
+    idea({ id: 6, opened: "2026-11-01", ticker: "SNGS", name: "Сургутнефтегаз" }),
+    idea({ id: 7, opened: "2026-11-01", ticker: "SNGSP", name: "Сургутнефтегаз прив." }),
+  ] } as FlightResponse;
+  const f = (ticker: string) => ({ period: "all" as const, book: "all" as const, analyst: "", ticker });
+
+  it("T selects only its active, closed and portfolio ideas, not substring matches", () => {
+    const r = applyFilters(set, f(" t "));
+    expect(r.ideas.map((i) => i.id)).toEqual([1, 2, 5]);
+    expect(r.counts.all).toBe(3);
+    expect(r.counts.active).toBe(2);
+    expect(r.counts.closed).toBe(1);
+  });
+  it("SNGS does not select the different ticker SNGSP", () => {
+    expect(applyFilters(set, f("SNGS")).ideas.map((i) => i.id)).toEqual([6]);
+  });
+  it("company name search still finds both share classes", () => {
+    expect(applyFilters(set, f("сургут")).ideas.map((i) => i.id)).toEqual([6, 7]);
+  });
+});
+
 describe("LIVE in the air", () => {
   const set: Idea[] = [
     idea({ opened: "2026-11-01", status: "active", yieldPct: 4.2 }),

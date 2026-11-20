@@ -121,20 +121,25 @@ export function inPeriod(i: RawIdea, p: Period, asOf: string) {
 }
 const inBook = (i: Idea, b: Book) => b === "all" || i.status === b;
 const byAnalyst = (i: Idea, a: string) => !a || i.analyst === a;
-function byTicker(i: RawIdea, t: string) {
+const tickerCodes = (i: Idea) => (i.basket ? i.ticker.split(/[,;\s]+/) : [i.ticker]).map((t) => t.trim().toLowerCase()).filter(Boolean);
+function byTicker(i: RawIdea, t: string, exact: boolean) {
   const q = t.trim().toLowerCase();
   if (!q) return true;
+  if (exact) return tickerCodes(i).includes(q);
   return i.ticker.toLowerCase().includes(q) || i.name.toLowerCase().includes(q) || (i.title ?? "").toLowerCase().includes(q);
 }
 
 /** Apply all filters locally to the full dataset fetched once; counters are tallies of the filtered set. */
 export function applyFilters(all: FlightResponse, f: Filters): FlightResponse {
   const src = all.ideas as RawIdea[];
+  // Resolve known codes against the full dataset, not against other active filters.
+  // A selected T must not match VTBR, a company name or a portfolio title.
+  const exactTicker = src.some((i) => tickerCodes(i).includes(f.ticker.trim().toLowerCase()));
   const ok = (i: RawIdea, skip?: keyof Filters) =>
     (skip === "period" || inPeriod(i, f.period, all.asOf)) &&
     (skip === "book" || inBook(i, f.book)) &&
     (skip === "analyst" || byAnalyst(i, f.analyst)) &&
-    (skip === "ticker" || byTicker(i, f.ticker)) &&
+    (skip === "ticker" || byTicker(i, f.ticker, exactTicker)) &&
     (skip === "kind" || !f.kind || kindOf(i) === f.kind) &&
     (skip === "atype" || !f.atype || analystTypeOf(i) === f.atype);
 

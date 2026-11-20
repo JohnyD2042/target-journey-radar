@@ -31,6 +31,24 @@ const flight = {
 };
 
 describe("Другие идеи", () => {
+  it("shows all and only T ideas after opening its news event", () => {
+    const previous = flight.ideas;
+    flight.ideas = [{ ...idea(1, "active", "T"), yieldPct: 35 }, idea(2, "closed", "T"), idea(3, "active", "VTBR")];
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    Element.prototype.scrollIntoView = vi.fn();
+    const Component = Route.options.component;
+    if (!Component) throw new Error("Missing index component");
+    try {
+      render(<Component />);
+      fireEvent.click(screen.getByTestId("news-ticker"));
+      fireEvent.click(screen.getByRole("button", { name: "Другие идеи" }));
+      expect(screen.getByRole("button", { name: "Самолёт 1" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Самолёт 2" })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Самолёт 3" })).toBeNull();
+    } finally {
+      flight.ideas = previous;
+    }
+  });
   it("switches from active or closed to all statuses of the selected ticker", () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     Element.prototype.scrollIntoView = vi.fn();
