@@ -108,6 +108,8 @@ function Index() {
   // any header filter change drops the secondary zone highlight: the whole map shows again
   useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind, atype]);
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
+  // after any dropdown pick: hide the list and release DOM focus so the next click reopens it
+  const blurActive = () => (document.activeElement as HTMLElement | null)?.blur?.();
   const pickBoardTicker = (value: string, status: Book) => {
     if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
     setSel(null);
@@ -212,13 +214,13 @@ function Index() {
                 <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">── Тип аналитика ──</div>
                 <div className="flex flex-wrap gap-1.5">
                   {ANALYST_TYPES.map(([k, l]) => (
-                    <Annunciator key={k} label={l} count={data?.atypes?.[k] ?? 0} on={atype === k} onClick={() => toggleAtype(k)} mouseDown />
+                    <Annunciator key={k} label={l} count={data?.atypes?.[k] ?? 0} on={atype === k} onClick={() => { toggleAtype(k); setFocus(false); blurActive(); }} mouseDown />
                   ))}
                 </div>
               </div>
-              <button onMouseDown={() => { setAnalyst(null); setQ(""); }} className="flex w-full justify-between px-3 py-2 text-left text-muted-foreground hover:bg-accent">Все аналитики</button>
+              <button onMouseDown={() => { setAnalyst(null); setQ(""); setFocus(false); blurActive(); }} className="flex w-full justify-between px-3 py-2 text-left text-muted-foreground hover:bg-accent">Все аналитики</button>
               {analysts.map((a) => (
-                <button key={a.name} onMouseDown={() => { setAnalyst(a.name); setQ(""); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
+                <button key={a.name} onMouseDown={() => { setAnalyst(a.name); setQ(""); setFocus(false); blurActive(); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
                   {a.name} <span className="font-mono text-xs text-muted-foreground">{a.count}</span>
                 </button>
               ))}
@@ -247,6 +249,7 @@ function Index() {
                 e.preventDefault();
                 commitTicker(instruments[0]?.ticker || exactHit(tq) || tq.trim());
                 setTFocus(false);
+                blurActive();
               }}
               onFocus={() => setTFocus(true)}
               onBlur={() => setTimeout(() => setTFocus(false), 150)}
@@ -260,13 +263,13 @@ function Index() {
                   <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">── Тип инструмента ──</div>
                   <div className="flex flex-wrap gap-1.5">
                     {KINDS.map(([k, l]) => (
-                      <Annunciator key={k} label={l} count={data?.kinds?.[k] ?? 0} on={kind === k} onClick={() => toggleKind(k)} mouseDown />
+                      <Annunciator key={k} label={l} count={data?.kinds?.[k] ?? 0} on={kind === k} onClick={() => { toggleKind(k); setTFocus(false); blurActive(); }} mouseDown />
                     ))}
                   </div>
                 </div>
                 {!instruments.length && <div className="px-3 py-2 text-muted-foreground">Ничего не нашли</div>}
                 {instruments.map((x) => (
-                  <button key={x.ticker} type="button" onMouseDown={() => { commitTicker(x.ticker); setTFocus(false); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
+                  <button key={x.ticker} type="button" onMouseDown={() => { commitTicker(x.ticker); setTFocus(false); blurActive(); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
                     <span className="min-w-0 truncate"><span className="font-mono font-semibold">{x.ticker}</span> <span className="text-muted-foreground">{x.name}</span></span>
                     <span className="font-mono text-xs text-muted-foreground">{x.count}</span>
                   </button>
