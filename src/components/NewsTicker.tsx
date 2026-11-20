@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Idea } from "@/lib/ideas";
 import type { FeedEvent } from "@/lib/feed";
+import { Button } from "@/components/ui/button";
 
 /** one-line terminal ticker: switches event every 3.5 s, pauses under the pointer */
-export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; onIdea: (i: Idea) => void; onTicker: (t: string) => void }) {
+export function NewsTicker({ events, onIdea, onTicker, onAnalyst }: { events: FeedEvent[]; onIdea: (i: Idea) => void; onTicker: (t: string) => void; onAnalyst: (name: string) => void }) {
   const [n, setN] = useState(0);
   const paused = useRef(false);
   useEffect(() => {
@@ -21,12 +22,13 @@ export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; 
   if (e.idea) parts.push({ node: <span className="text-muted-foreground">{e.idea.analyst}</span>, cls: "hidden min-[640px]:inline" });
   if (e.text) parts.push({ node: <span>{e.text}</span> });
   return (
-    <button
+    <Button
+      variant="ghost"
       type="button"
       data-testid="news-ticker"
       onMouseEnter={() => { paused.current = true; }}
       onMouseLeave={() => { paused.current = false; }}
-      onClick={() => (e.idea ? onIdea(e.idea) : e.ticker && onTicker(e.ticker))}
+      onClick={() => { if (e.idea) onIdea(e.idea); else if (e.ticker) onTicker(e.ticker); else if (e.analyst) onAnalyst(e.analyst); }}
       className="mx-0 mb-2 flex h-9 w-full items-center gap-2 overflow-hidden border-y bg-card px-3 text-left font-mono text-xs transition-colors hover:border-primary min-[640px]:mx-2 min-[640px]:w-[calc(100%-1rem)] min-[640px]:rounded-md min-[640px]:border md:mx-4 md:w-[calc(100%-2rem)]"
     >
       <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-long" />
@@ -44,6 +46,6 @@ export function NewsTicker({ events, onIdea, onTicker }: { events: FeedEvent[]; 
           {e.status && <> <span className={`rounded-sm border px-1 text-[10px] uppercase ${e.status === "достигли цели" ? "text-long" : "text-muted-foreground"}`}>{e.status}</span></>}
         </span>
       </span>
-    </button>
+    </Button>
   );
 }

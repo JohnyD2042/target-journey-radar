@@ -285,7 +285,7 @@ function Index() {
        </div>
       </div>
 
-      {feed.length > 0 && <NewsTicker events={feed} onIdea={pickBoardIdea} onTicker={(t) => pickBoardTicker(t, "all")} />}
+      {feed.length > 0 && <NewsTicker events={feed} onIdea={pickBoardIdea} onTicker={(t) => pickBoardTicker(t, "all")} onAnalyst={pickBoardAnalyst} />}
       {/* Scene */}
       <div className="flex flex-col pb-8 lg:flex-row">
         <div ref={mapStart} className="relative mb-4 h-[480px] p-0 lg:flex-1 min-[640px]:p-2 md:h-[680px] md:p-4">

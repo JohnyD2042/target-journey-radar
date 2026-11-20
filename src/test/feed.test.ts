@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFeed } from "@/lib/feed";
+import { buildFeed, weeklySummary } from "@/lib/feed";
 import type { Idea } from "@/lib/ideas";
 
 const idea = (o: Partial<Idea> & Record<string, unknown>): Idea => ({
@@ -10,6 +10,46 @@ const idea = (o: Partial<Idea> & Record<string, unknown>): Idea => ({
 const STATES = ["взлёт", "в полёте", "посадка", "достигли цели", "закрыта", "герой"];
 
 describe("buildFeed", () => {
+  it("counts 4 short ideas among 20 weekly ideas", () => {
+    const ideas = Array.from({ length: 20 }, (_, id) => idea({ id, opened: "2026-11-16", strategy: id < 4 ? "шорт" : "лонг" }));
+    const summary = weeklySummary(ideas, "2026-11-19");
+    expect(summary.count).toBe(20);
+    expect(summary.shortCount).toBe(4);
+    const event = buildFeed(ideas, "2026-11-19").find((e) => e.id === "s-short");
+    expect(event?.count).toBe(20);
+    expect(event?.shortCount).toBe(4);
+  });
+
+  it("ranks weekly stocks across both statuses and counts basket members like the header", () => {
+    const ideas = [
+      idea({ id: 1, ticker: "TRNFP", name: "Транснефть-ап", assetType: "stock", opened: "2026-11-12" }),
+      idea({ id: 2, ticker: "TRNFP", name: "Транснефть-ап", assetType: "stock", opened: "2026-11-17", status: "closed" }),
+      idea({ id: 3, ticker: "TRNFP, SBER", basket: true, opened: "2026-11-18" }),
+      idea({ id: 4, ticker: "SBER", assetType: "stock", opened: "2026-11-17" }),
+      ...Array.from({ length: 5 }, (_, id) => idea({ id: 10 + id, ticker: "GOLD", assetType: "futures_commodities", opened: "2026-11-16" })),
+      ...Array.from({ length: 5 }, (_, id) => idea({ id: 20 + id, ticker: "SBER", assetType: "stock", opened: "2026-11-11" })),
+    ];
+    expect(weeklySummary(ideas, "2026-11-19").stock).toEqual({ ticker: "TRNFP", name: "Транснефть-ап", count: 3 });
+  });
+
+  it("ranks the most active weekly analyst by new ideas, including closed ideas", () => {
+    const ideas = [
+      idea({ analyst: "А", opened: "2026-11-15" }),
+      idea({ analyst: "Б", opened: "2026-11-12", status: "closed" }),
+      idea({ analyst: "Б", opened: "2026-11-17" }),
+      idea({ analyst: "Б", opened: "2026-11-18", basket: true }),
+      ...Array.from({ length: 5 }, () => idea({ analyst: "А", opened: "2026-11-11" })),
+    ];
+    expect(weeklySummary(ideas, "2026-11-19").analyst).toEqual({ name: "Б", count: 3 });
+  });
+
+  it("keeps all three weekly summaries in the 20-event rotation even with many fresh ideas", () => {
+    const ideas = Array.from({ length: 30 }, (_, id) => idea({ id, assetType: "stock", opened: "2026-11-19" }));
+    const events = buildFeed(ideas, "2026-11-19");
+    expect(events).toHaveLength(20);
+    expect(events.filter((e) => e.kind === "stat")).toHaveLength(3);
+  });
+
   it("includes ideas opened or closed within the last day and caps at 20", () => {
     const ideas = [
       idea({ id: 1, opened: "2026-11-19" }),

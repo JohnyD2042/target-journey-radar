@@ -1,5 +1,5 @@
 import type { Idea, Stage } from "@/lib/ideas";
-import { ideaTitle } from "@/lib/ideas";
+import { ideaTitle, inPeriod } from "@/lib/ideas";
 import { topDarkHorses } from "@/lib/boards";
 
 const DAY = 86_400_000;
@@ -12,6 +12,9 @@ export interface FeedEvent {
   text: string;
   idea?: Idea;
   ticker?: string;
+  analyst?: string;
+  count?: number;
+  shortCount?: number;
   /** upside or result, shown at the right end of the line */ value?: string;
   /** company / instrument / portfolio name, shown at the left end */ name?: string;
   /** state of the idea: взлёт / в полёте / посадка / закрыта ... */ status?: string | undefined;
@@ -37,7 +40,9 @@ function shuffle<T>(list: T[], seed: string): T[] {
   for (let i = out.length - 1; i > 0; i--) {
     h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
     const j = h % (i + 1);
-    [out[i], out[j]] = [out[j]!, out[i]!];
+    const left = out[i];
+    const right = out[j];
+    if (left !== undefined && right !== undefined) [out[i], out[j]] = [right, left];
   }
   return out;
 }
@@ -47,12 +52,41 @@ function shuffle<T>(list: T[], seed: string): T[] {
  * then landing-zone entries, extreme yields, new heroes and flow statistics fill the rest.
  * Each line carries the company name on the left and the state of the idea on the right.
  */
+export function weeklySummary(ideas: Idea[], asOf: string) {
+  const week = ideas.filter((i) => inPeriod(i, "week", asOf));
+  const stocks = new Map(ideas.filter((i) => !i.basket && i.assetType === "stock").map((i) => [i.ticker, i.name]));
+  const byStock = new Map<string, number>();
+  const byAnalyst = new Map<string, number>();
+  for (const i of week) {
+    byAnalyst.set(i.analyst, (byAnalyst.get(i.analyst) ?? 0) + 1);
+    const codes = i.basket ? i.ticker.split(/[,;\s]+/).filter(Boolean) : [i.ticker];
+    for (const code of codes) if (stocks.has(code)) byStock.set(code, (byStock.get(code) ?? 0) + 1);
+  }
+  const rank = (entries: Map<string, number>) => [...entries].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+  const stock = rank(byStock);
+  const analyst = rank(byAnalyst);
+  return {
+    count: week.length,
+    shortCount: week.filter((i) => i.strategy === "шорт").length,
+    stock: stock ? { ticker: stock[0], name: stocks.get(stock[0]) || stock[0], count: stock[1] } : undefined,
+    analyst: analyst ? { name: analyst[0], count: analyst[1] } : undefined,
+  };
+}
+
 export function buildFeed(ideas: Idea[], asOf: string, n = 20): FeedEvent[] {
   const now = Date.parse(asOf.slice(0, 10));
   const raw = ideas as Raw[];
   const out: FeedEvent[] = [];
+  const summary = weeklySummary(ideas, asOf);
+  const stats: FeedEvent[] = [];
+  if (summary.count > 0) {
+    stats.push({ id: "s-short", kind: "stat", count: summary.count, shortCount: summary.shortCount, text: `${summary.count} ${plural(summary.count)} за неделю, из них ${summary.shortCount} в шорт` });
+    if (summary.stock) stats.push({ id: `s-${summary.stock.ticker}`, kind: "stat", ticker: summary.stock.ticker, count: summary.stock.count, text: `Самая популярная акция недели ${summary.stock.name}: ${summary.stock.count} ${plural(summary.stock.count)}` });
+    if (summary.analyst) stats.push({ id: "s-analyst", kind: "stat", analyst: summary.analyst.name, count: summary.analyst.count, text: `Самый активный аналитик недели ${summary.analyst.name}: ${summary.analyst.count} ${plural(summary.analyst.count)}` });
+  }
+  const ideaLimit = Math.max(0, n - stats.length);
   const used = new Set<Idea["id"]>();
-  const push = (e: FeedEvent) => { if (out.length >= n) return; if (e.idea) { if (used.has(e.idea.id)) return; used.add(e.idea.id); } out.push(e); };
+  const push = (e: FeedEvent) => { if (out.length >= ideaLimit) return; if (e.idea) { if (used.has(e.idea.id)) return; used.add(e.idea.id); } out.push(e); };
   /** every idea line repeats the name and the state the component prints itself */
   const ideaEvent = (e: Omit<FeedEvent, "name" | "status"> & { idea: Idea }): FeedEvent =>
     ({ ...e, name: ideaTitle(e.idea), status: statusOf(e.idea) });
@@ -81,21 +115,6 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 20): FeedEvent[] {
   for (const h of topDarkHorses(ideas, asOf, 2))
     extra.push({ id: `h${h.ticker}`, kind: "hero", ticker: h.ticker, name: h.name || h.ticker, status: "герой", text: `${h.count} ${plural(h.count)} за 60 дней` });
 
-  const week = raw.filter((i) => age(i.opened, now) >= 0 && age(i.opened, now) <= 7);
-  if (week.length >= 3) {
-    const shorts = week.filter((i) => i.strategy === "шорт").length;
-    extra.push({ id: "s-short", kind: "stat", text: `За неделю ${week.length} новых ${plural(week.length)}, ${Math.round((shorts / week.length) * 100)}% в шорт` });
-    const by = new Map<string, { count: number; name: string }>();
-    for (const i of week) if (!i.basket) {
-      const e = by.get(i.ticker) ?? { count: 0, name: i.name };
-      e.count++;
-      if (!e.name) e.name = i.name;
-      by.set(i.ticker, e);
-    }
-    const top = [...by].sort((a, b) => b[1].count - a[1].count)[0];
-    if (top && top[1].count >= 2)
-      extra.push({ id: `s-${top[0]}`, kind: "stat", ticker: top[0], name: top[1].name || top[0], text: `самый обсуждаемый актив недели: ${top[1].count} ${plural(top[1].count)}` });
-  }
   extra.forEach(push);
-  return shuffle(out, asOf);
+  return shuffle([...out, ...stats].slice(0, n), asOf);
 }
