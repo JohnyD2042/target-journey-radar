@@ -62,6 +62,16 @@ function Index() {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pickIdea = (i: Idea) => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } setSel(i); };
   const pickBoardIdea = (i: Idea) => {
+    setPeriod("all");
+    setBook("all");
+    setTicker("");
+    setTq("");
+    setAnalyst(null);
+    setQ("");
+    setKind("");
+    setAtype("");
+    setFocus(false);
+    setTFocus(false);
     pickIdea(i);
     setBoardPick(i);
     setZone(null);
