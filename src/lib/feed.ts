@@ -17,7 +17,7 @@ export interface FeedEvent {
   shortCount?: number;
   /** upside or result, shown at the right end of the line */ value?: string;
   /** company / instrument / portfolio name, shown at the left end */ name?: string;
-  /** state of the idea: взлёт / в полёте / посадка / закрыта ... */ status?: string | undefined;
+  /** API flight stage only; aggregate stories have no stage. */ status?: string | undefined;
 }
 
 const plural = (k: number) => (k % 10 === 1 && k % 100 !== 11 ? "идея" : k % 10 >= 2 && k % 10 <= 4 && (k % 100 < 12 || k % 100 > 14) ? "идеи" : "идей");
@@ -26,9 +26,8 @@ const age = (d: string | null | undefined, now: number) => (d ? Math.round((now 
 
 /** state of an idea, worded like the map zones */
 // only the four statuses the user named; other stages carry no status
-const STAGE_STATUS: Partial<Record<Stage, string>> = { liftoff: "взлёт", cruise: "в полёте", approach: "посадка", landed: "достигли цели" };
+const STAGE_STATUS: Partial<Record<Stage, string>> = { liftoff: "взлёт", cruise: "в полёте", approach: "посадка", landed: "целевая цена" };
 function statusOf(i: Idea): string | undefined {
-  if (i.status === "closed") return i.stage === "landed" ? "достигли цели" : "закрыта";
   return STAGE_STATUS[i.stage];
 }
 
@@ -122,7 +121,7 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 25): FeedEvent[] {
     .map((i) => event(i, "no-target", "полёт без целевой цены", yieldValue(i))));
   group(topDarkHorses(ideas, asOf, 5).map((h) => ({
     id: `h${h.ticker}`, kind: "hero" as const, ticker: h.ticker, name: h.name || h.ticker,
-    status: "герой", text: `новый герой ${h.count} ${plural(h.count)} за 60 дней`,
+    text: `новый герой ${h.count} ${plural(h.count)} за 60 дней`,
     ...(h.averageUpside != null ? { value: `средний апсайд ${pct(h.averageUpside)}` } : {}),
   })));
   group(topPredictable(ideas, 3).map((t) => ({

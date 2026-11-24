@@ -7,7 +7,7 @@ const idea = (o: Partial<Idea> & Record<string, unknown>): Idea => ({
   target: 2, yieldPct: 1, toTargetPct: 50, noTarget: false, capturedX: 0, stage: "cruise", opened: "2026-01-01", ...o,
 } as Idea);
 
-const STATES = ["взлёт", "в полёте", "посадка", "достигли цели", "закрыта", "герой"];
+const STATES = ["взлёт", "в полёте", "посадка", "целевая цена"];
 
 describe("buildFeed", () => {
   it("counts 4 short ideas among 20 weekly ideas", () => {
@@ -91,9 +91,9 @@ describe("buildFeed", () => {
       }
     }
     const closedByTarget = f.find((e) => e.idea?.id === 3);
-    expect(closedByTarget?.status).toBe("достигли цели");
+    expect(closedByTarget?.status).toBe("целевая цена");
     const closedByStop = f.find((e) => e.idea?.id === 4);
-    expect(closedByStop?.status).toBe("закрыта");
+    expect(closedByStop?.status).toBeUndefined();
   });
 
   it("words the state like the map zones for ideas still in the air", () => {
@@ -136,6 +136,13 @@ describe("buildFeed", () => {
     const ideas = Array.from({ length: 40 }, (_, id) => idea({ id, ticker: `T${id}`, opened: "2026-11-19", yieldPct: 35, toTargetPct: 70 }));
     const ids = buildFeed(ideas, "2026-11-19").flatMap((e) => e.idea ? [e.idea.id] : []);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("does not assign an individual flight stage to aggregate hero stories", () => {
+    const events = buildFeed([idea({ id: 1, opened: "2026-11-19" })], "2026-11-19");
+    const heroes = events.filter((e) => e.kind === "hero");
+    expect(heroes).toHaveLength(1);
+    expect(heroes[0]?.status).toBeUndefined();
   });
 
   it("does not invent arrivals or weekly surprises when there are no matching ideas", () => {

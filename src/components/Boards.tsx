@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowUp, ChevronDown, ChevronUp, CircleGauge, Radar, Route, ScanEye, Telescope, Timer } from "lucide-react";
+import { ChevronDown, ChevronUp, Timer } from "lucide-react";
+import { BOARD_ICONS } from "@/components/board-icons";
 import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable, topArrivals } from "@/lib/boards";
 import { ideaTitle, isLong, type Book, type Idea } from "@/lib/ideas";
 import { Button } from "@/components/ui/button";
@@ -107,7 +108,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         more={{ open: open.climbers, total: allClimbers.length, onToggle: toggle("climbers") }}
         title="Бодрый старт"
         sub="Новые идеи, которые быстро набирают высоту"
-        icon={<CircleGauge size={15} strokeWidth={1.75} />}
+        icon={<BOARD_ICONS.climbers size={15} strokeWidth={1.75} />}
         cols={ideaColumns}
         head={["Идея", "Текущая прибыль", "Возраст", "Прибыль/день"]}
         leftHead
@@ -142,7 +143,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         more={{ open: open.dark, total: allDark.length, onToggle: toggle("dark") }}
         title="Новые герои"
         sub="Новые имена и неожиданные возвращения"
-        icon={<ScanEye size={15} strokeWidth={1.75} />}
+        icon={<BOARD_ICONS.dark size={15} strokeWidth={1.75} />}
         cols={darkColumns}
         head={["Актив", "Идей", "Ср. апсайд"]}
       >
@@ -168,7 +169,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         more={{ open: open.kpd, total: allKpd.length, onToggle: toggle("kpd") }}
         title="КПД аналитики"
         sub="Активы, которые лучше всего поддаются прогнозированию"
-        icon={<Telescope size={15} strokeWidth={1.75} />}
+        icon={<BOARD_ICONS.predictable size={15} strokeWidth={1.75} />}
         cols={analystColumns}
         head={["Актив", "идей в плюсе", "Ср. прибыль"]}
       >
@@ -196,7 +197,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         more={{ open: open.upside, total: allUpside.length, onToggle: toggle("upside") }}
         title="Максимальный апсайд"
         sub="Активные идеи с максимальным потенциалом роста"
-        icon={<ArrowUp size={15} strokeWidth={1.75} />}
+        icon={<BOARD_ICONS.upside size={15} strokeWidth={1.75} />}
         cols={upsideColumns}
         head={["Идея", "Фаза", "Апсайд"]}
       >
@@ -228,7 +229,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         more={{ open: open.arrivals, total: allArrivals.length, onToggle: toggle("arrivals") }}
         title="Прибытие"
         sub="Идеи, которые скоро закроются"
-        icon={<Route size={15} strokeWidth={1.75} />}
+        icon={<BOARD_ICONS.arrivals size={15} strokeWidth={1.75} />}
         cols={arrivalColumns}
         head={["Идея", "Текущая прибыль", "Причина"]}
       >
@@ -259,7 +260,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
         className="order-6 md:order-none"
         title="Пунктуальность аналитиков"
         sub="Точность прогнозов за всё время"
-        icon={<Radar size={15} strokeWidth={1.75} />}
+        icon={<BOARD_ICONS.punctual size={15} strokeWidth={1.75} />}
         cols={analystColumns}
         head={["Аналитик", "идей в плюсе", "цель или почти"]}
       >
