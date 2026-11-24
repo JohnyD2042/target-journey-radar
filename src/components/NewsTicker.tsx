@@ -1,51 +1,74 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { useRef } from "react";
+import { ChartNoAxesColumn, Plane, Star, Trophy } from "lucide-react";
 import type { Idea } from "@/lib/ideas";
 import type { FeedEvent } from "@/lib/feed";
 import { Button } from "@/components/ui/button";
 
-/** one-line terminal ticker: switches event every 3.5 s, pauses under the pointer */
+/** Manual, single-line event capsules; touch scrolling stays native. */
 export function NewsTicker({ events, onIdea, onTicker, onAnalyst }: { events: FeedEvent[]; onIdea: (i: Idea) => void; onTicker: (t: string) => void; onAnalyst: (name: string) => void }) {
-  const [n, setN] = useState(0);
-  const paused = useRef(false);
-  useEffect(() => {
-    if (events.length < 2) return;
-    const t = setInterval(() => { if (!paused.current) setN((v) => (v + 1) % events.length); }, 3500);
-    return () => clearInterval(t);
-  }, [events.length]);
-  const e = events[n % Math.max(1, events.length)];
-  if (!e) return null;
-  const side = e.idea ? (e.idea.strategy === "шорт" ? "text-short" : "text-long") : "text-muted-foreground";
-  // one sentence without separators: name, analyst, event, upside/result, status at the end
-  // the analyst is dropped on narrow screens so the name and the state never get cut
-  const parts: { node: ReactNode; cls?: string }[] = [];
-  if (e.name) parts.push({ node: <b className="font-semibold">{e.name}</b> });
-  if (e.idea) parts.push({ node: <span className="text-muted-foreground">{e.idea.analyst}</span>, cls: "hidden min-[640px]:inline" });
-  if (e.text) parts.push({ node: <span>{e.text}</span> });
+  const gesture = useRef<{ id: number; x: number; left: number } | null>(null);
+  const dragged = useRef(false);
+  if (!events.length) return null;
   return (
-    <Button
-      variant="ghost"
-      type="button"
-      data-testid="news-ticker"
-      onMouseEnter={() => { paused.current = true; }}
-      onMouseLeave={() => { paused.current = false; }}
-      onClick={() => { if (e.idea) onIdea(e.idea); else if (e.ticker) onTicker(e.ticker); else if (e.analyst) onAnalyst(e.analyst); }}
-      className="mx-0 mb-2 flex h-9 w-full items-center gap-2 overflow-hidden border-y bg-card px-3 text-left font-mono text-xs transition-colors hover:border-primary min-[640px]:mx-2 min-[640px]:w-[calc(100%-1rem)] min-[640px]:rounded-md min-[640px]:border md:mx-4 md:w-[calc(100%-2rem)]"
+    <div
+      role="region"
+      aria-label="Новости идей"
+      className="news-capsules mx-2 mb-3 flex select-none gap-2 overflow-x-auto overscroll-x-contain py-1 md:mx-4"
+      onPointerDown={(event) => {
+        dragged.current = false;
+        if (event.pointerType !== "mouse" || event.button !== 0) return;
+        gesture.current = { id: event.pointerId, x: event.clientX, left: event.currentTarget.scrollLeft };
+      }}
+      onPointerMove={(event) => {
+        const start = gesture.current;
+        if (!start || event.pointerId !== start.id) return;
+        const distance = event.clientX - start.x;
+        if (!dragged.current && Math.abs(distance) < 6) return;
+        dragged.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        event.currentTarget.scrollLeft = start.left - distance;
+        event.preventDefault();
+      }}
+      onPointerUp={(event) => {
+        gesture.current = null;
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+      }}
+      onPointerCancel={() => { gesture.current = null; }}
+      onClickCapture={(event) => {
+        if (dragged.current && event.detail !== 0) { event.preventDefault(); event.stopPropagation(); }
+      }}
     >
-      <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-long" />
-      <span key={e.id} className="feed-in flex min-w-0 flex-1 items-center gap-2">
-        <span className={`shrink-0 ${side}`}>{e.idea ? "✈" : "◆"}</span>
-        {e.idea && <span className={`shrink-0 font-semibold ${side}`}>{e.idea.strategy === "шорт" ? "ШОРТ" : "ЛОНГ"}</span>}
-        <span className="min-w-0 flex-1 truncate text-foreground">
-          {parts.map((p, k) => (
-            <Fragment key={k}>
-              {k > 0 && " "}
-              <span className={p.cls ?? ""}>{p.node}</span>
-            </Fragment>
-          ))}
-          {e.value && <> <span className={e.idea && e.idea.yieldPct < 0 && e.kind !== "open" ? "text-short" : "text-long"}>{e.value}</span></>}
-          {e.status && <> <span className={`rounded-sm border px-1 text-[10px] uppercase ${e.status === "достигли цели" ? "text-long" : "text-muted-foreground"}`}>{e.status}</span></>}
-        </span>
-      </span>
-    </Button>
+      {events.map((e) => {
+        const side = e.idea ? (e.idea.strategy === "шорт" ? "text-short" : "text-long") : "text-primary";
+        const Icon = e.idea ? Plane : e.analyst ? Star : e.ticker ? Trophy : ChartNoAxesColumn;
+        const label = [e.idea?.strategy, e.name, e.idea?.analyst, e.text, e.value, e.status].filter(Boolean).join(" ");
+        return (
+          <Button
+            key={e.id}
+            variant="outline"
+            type="button"
+            data-testid="news-ticker"
+            data-event-id={e.id}
+            aria-label={label}
+            title={label}
+            onClick={() => { if (e.idea) onIdea(e.idea); else if (e.ticker) onTicker(e.ticker); else if (e.analyst) onAnalyst(e.analyst); }}
+            className="h-12 min-w-0 shrink-0 basis-[calc(100%-20px)] justify-start gap-2 rounded-full bg-card px-3 text-left font-mono text-[11px] hover:border-primary md:basis-[calc((100%-28px)/2)] md:text-xs"
+          >
+            <span className={`grid size-7 shrink-0 place-items-center rounded-full bg-muted ${side}`}><Icon /></span>
+            {e.idea && <span className={`shrink-0 font-semibold ${side}`}>{e.idea.strategy === "шорт" ? "ШОРТ" : "ЛОНГ"}</span>}
+            <span className="min-w-0 flex-1 truncate text-foreground">
+              {e.name && <><b className="font-semibold">{e.name}</b>{" "}</>}
+              {e.idea && <span className="hidden text-muted-foreground min-[1280px]:inline">{e.idea.analyst}{" "}</span>}
+              <span className={e.idea ? "hidden text-muted-foreground min-[1280px]:inline" : "text-muted-foreground"}>{e.text}</span>
+            </span>
+            {e.value && <span className={`shrink-0 ${e.idea && e.idea.yieldPct < 0 && e.kind !== "open" ? "text-short" : "text-long"}`}>
+              <span className="min-[1280px]:hidden">{e.value.replace(/^(апсайд|результат|прибыль|убыток)\s+/, "")}</span>
+              <span className="hidden min-[1280px]:inline">{e.value}</span>
+            </span>}
+            {e.status && <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] uppercase ${e.status === "достигли цели" ? "text-long" : "text-muted-foreground"}`}>{e.status}</span>}
+          </Button>
+        );
+      })}
+    </div>
   );
 }

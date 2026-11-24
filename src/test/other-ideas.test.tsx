@@ -42,6 +42,8 @@ const flight = {
   ideas: [idea(1, "active"), idea(2, "closed"), idea(3, "active", "SBER")],
 };
 
+function failMissingNews(): never { throw new Error("Missing news event"); }
+
 describe("Другие идеи", () => {
   it("board idea selection clears the old ticker and restores every idea on each selection", () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: true });
@@ -77,7 +79,7 @@ describe("Другие идеи", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Неделя / }));
     fireEvent.click(screen.getByRole("button", { name: /^Закрытые / }));
     expect(screen.queryByRole("button", { name: "Самолёт 1" })).toBeNull();
-    fireEvent.click(screen.getByTestId("news-ticker"));
+    fireEvent.click(screen.getAllByTestId("news-ticker")[0] ?? failMissingNews());
     expect(screen.getByPlaceholderText("Все аналитики — поиск…")).toHaveValue("");
     expect(screen.getByRole("button", { name: /^Акции / })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: /^Профучастники / })).toHaveAttribute("aria-pressed", "false");
@@ -93,7 +95,7 @@ describe("Другие идеи", () => {
     if (!Component) throw new Error("Missing index component");
     try {
       render(<Component />);
-      fireEvent.click(screen.getByTestId("news-ticker"));
+      fireEvent.click(screen.getAllByTestId("news-ticker")[0] ?? failMissingNews());
       fireEvent.click(screen.getByRole("button", { name: "Другие идеи" }));
       expect(screen.getByRole("button", { name: "Самолёт 1" })).toBeTruthy();
       expect(screen.getByRole("button", { name: "Самолёт 2" })).toBeTruthy();
