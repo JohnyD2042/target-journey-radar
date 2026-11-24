@@ -88,11 +88,11 @@ function Index() {
   // analyst kind: institutional -> Профучастники, finfluencer -> Финфлюенсеры
   const [atype, setAtype] = useState<AnalystType | "">("");
   const toggleAtype = (t: AnalystType) => setAtype(atype === t ? "" : t);
-  const pickBoardAnalyst = (name: string) => {
+  const pickBoardAnalyst = (name: string, scope: Period = "all") => {
     if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
     setSel(null);
     setBoardPick(null);
-    setPeriod("all");
+    setPeriod(scope);
     setBook("all");
     setTicker("");
     setTq("");
@@ -111,11 +111,11 @@ function Index() {
   const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
   // after any dropdown pick: hide the list and release DOM focus so the next click reopens it
   const blurActive = () => (document.activeElement as HTMLElement | null)?.blur?.();
-  const pickBoardTicker = (value: string, status: Book) => {
+  const pickBoardTicker = (value: string, status: Book, scope: Period = "all") => {
     if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
     setSel(null);
     setBoardPick(null);
-    setPeriod("all");
+    setPeriod(scope);
     setBook(status);
     setAnalyst(null);
     setQ("");
@@ -286,7 +286,7 @@ function Index() {
        </div>
       </div>
 
-      {feed.length > 0 && <NewsTicker events={feed} onIdea={pickBoardIdea} onTicker={(t) => pickBoardTicker(t, "all")} onAnalyst={pickBoardAnalyst} />}
+      {feed.length > 0 && <NewsTicker events={feed} onIdea={pickBoardIdea} onTicker={(t, scope) => pickBoardTicker(t, "all", scope)} onAnalyst={pickBoardAnalyst} onWeek={() => pickBoardTicker("", "all", "week")} />}
       {/* Scene */}
       <div className="flex flex-col pb-8 lg:flex-row">
         <div ref={mapStart} className="relative mb-4 h-[480px] p-0 lg:flex-1 min-[640px]:p-2 md:h-[680px] md:p-4">

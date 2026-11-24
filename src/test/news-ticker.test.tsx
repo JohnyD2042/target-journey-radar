@@ -18,22 +18,22 @@ const events: FeedEvent[] = [
 describe("manual news capsules", () => {
   it("selects the specific idea from its capsule", () => {
     const onIdea = vi.fn();
-    render(<NewsTicker events={events} onIdea={onIdea} onTicker={vi.fn()} onAnalyst={vi.fn()} />);
+    render(<NewsTicker events={events} onIdea={onIdea} onTicker={vi.fn()} onAnalyst={vi.fn()} onWeek={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Т-Технологии/ }));
     expect(onIdea).toHaveBeenCalledExactlyOnceWith(idea);
   });
 
   it("selects the weekly stock from its own capsule", () => {
     const onTicker = vi.fn();
-    render(<NewsTicker events={events} onIdea={vi.fn()} onTicker={onTicker} onAnalyst={vi.fn()} />);
+    render(<NewsTicker events={events} onIdea={vi.fn()} onTicker={onTicker} onAnalyst={vi.fn()} onWeek={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Самая популярная акция недели" }));
-    expect(onTicker).toHaveBeenCalledExactlyOnceWith("T");
+    expect(onTicker).toHaveBeenCalledExactlyOnceWith("T", "all");
   });
 
   it("selects the weekly analyst from its own capsule", () => {
     const onAnalyst = vi.fn();
-    render(<NewsTicker events={events} onIdea={vi.fn()} onTicker={vi.fn()} onAnalyst={onAnalyst} />);
+    render(<NewsTicker events={events} onIdea={vi.fn()} onTicker={vi.fn()} onAnalyst={onAnalyst} onWeek={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Самый активный аналитик недели" }));
-    expect(onAnalyst).toHaveBeenCalledExactlyOnceWith("Автор");
+    expect(onAnalyst).toHaveBeenCalledExactlyOnceWith("Автор", "all");
   });
 });

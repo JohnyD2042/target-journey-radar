@@ -45,6 +45,57 @@ const flight = {
 function failMissingNews(): never { throw new Error("Missing news event"); }
 
 describe("Другие идеи", () => {
+  const withWeeklyFlight = (check: () => void) => {
+    const previous = flight.ideas;
+    flight.ideas = [
+      ...Array.from({ length: 31 }, (_, id) => ({
+        ...idea(id + 1, id % 2 === 0 ? "active" : "closed", id < 10 ? "SBER" : "T"),
+        analyst: id < 7 ? "СберИнвестиции" : `Автор ${id % 6}`,
+        strategy: id < 3 ? "шорт" as const : "лонг" as const,
+        opened: "2026-11-16",
+      })),
+      { ...idea(100, "active", "SBER"), analyst: "СберИнвестиции", opened: "2026-10-01" },
+    ];
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    Element.prototype.scrollIntoView = vi.fn();
+    const Component = Route.options.component;
+    if (!Component) throw new Error("Missing index component");
+    try { render(<Component />); check(); } finally { flight.ideas = previous; }
+  };
+
+  it("weekly count opens all 31 weekly ideas, including the 3 shorts, and clears stale filters", () => {
+    withWeeklyFlight(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Табло аналитик A" }));
+      fireEvent.click(screen.getByRole("button", { name: /^Активные / }));
+      fireEvent.click(screen.getByRole("button", { name: "31 идея за неделю, из них 3 в шорт" }));
+      expect(screen.getByTestId("map-ideas").querySelectorAll("button")).toHaveLength(31);
+      for (const id of [1, 2, 3, 31]) expect(screen.getByRole("button", { name: `Самолёт ${id}` })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Самолёт 100" })).toBeNull();
+      expect(screen.getByPlaceholderText("Все аналитики — поиск…")).toHaveValue("");
+    });
+  });
+
+  it("weekly analyst opens exactly 7 Sber ideas, not its all-time history", () => {
+    withWeeklyFlight(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Табло CHMF" }));
+      fireEvent.click(screen.getByRole("button", { name: /СберИнвестиции самый активный аналитик недели/ }));
+      expect(screen.getByTestId("map-ideas").querySelectorAll("button")).toHaveLength(7);
+      for (const id of [1, 2, 7]) expect(screen.getByRole("button", { name: `Самолёт ${id}` })).toBeTruthy();
+      for (const id of [8, 100]) expect(screen.queryByRole("button", { name: `Самолёт ${id}` })).toBeNull();
+      expect(screen.getByPlaceholderText("Тикер или название…")).toHaveValue("");
+    });
+  });
+
+  it("weekly stock also limits navigation to the week's ideas in both statuses", () => {
+    withWeeklyFlight(() => {
+      fireEvent.click(screen.getByRole("button", { name: /T самая популярная акция недели/ }));
+      expect(screen.getByTestId("map-ideas").querySelectorAll("button")).toHaveLength(21);
+      expect(screen.getByRole("button", { name: "Самолёт 11" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Самолёт 12" })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Самолёт 100" })).toBeNull();
+    });
+  });
+
   it("board idea selection clears the old ticker and restores every idea on each selection", () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: true });
     Element.prototype.scrollIntoView = vi.fn();

@@ -1,4 +1,4 @@
-import type { Idea, Stage } from "@/lib/ideas";
+import type { Idea, Period, Stage } from "@/lib/ideas";
 import { ideaTitle, inPeriod } from "@/lib/ideas";
 import { topArrivals, topClimbers, topDarkHorses, topPredictable, topPunctual, topUpside } from "@/lib/boards";
 
@@ -15,6 +15,7 @@ export interface FeedEvent {
   analyst?: string;
   count?: number;
   shortCount?: number;
+  /** Navigation scope for aggregate weekly stories. */ period?: Period;
   /** upside or result, shown at the right end of the line */ value?: string;
   /** company / instrument / portfolio name, shown at the left end */ name?: string;
   /** API flight stage only; aggregate stories have no stage. */ status?: string | undefined;
@@ -134,9 +135,9 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 25): FeedEvent[] {
   })));
   const summary = weeklySummary(ideas, asOf);
   if (summary.count > 0) {
-    group([{ id: "s-short", kind: "stat", count: summary.count, shortCount: summary.shortCount, text: `${summary.count} ${plural(summary.count)} за неделю, из них ${summary.shortCount} в шорт` }]);
-    if (summary.stock) group([{ id: `s-${summary.stock.ticker}`, kind: "stat", ticker: summary.stock.ticker, name: summary.stock.name, count: summary.stock.count, text: `самая популярная акция недели - ${summary.stock.count} ${plural(summary.stock.count)}` }]);
-    if (summary.analyst) group([{ id: "s-analyst", kind: "stat", analyst: summary.analyst.name, name: summary.analyst.name, count: summary.analyst.count, text: `самый активный аналитик недели - ${summary.analyst.count} ${plural(summary.analyst.count)}` }]);
+    group([{ id: "s-short", kind: "stat", period: "week", count: summary.count, shortCount: summary.shortCount, text: `${summary.count} ${plural(summary.count)} за неделю, из них ${summary.shortCount} в шорт` }]);
+    if (summary.stock) group([{ id: `s-${summary.stock.ticker}`, kind: "stat", period: "week", ticker: summary.stock.ticker, name: summary.stock.name, count: summary.stock.count, text: `самая популярная акция недели - ${summary.stock.count} ${plural(summary.stock.count)}` }]);
+    if (summary.analyst) group([{ id: "s-analyst", kind: "stat", period: "week", analyst: summary.analyst.name, name: summary.analyst.name, count: summary.analyst.count, text: `самый активный аналитик недели - ${summary.analyst.count} ${plural(summary.analyst.count)}` }]);
   }
 
   const queues = groups.map((list) => [...list]);
