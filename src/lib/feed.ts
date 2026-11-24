@@ -121,7 +121,7 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 25): FeedEvent[] {
     .map((i) => event(i, "no-target", "полёт без целевой цены", yieldValue(i))));
   group(topDarkHorses(ideas, asOf, 5).map((h) => ({
     id: `h${h.ticker}`, kind: "hero" as const, ticker: h.ticker, name: h.name || h.ticker,
-    text: `новый герой ${h.count} ${plural(h.count)} за 60 дней`,
+    text: `новый герой - ${h.count} ${plural(h.count)} за 60 дней`,
     ...(h.averageUpside != null ? { value: `средний апсайд ${pct(h.averageUpside)}` } : {}),
   })));
   group(topPredictable(ideas, 3).map((t) => ({
@@ -129,14 +129,14 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 25): FeedEvent[] {
     text: `точность прогнозов ${t.positive} из ${t.total} идей в плюсе`,
   })));
   group(topPunctual(ideas, 3).map((a) => ({
-    id: `analyst-${a.name}`, kind: "punctual" as const, analyst: a.name,
-    text: `${a.name} ${a.onTarget} из ${a.total} идей у цели или на посадке`,
+    id: `analyst-${a.name}`, kind: "punctual" as const, analyst: a.name, name: a.name,
+    text: `${a.onTarget} из ${a.total} идей у цели или на посадке`,
   })));
   const summary = weeklySummary(ideas, asOf);
   if (summary.count > 0) {
     group([{ id: "s-short", kind: "stat", count: summary.count, shortCount: summary.shortCount, text: `${summary.count} ${plural(summary.count)} за неделю, из них ${summary.shortCount} в шорт` }]);
-    if (summary.stock) group([{ id: `s-${summary.stock.ticker}`, kind: "stat", ticker: summary.stock.ticker, count: summary.stock.count, text: `Самая популярная акция недели ${summary.stock.name}: ${summary.stock.count} ${plural(summary.stock.count)}` }]);
-    if (summary.analyst) group([{ id: "s-analyst", kind: "stat", analyst: summary.analyst.name, count: summary.analyst.count, text: `Самый активный аналитик недели ${summary.analyst.name}: ${summary.analyst.count} ${plural(summary.analyst.count)}` }]);
+    if (summary.stock) group([{ id: `s-${summary.stock.ticker}`, kind: "stat", ticker: summary.stock.ticker, name: summary.stock.name, count: summary.stock.count, text: `самая популярная акция недели - ${summary.stock.count} ${plural(summary.stock.count)}` }]);
+    if (summary.analyst) group([{ id: "s-analyst", kind: "stat", analyst: summary.analyst.name, name: summary.analyst.name, count: summary.analyst.count, text: `самый активный аналитик недели - ${summary.analyst.count} ${plural(summary.analyst.count)}` }]);
   }
 
   const queues = groups.map((list) => [...list]);

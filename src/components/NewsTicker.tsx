@@ -42,7 +42,8 @@ export function NewsTicker({ events, onIdea, onTicker, onAnalyst }: { events: Fe
       {events.map((e) => {
         const side = e.idea ? (e.idea.strategy === "шорт" ? "text-short" : "text-long") : "text-primary";
         const Icon = e.idea ? IDEA_ICON : e.kind === "hero" ? BOARD_ICONS.dark : e.kind === "predictable" ? BOARD_ICONS.predictable : e.kind === "punctual" ? BOARD_ICONS.punctual : ChartNoAxesColumn;
-        const label = [e.idea?.strategy === "шорт" ? "ШОРТ" : undefined, e.name, e.idea?.analyst, e.text, e.value, e.status].filter(Boolean).join(" ");
+        const name = e.name?.replace(/\p{L}/u, (letter) => letter.toLocaleUpperCase("ru-RU"));
+        const label = [name, e.idea?.analyst, e.idea?.strategy === "шорт" ? "ШОРТ" : undefined, e.text, e.value, e.status].filter(Boolean).join(" ");
         return (
           <Button
             key={e.id}
@@ -56,11 +57,9 @@ export function NewsTicker({ events, onIdea, onTicker, onAnalyst }: { events: Fe
             className="h-12 min-w-0 shrink-0 min-w-[calc(100%-20px)] justify-start gap-1.5 rounded-full bg-card px-3 text-left font-mono text-[11px] hover:border-primary md:min-w-[calc((100%-28px)/2)] md:text-xs"
           >
             <span className={`grid size-7 shrink-0 place-items-center rounded-full bg-muted ${side}`}><Icon /></span>
+            {name && <b className="shrink-0 font-semibold text-foreground">{name}</b>}
             {e.idea?.strategy === "шорт" && <span className={`shrink-0 font-semibold ${side}`}>ШОРТ</span>}
-            <span className="shrink-0 text-foreground">
-              <span className="text-muted-foreground">{e.text}</span>
-              {e.name && <>{" "}<b className="font-semibold">{e.name}</b></>}
-            </span>
+            <span className="shrink-0 text-muted-foreground">{e.text}</span>
             {e.value && <span className={`shrink-0 ${e.idea && e.idea.yieldPct < 0 && e.kind !== "open" ? "text-short" : "text-long"}`}>
               {e.value}
             </span>}
