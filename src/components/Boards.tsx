@@ -2,7 +2,8 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Timer } from "lucide-react";
 import { BOARD_ICONS } from "@/components/board-icons";
 import { topClimbers, topPunctual, topUpside, topDarkHorses, topPredictable, topArrivals } from "@/lib/boards";
-import { ideaTitle, isLong, type Book, type Idea } from "@/lib/ideas";
+import { ideaTitle, type Book, type Idea } from "@/lib/ideas";
+import { SideTag } from "@/components/IdeaPath";
 import { Button } from "@/components/ui/button";
 import { ScrambleTitle } from "@/components/ScrambleTitle";
 import { ZoneGlyph, ZONE_ICON } from "@/components/FlightChart";
@@ -118,7 +119,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
             <Button variant="ghost" onClick={() => onPick(i)} className={`grid h-15 w-full ${ideaColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} title={isLong(i) ? "Лонг" : "Шорт"} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
+                  <SideTag idea={i} />
                   <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{i.ticker}</span>
                   <span className="min-w-0 truncate text-sm" title={ideaTitle(i)}>{ideaTitle(i)}</span>
                 </span>
@@ -208,7 +209,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
               <Button variant="ghost" onClick={() => onPick(i)} className={`grid h-15 w-full ${upsideColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
                 <span className="min-w-0">
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
+                    <SideTag idea={i} />
                     <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{i.ticker}</span>
                     <span className="min-w-0 truncate text-sm" title={ideaTitle(i)}>{ideaTitle(i)}</span>
                   </span>
@@ -238,7 +239,7 @@ export function Boards({ ideas, asOf, onPick, onAnalystPick, onTickerPick }: { i
             <Button variant="ghost" onClick={() => onPick(i)} className={`grid h-15 w-full ${arrivalColumns} items-center whitespace-normal rounded-none px-3 py-2.5 text-left font-normal hover:bg-muted/40`}>
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <span className={`w-4 shrink-0 text-center text-sm ${isLong(i) ? "text-long" : "text-short"}`} aria-label={isLong(i) ? "Лонг" : "Шорт"}>✈</span>
+                  <SideTag idea={i} />
                   <span className="shrink-0 rounded border px-1 font-mono text-xs font-semibold">{i.ticker}</span>
                   <span className="min-w-0 truncate text-sm" title={ideaTitle(i)}>{ideaTitle(i)}</span>
                 </span>

@@ -1,4 +1,5 @@
 import { type Idea, isLong } from "@/lib/ideas";
+import { IDEA_ICON } from "@/components/board-icons";
 
 const pct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 const x = (v: number) => `${v.toFixed(2).replace(".", ",")}x`;
@@ -40,8 +41,9 @@ export function IdeaPath({ idea: i }: { idea: Idea }) {
 
 export function SideTag({ idea: i }: { idea: Idea }) {
   return (
-    <span className={`rounded border px-1 font-mono text-[9px] font-semibold uppercase leading-4 ${isLong(i) ? "border-long/40 text-long" : "border-short/40 text-short"}`}>
-      {i.strategy}
+    <span title={isLong(i) ? "Лонг" : "Шорт"} aria-label={isLong(i) ? "Лонг" : "Шорт"} className={`inline-flex shrink-0 items-center gap-1 font-mono text-[9px] font-semibold uppercase leading-4 ${isLong(i) ? "text-long" : "text-short"}`}>
+      <IDEA_ICON size={14} aria-hidden="true" />
+      {!isLong(i) && "ШОРТ"}
     </span>
   );
 }

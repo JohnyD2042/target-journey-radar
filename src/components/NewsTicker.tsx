@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { ChartNoAxesColumn, Plane } from "lucide-react";
-import { BOARD_ICONS } from "@/components/board-icons";
+import { ChartNoAxesColumn } from "lucide-react";
+import { BOARD_ICONS, IDEA_ICON } from "@/components/board-icons";
 import type { Idea } from "@/lib/ideas";
 import type { FeedEvent } from "@/lib/feed";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export function NewsTicker({ events, onIdea, onTicker, onAnalyst }: { events: Fe
     >
       {events.map((e) => {
         const side = e.idea ? (e.idea.strategy === "шорт" ? "text-short" : "text-long") : "text-primary";
-        const Icon = e.idea ? Plane : e.kind === "hero" ? BOARD_ICONS.dark : e.kind === "predictable" ? BOARD_ICONS.predictable : e.kind === "punctual" ? BOARD_ICONS.punctual : ChartNoAxesColumn;
+        const Icon = e.idea ? IDEA_ICON : e.kind === "hero" ? BOARD_ICONS.dark : e.kind === "predictable" ? BOARD_ICONS.predictable : e.kind === "punctual" ? BOARD_ICONS.punctual : ChartNoAxesColumn;
         const label = [e.idea?.strategy === "шорт" ? "ШОРТ" : undefined, e.name, e.idea?.analyst, e.text, e.value, e.status].filter(Boolean).join(" ");
         return (
           <Button

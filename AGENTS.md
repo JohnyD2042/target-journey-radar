@@ -11,6 +11,7 @@
 
 - Keep flight-map viewport math in the browser-safe map-view module with unit tests; this separates navigation from animated rendering.
 - Keep board heading symbols in the shared browser-safe board-icons module and reuse them for matching aggregate news stories so sections cannot drift apart.
+- Reuse IDEA_ICON and SideTag for idea direction in news, board rows, cards, tooltips and the direction key; retain the map's top-down animated markers and zone glyphs as distinct cartographic symbols.
 - Render zone labels and counts inside the map, outside its pan/zoom transform; navigation and reset must not remove the overview.
 - Individual idea selections from boards or news clear all header filters, show the full dataset, replace the pinned idea, scroll to the map wrapper and reset its viewport; this prevents stale instrument or analyst selections from mixing unrelated planes.
 - Analyst board selections use the header analyst filter and clear other filters and pinned ideas, so the map shows the author's entire history without unrelated planes.

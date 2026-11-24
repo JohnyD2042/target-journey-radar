@@ -6,6 +6,7 @@ import { FlightChart, ZoneGlyph, ZONE_ICON, ZONE_TEXT } from "@/components/Fligh
 import { BasketTag, SideTag, IdeaPath } from "@/components/IdeaPath";
 import { Boards } from "@/components/Boards";
 import { NewsTicker } from "@/components/NewsTicker";
+import { IDEA_ICON } from "@/components/board-icons";
 import { buildFeed, type FeedEvent } from "@/lib/feed";
 import { TabloLogo } from "@/components/TabloLogo";
 import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, moscowTime, zoneOf, ANALYST_TYPES, KINDS, type AnalystType, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
@@ -309,7 +310,7 @@ function Index() {
           )}
           {isFetching && data && <div className="pointer-events-none absolute right-6 top-4 font-mono text-[10px] text-muted-foreground">обновление…</div>}
           <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
-            <span className="text-long">✈ лонг</span><span className="text-short">✈ шорт</span>
+            <span className="inline-flex items-center gap-1 text-long"><IDEA_ICON size={14} aria-hidden="true" /> лонг</span><span className="inline-flex items-center gap-1 text-short"><IDEA_ICON size={14} aria-hidden="true" /> шорт</span>
           </div>
           {sel && <Card idea={sel} onClose={() => setSel(null)} onOthers={(t) => pickBoardTicker(t, "all")} />}
         </div>
