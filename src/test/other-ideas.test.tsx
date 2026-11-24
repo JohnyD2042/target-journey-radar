@@ -95,7 +95,7 @@ describe("Другие идеи", () => {
     if (!Component) throw new Error("Missing index component");
     try {
       render(<Component />);
-      fireEvent.click(screen.getAllByTestId("news-ticker")[0] ?? failMissingNews());
+      fireEvent.click(screen.getByRole("button", { name: /^лонг T A / }));
       fireEvent.click(screen.getByRole("button", { name: "Другие идеи" }));
       expect(screen.getByRole("button", { name: "Самолёт 1" })).toBeTruthy();
       expect(screen.getByRole("button", { name: "Самолёт 2" })).toBeTruthy();

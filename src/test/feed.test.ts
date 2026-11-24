@@ -43,14 +43,14 @@ describe("buildFeed", () => {
     expect(weeklySummary(ideas, "2026-11-19").analyst).toEqual({ name: "Б", count: 3 });
   });
 
-  it("keeps all three weekly summaries in the 20-event rotation even with many fresh ideas", () => {
+  it("keeps all three weekly summaries in the 25-event feed even with many fresh ideas", () => {
     const ideas = Array.from({ length: 30 }, (_, id) => idea({ id, assetType: "stock", opened: "2026-11-19" }));
     const events = buildFeed(ideas, "2026-11-19");
-    expect(events).toHaveLength(20);
+    expect(events).toHaveLength(25);
     expect(events.filter((e) => e.kind === "stat")).toHaveLength(3);
   });
 
-  it("includes ideas opened or closed within the last day and caps at 20", () => {
+  it("includes ideas opened or closed within the last day and caps at 25", () => {
     const ideas = [
       idea({ id: 1, opened: "2026-11-19" }),
       idea({ id: 2, status: "closed", closed: "2026-11-18" }),
@@ -58,11 +58,11 @@ describe("buildFeed", () => {
       ...Array.from({ length: 30 }, (_, k) => idea({ id: 100 + k, opened: "2026-11-19" })),
     ];
     const f = buildFeed(ideas, "2026-11-19");
-    expect(f).toHaveLength(20);
+    expect(f).toHaveLength(25);
     const all = buildFeed(ideas.slice(0, 3), "2026-11-19");
     expect(all.some((e) => e.idea?.id === 1 && e.kind === "open")).toBe(true);
     expect(all.some((e) => e.idea?.id === 2 && e.kind === "close")).toBe(true);
-    expect(all.some((e) => e.idea?.id === 3)).toBe(false);
+    expect(all.some((e) => e.idea?.id === 3 && e.kind === "open")).toBe(false);
   });
 
   it("names the company, not the short ticker, and puts the state last", () => {
@@ -111,5 +111,41 @@ describe("buildFeed", () => {
     expect(byId.get(2)).toBe("в полёте");
     expect(byId.get(3)).toBe("посадка");
     expect(byId.get(4)).toBeUndefined();
+  });
+
+  it("reserves different scenarios among 25 stories instead of letting fresh ideas crowd them out", () => {
+    const ideas = [
+      ...Array.from({ length: 40 }, (_, id) => idea({ id, ticker: `NEW${id}`, assetType: "stock", opened: "2026-11-19" })),
+      idea({ id: 100, ticker: "LAND", stage: "approach", yieldPct: 20 }),
+      idea({ id: 101, ticker: "WIN", yieldPct: 80 }),
+      idea({ id: 102, ticker: "LOSS", yieldPct: -40, stage: "cold" }),
+      idea({ id: 103, ticker: "UP", toTargetPct: 250 }),
+      idea({ id: 104, ticker: "SHORT", strategy: "шорт", yieldPct: 10 }),
+      idea({ id: 105, ticker: "EXP", expectedEnd: "2026-11-20" }),
+      idea({ id: 106, ticker: "CLOSE", status: "closed", closed: "2026-11-19", yieldPct: -5 }),
+      idea({ id: 107, ticker: "TARGET", status: "closed", stage: "landed", closed: "2026-11-19", yieldPct: 30 }),
+    ];
+    const events = buildFeed(ideas, "2026-11-19");
+    expect(events).toHaveLength(25);
+    for (const kind of ["open", "close", "target", "approach", "win", "loss", "upside", "short-record", "expiring", "surprise", "hero", "stat"]) {
+      expect(events.some((e) => e.kind === kind)).toBe(true);
+    }
+  });
+
+  it("never repeats an idea across different stories", () => {
+    const ideas = Array.from({ length: 40 }, (_, id) => idea({ id, ticker: `T${id}`, opened: "2026-11-19", yieldPct: 35, toTargetPct: 70 }));
+    const ids = buildFeed(ideas, "2026-11-19").flatMap((e) => e.idea ? [e.idea.id] : []);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("does not invent arrivals or weekly surprises when there are no matching ideas", () => {
+    const events = buildFeed([idea({ opened: "2026-01-01", yieldPct: -1, stage: "cold", noTarget: true })], "2026-11-19");
+    expect(events.some((e) => e.kind === "approach" || e.kind === "surprise")).toBe(false);
+    expect(events.length).toBeLessThan(20);
+  });
+
+  it("excludes future closures from recent stories", () => {
+    const events = buildFeed([idea({ status: "closed", closed: "2026-11-20" })], "2026-11-19");
+    expect(events.some((e) => e.idea)).toBe(false);
   });
 });

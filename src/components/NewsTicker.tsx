@@ -52,18 +52,16 @@ export function NewsTicker({ events, onIdea, onTicker, onAnalyst }: { events: Fe
             aria-label={label}
             title={label}
             onClick={() => { if (e.idea) onIdea(e.idea); else if (e.ticker) onTicker(e.ticker); else if (e.analyst) onAnalyst(e.analyst); }}
-            className="h-12 min-w-0 shrink-0 basis-[calc(100%-20px)] justify-start gap-2 rounded-full bg-card px-3 text-left font-mono text-[11px] hover:border-primary md:basis-[calc((100%-28px)/2)] md:text-xs"
+            className="h-12 min-w-0 shrink-0 min-w-[calc(100%-20px)] justify-start gap-1.5 rounded-full bg-card px-3 text-left font-mono text-[11px] hover:border-primary md:min-w-[calc((100%-28px)/2)] md:text-xs"
           >
             <span className={`grid size-7 shrink-0 place-items-center rounded-full bg-muted ${side}`}><Icon /></span>
             {e.idea && <span className={`shrink-0 font-semibold ${side}`}>{e.idea.strategy === "шорт" ? "ШОРТ" : "ЛОНГ"}</span>}
-            <span className="min-w-0 flex-1 truncate text-foreground">
-              {e.name && <><b className="font-semibold">{e.name}</b>{" "}</>}
-              {e.idea && <span className="hidden text-muted-foreground min-[1280px]:inline">{e.idea.analyst}{" "}</span>}
-              <span className={e.idea ? "hidden text-muted-foreground min-[1280px]:inline" : "text-muted-foreground"}>{e.text}</span>
+            <span className="shrink-0 text-foreground">
+              <span className="text-muted-foreground">{e.text}</span>
+              {e.name && <>{" "}<b className="font-semibold">{e.name}</b></>}
             </span>
             {e.value && <span className={`shrink-0 ${e.idea && e.idea.yieldPct < 0 && e.kind !== "open" ? "text-short" : "text-long"}`}>
-              <span className="min-[1280px]:hidden">{e.value.replace(/^(апсайд|результат|прибыль|убыток)\s+/, "")}</span>
-              <span className="hidden min-[1280px]:inline">{e.value}</span>
+              {e.value}
             </span>}
             {e.status && <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] uppercase ${e.status === "достигли цели" ? "text-long" : "text-muted-foreground"}`}>{e.status}</span>}
           </Button>

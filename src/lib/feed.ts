@@ -1,11 +1,11 @@
 import type { Idea, Stage } from "@/lib/ideas";
 import { ideaTitle, inPeriod } from "@/lib/ideas";
-import { topDarkHorses } from "@/lib/boards";
+import { topArrivals, topClimbers, topDarkHorses, topPredictable, topPunctual, topUpside } from "@/lib/boards";
 
 const DAY = 86_400_000;
 type Raw = Idea & { opened?: string | null; closed?: string | null };
 
-export type FeedKind = "open" | "close" | "target" | "approach" | "win" | "loss" | "hero" | "stat";
+export type FeedKind = "open" | "close" | "target" | "approach" | "win" | "loss" | "hero" | "stat" | "upside" | "start" | "surprise" | "expiring" | "near-target" | "short-record" | "weekly-win" | "weekly-loss" | "portfolio" | "no-target" | "predictable" | "punctual";
 export interface FeedEvent {
   id: string;
   kind: FeedKind;
@@ -47,11 +47,6 @@ function shuffle<T>(list: T[], seed: string): T[] {
   return out;
 }
 
-/**
- * Ticker-tape feed: up to n events. Fresh events (opened within 1 day, closed within 1 day) come first,
- * then landing-zone entries, extreme yields, new heroes and flow statistics fill the rest.
- * Each line carries the company name on the left and the state of the idea on the right.
- */
 export function weeklySummary(ideas: Idea[], asOf: string) {
   const week = ideas.filter((i) => inPeriod(i, "week", asOf));
   const stocks = new Map(ideas.filter((i) => !i.basket && i.assetType === "stock").map((i) => [i.ticker, i.name]));
@@ -73,48 +68,102 @@ export function weeklySummary(ideas: Idea[], asOf: string) {
   };
 }
 
-export function buildFeed(ideas: Idea[], asOf: string, n = 20): FeedEvent[] {
+/** Round-robin selection reserves room for each real scenario before filling extra slots. */
+export function buildFeed(ideas: Idea[], asOf: string, n = 25): FeedEvent[] {
   const now = Date.parse(asOf.slice(0, 10));
+  if (!Number.isFinite(now) || n <= 0) return [];
   const raw = ideas as Raw[];
-  const out: FeedEvent[] = [];
-  const summary = weeklySummary(ideas, asOf);
-  const stats: FeedEvent[] = [];
-  if (summary.count > 0) {
-    stats.push({ id: "s-short", kind: "stat", count: summary.count, shortCount: summary.shortCount, text: `${summary.count} ${plural(summary.count)} за неделю, из них ${summary.shortCount} в шорт` });
-    if (summary.stock) stats.push({ id: `s-${summary.stock.ticker}`, kind: "stat", ticker: summary.stock.ticker, count: summary.stock.count, text: `Самая популярная акция недели ${summary.stock.name}: ${summary.stock.count} ${plural(summary.stock.count)}` });
-    if (summary.analyst) stats.push({ id: "s-analyst", kind: "stat", analyst: summary.analyst.name, count: summary.analyst.count, text: `Самый активный аналитик недели ${summary.analyst.name}: ${summary.analyst.count} ${plural(summary.analyst.count)}` });
-  }
-  const ideaLimit = Math.max(0, n - stats.length);
-  const used = new Set<Idea["id"]>();
-  const push = (e: FeedEvent) => { if (out.length >= ideaLimit) return; if (e.idea) { if (used.has(e.idea.id)) return; used.add(e.idea.id); } out.push(e); };
-  /** every idea line repeats the name and the state the component prints itself */
-  const ideaEvent = (e: Omit<FeedEvent, "name" | "status"> & { idea: Idea }): FeedEvent =>
-    ({ ...e, name: ideaTitle(e.idea), status: statusOf(e.idea) });
-
-  const fresh: FeedEvent[] = [];
-  for (const i of raw) {
-    if (i.status === "closed" && age(i.closed, now) <= 1) {
-      const hit = i.stage === "landed";
-      fresh.push(ideaEvent({ id: `c${i.id}`, kind: hit ? "target" : "close", idea: i, text: "идея закрыта", value: `результат ${pct(i.yieldPct)}` }));
-    } else if (age(i.opened, now) <= 1 && age(i.opened, now) >= 0) {
-      const up = !i.noTarget && i.toTargetPct != null ? `апсайд ${pct(((i as Idea & { upsidePct?: number }).upsidePct ?? 0))}` : undefined;
-      fresh.push(ideaEvent({ id: `o${i.id}`, kind: "open", idea: i, text: "новая идея", ...(up ? { value: up } : {}) }));
-    }
-  }
-  fresh.sort((a, b) => Date.parse((b.idea as Raw).closed ?? (b.idea as Raw).opened ?? "") - Date.parse((a.idea as Raw).closed ?? (a.idea as Raw).opened ?? ""));
-  fresh.forEach(push);
-
   const active = raw.filter((i) => i.status === "active");
-  const extra: FeedEvent[] = [];
-  for (const i of active.filter((x) => x.stage === "approach").slice(0, 4))
-    extra.push(ideaEvent({ id: `a${i.id}`, kind: "approach", idea: i, text: "почти у цели", value: `прибыль ${pct(i.yieldPct)}` }));
-  for (const i of [...active].sort((a, b) => b.yieldPct - a.yieldPct).slice(0, 2))
-    if (i.yieldPct >= 30) extra.push(ideaEvent({ id: `w${i.id}`, kind: "win", idea: i, text: "рекорд в воздухе", value: `прибыль ${pct(i.yieldPct)}` }));
-  for (const i of [...active].sort((a, b) => a.yieldPct - b.yieldPct).slice(0, 2))
-    if (i.yieldPct <= -25) extra.push(ideaEvent({ id: `l${i.id}`, kind: "loss", idea: i, text: "турбулентность", value: `убыток ${pct(i.yieldPct)}` }));
-  for (const h of topDarkHorses(ideas, asOf, 2))
-    extra.push({ id: `h${h.ticker}`, kind: "hero", ticker: h.ticker, name: h.name || h.ticker, status: "герой", text: `${h.count} ${plural(h.count)} за 60 дней` });
+  const groups: FeedEvent[][] = [];
+  const group = (list: FeedEvent[]) => { if (list.length) groups.push(list); };
+  const event = (i: Idea, kind: FeedKind, text: string, value?: string): FeedEvent => ({
+    id: `${kind}-${i.id}`, kind, idea: i, name: ideaTitle(i), status: statusOf(i), text,
+    ...(value ? { value } : {}),
+  });
+  const yieldValue = (i: Idea) => `доходность ${pct(i.yieldPct)}`;
+  const upsideValue = (i: Idea) => !i.noTarget && i.toTargetPct != null && Number.isFinite(i.toTargetPct)
+    ? `апсайд ${pct(i.toTargetPct)}` : undefined;
+  const recent = (date: string | null | undefined, days: number) => { const a = age(date, now); return a >= 0 && a <= days; };
+  const byYield = (a: Idea, b: Idea) => b.yieldPct - a.yieldPct;
+  const byDate = (a: Raw, b: Raw) => Date.parse(b.closed ?? b.opened ?? "") - Date.parse(a.closed ?? a.opened ?? "");
 
-  extra.forEach(push);
-  return shuffle([...out, ...stats].slice(0, n), asOf);
+  group(raw.filter((i) => i.status === "active" && recent(i.opened, 1)).sort(byDate)
+    .map((i) => {
+      const initial = (i as Raw & { upsidePct?: number }).upsidePct;
+      return event(i, "open", "новая идея за сутки", !i.noTarget && initial != null && Number.isFinite(initial) ? `апсайд ${pct(initial)}` : upsideValue(i));
+    }));
+  group(raw.filter((i) => i.status === "closed" && recent(i.closed, 1) && i.stage !== "landed").sort(byDate)
+    .map((i) => event(i, "close", "закрытие за сутки", `результат ${pct(i.yieldPct)}`)));
+  group(raw.filter((i) => i.status === "closed" && recent(i.closed, 1) && i.stage === "landed").sort(byDate)
+    .map((i) => event(i, "target", "цель достигнута за сутки", `результат ${pct(i.yieldPct)}`)));
+  group(active.filter((i) => i.stage === "approach").sort(byYield)
+    .map((i) => event(i, "approach", "заход на посадку", yieldValue(i))));
+  group(topUpside(ideas, 10).map((i) => event(i, "upside", "максимальный апсайд", upsideValue(i))));
+  group(topClimbers(ideas, asOf, 10).map((c) => event(c.idea, "start", "бодрый старт", `темп ${pct(c.perDay)}/день`)));
+  group([...active].filter((i) => i.yieldPct >= 30).sort(byYield)
+    .map((i) => event(i, "win", "рекорд в воздухе", yieldValue(i))));
+  group([...active].filter((i) => i.yieldPct <= -25).sort((a, b) => a.yieldPct - b.yieldPct)
+    .map((i) => event(i, "loss", "турбулентность", yieldValue(i))));
+  group(active.filter((i) => recent(i.opened, 7) && i.yieldPct > 0).sort(byYield)
+    .map((i) => event(i, "surprise", "сюрприз недели", yieldValue(i))));
+  group(active.filter((i) => i.strategy === "шорт" && i.yieldPct > 0).sort(byYield)
+    .map((i) => event(i, "short-record", "лидер среди шортов", yieldValue(i))));
+  const weekClosed = raw.filter((i) => i.status === "closed" && recent(i.closed, 7));
+  group(weekClosed.filter((i) => i.yieldPct > 0).sort(byYield)
+    .map((i) => event(i, "weekly-win", "успешное закрытие недели", `результат ${pct(i.yieldPct)}`)));
+  group(weekClosed.filter((i) => i.yieldPct < 0).sort((a, b) => a.yieldPct - b.yieldPct)
+    .map((i) => event(i, "weekly-loss", "убыточное закрытие недели", `результат ${pct(i.yieldPct)}`)));
+  const arrivals = topArrivals(ideas, asOf, ideas.length);
+  group(arrivals.filter((a) => a.reason === "expiring").map((a) => event(a.idea, "expiring", `срок истекает через ${a.days ?? 0} дн.`, yieldValue(a.idea))));
+  group(arrivals.filter((a) => a.reason === "upside").map((a) => event(a.idea, "near-target", "до цели меньше 3%", upsideValue(a.idea))));
+  group(active.filter((i) => i.basket && i.yieldPct > 0).sort(byYield)
+    .map((i) => event(i, "portfolio", "портфель в плюсе", yieldValue(i))));
+  group(active.filter((i) => i.noTarget && i.yieldPct > 0).sort(byYield)
+    .map((i) => event(i, "no-target", "полёт без целевой цены", yieldValue(i))));
+  group(topDarkHorses(ideas, asOf, 5).map((h) => ({
+    id: `h${h.ticker}`, kind: "hero" as const, ticker: h.ticker, name: h.name || h.ticker,
+    status: "герой", text: `новый герой ${h.count} ${plural(h.count)} за 60 дней`,
+    ...(h.averageUpside != null ? { value: `средний апсайд ${pct(h.averageUpside)}` } : {}),
+  })));
+  group(topPredictable(ideas, 3).map((t) => ({
+    id: `p${t.ticker}`, kind: "predictable" as const, ticker: t.ticker, name: t.name || t.ticker,
+    text: `точность прогнозов ${t.positive} из ${t.total} идей в плюсе`,
+  })));
+  group(topPunctual(ideas, 3).map((a) => ({
+    id: `analyst-${a.name}`, kind: "punctual" as const, analyst: a.name,
+    text: `${a.name} ${a.onTarget} из ${a.total} идей у цели или на посадке`,
+  })));
+  const summary = weeklySummary(ideas, asOf);
+  if (summary.count > 0) {
+    group([{ id: "s-short", kind: "stat", count: summary.count, shortCount: summary.shortCount, text: `${summary.count} ${plural(summary.count)} за неделю, из них ${summary.shortCount} в шорт` }]);
+    if (summary.stock) group([{ id: `s-${summary.stock.ticker}`, kind: "stat", ticker: summary.stock.ticker, count: summary.stock.count, text: `Самая популярная акция недели ${summary.stock.name}: ${summary.stock.count} ${plural(summary.stock.count)}` }]);
+    if (summary.analyst) group([{ id: "s-analyst", kind: "stat", analyst: summary.analyst.name, count: summary.analyst.count, text: `Самый активный аналитик недели ${summary.analyst.name}: ${summary.analyst.count} ${plural(summary.analyst.count)}` }]);
+  }
+
+  const queues = groups.map((list) => [...list]);
+  const out: FeedEvent[] = [];
+  const used = new Set<Idea["id"]>();
+  while (out.length < n) {
+    let added = false;
+    for (const queue of queues) {
+      let next = queue.shift();
+      while (next?.idea && used.has(next.idea.id)) next = queue.shift();
+      if (!next) continue;
+      if (next.idea) used.add(next.idea.id);
+      out.push(next);
+      added = true;
+      if (out.length >= n) break;
+    }
+    if (!added) break;
+  }
+  // Shuffle stories, not the category selection: rankings and fresh-event priority stay meaningful.
+  const pending = shuffle(out, asOf);
+  const ordered: FeedEvent[] = [];
+  while (pending.length) {
+    const previous = ordered.at(-1);
+    const different = pending.findIndex((e) => e.kind !== previous?.kind);
+    const next = pending.splice(different < 0 ? 0 : different, 1)[0];
+    if (next) ordered.push(next);
+  }
+  return ordered;
 }
