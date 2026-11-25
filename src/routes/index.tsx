@@ -149,10 +149,11 @@ function Index() {
   const data = useMemo(() => (full ? applyFilters(full, filters) : undefined), [full, period, book, analyst, ticker, kind, atype]);
 
   const ideas = data?.ideas ?? [];
+  const [side, setSide] = useState<"лонг" | "шорт" | null>(null);
   const shown = useMemo(() => {
-    const filtered = zone ? ideas.filter((i) => zoneOf(i) === zone) : ideas;
+    const filtered = ideas.filter((i) => (!zone || zoneOf(i) === zone) && (!side || i.strategy === side));
     return boardPick && !filtered.some((i) => i.id === boardPick.id) ? [...filtered, boardPick] : filtered;
-  }, [ideas, zone, boardPick]);
+  }, [ideas, zone, side, boardPick]);
   const yRange = useMemo(() => fitYRange(shown.map((i) => i.yieldPct), data?.yieldMin ?? 0, data?.yieldMax ?? 0), [shown, data]);
   const analysts = (data?.analysts ?? []).filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   const tqn = tq.trim().toLowerCase();
@@ -309,8 +310,14 @@ function Index() {
             </div>
           )}
           {isFetching && data && <div className="pointer-events-none absolute right-6 top-4 font-mono text-[10px] text-muted-foreground">обновление…</div>}
-          <div className="pointer-events-none absolute -bottom-3 left-4 flex flex-wrap gap-4 font-mono text-[10px] text-muted-foreground md:left-6">
-            <span className="inline-flex items-center gap-1 text-long"><IDEA_ICON size={14} aria-hidden="true" /> лонг</span><span className="inline-flex items-center gap-1 text-short"><IDEA_ICON size={14} aria-hidden="true" /> шорт</span>
+          <div className="absolute -bottom-4 left-4 z-10 flex flex-wrap gap-2 font-mono text-xs md:left-6">
+            {(["лонг", "шорт"] as const).map((s) => (
+              <button key={s} type="button" aria-pressed={side === s} title={side === s ? "Показать все идеи" : `Показать только ${s}`}
+                onClick={() => setSide(side === s ? null : s)}
+                className={`inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 font-semibold uppercase ${s === "лонг" ? "text-long" : "text-short"} ${side === s ? (s === "лонг" ? "border-long" : "border-short") : side ? "opacity-50" : ""}`}>
+                <IDEA_ICON size={20} aria-hidden="true" /> {s === "лонг" ? "Long" : "Short"}
+              </button>
+            ))}
           </div>
           {sel && <Card idea={sel} onClose={() => setSel(null)} onOthers={(t) => pickBoardTicker(t, "all")} />}
         </div>
