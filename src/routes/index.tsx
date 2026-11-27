@@ -290,7 +290,9 @@ function Index() {
       {feed.length > 0 && <NewsTicker events={feed} onIdea={pickBoardIdea} onTicker={(t, scope) => pickBoardTicker(t, "all", scope)} onAnalyst={pickBoardAnalyst} onWeek={() => pickBoardTicker("", "all", "week")} />}
       {/* Scene */}
       <div className="flex flex-col pb-8 lg:flex-row">
-        <div ref={mapStart} className="relative mb-4 h-[480px] p-0 lg:flex-1 min-[640px]:p-2 md:h-[680px] md:p-4">
+        <div ref={mapStart} className="relative mb-4 p-0 lg:flex-1 min-[640px]:p-2 md:h-[680px] md:p-4">
+          {/* the map itself keeps its own box; the direction keys below it get their own row */}
+          <div className="relative h-[480px] md:absolute md:inset-0 md:h-auto">
           {data && shown.length > 0 ? (
             <FlightChart
               key={mapVisit}
@@ -310,7 +312,9 @@ function Index() {
             </div>
           )}
           {isFetching && data && <div className="pointer-events-none absolute right-6 top-4 font-mono text-[10px] text-muted-foreground">обновление…</div>}
-          <div className="absolute -bottom-4 left-4 z-10 flex flex-wrap gap-2 font-mono text-xs md:left-6">
+          {sel && <Card idea={sel} onClose={() => setSel(null)} onOthers={(t) => pickBoardTicker(t, "all")} />}
+          </div>
+          <div className="z-10 mt-2 flex flex-wrap gap-2 px-4 font-mono text-xs md:absolute md:-bottom-4 md:left-6 md:mt-0 md:px-0">
             {(["лонг", "шорт"] as const).map((s) => (
               <button key={s} type="button" aria-pressed={side === s} title={side === s ? "Показать все идеи" : `Показать только ${s}`}
                 onClick={() => setSide(side === s ? null : s)}
@@ -319,7 +323,6 @@ function Index() {
               </button>
             ))}
           </div>
-          {sel && <Card idea={sel} onClose={() => setSel(null)} onOthers={(t) => pickBoardTicker(t, "all")} />}
         </div>
       </div>
       <Legend />
