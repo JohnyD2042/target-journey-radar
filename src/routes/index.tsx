@@ -230,9 +230,9 @@ function Index() {
             </div>
           )}
         </div>
-        <Presets items={["СберИнвестиции"]} wide="Финам" onPick={(v) => { setAnalyst(v); setQ(""); }}>
-          <Annunciator label="Профучастники" count={data?.atypes?.institutional ?? 0} on={atype === "institutional"} onClick={() => toggleAtype("institutional")} />
-          {atype && atype !== "institutional" && <Annunciator label={ANALYST_TYPES.find(([k]) => k === atype)![1]} count={data?.atypes?.[atype] ?? 0} on onClick={() => setAtype("")} />}
+        <Presets items={["СберИнвестиции"]} wide="Финам" selected={analyst ?? ""} onPick={(v) => { setAnalyst(v); setQ(""); }}>
+          {analyst ? <Annunciator label={analyst} count={data?.ideas.length ?? 0} on onClick={() => { setAnalyst(null); setQ(""); }} /> : <Annunciator label="Профучастники" count={data?.atypes?.institutional ?? 0} on={atype === "institutional"} onClick={() => toggleAtype("institutional")} />}
+          {!analyst && atype && atype !== "institutional" && <Annunciator label={ANALYST_TYPES.find(([k]) => k === atype)![1]} count={data?.atypes?.[atype] ?? 0} on onClick={() => setAtype("")} />}
         </Presets>
         </div>
         <label className="flex min-w-0 flex-col gap-1">
@@ -279,9 +279,9 @@ function Index() {
               </div>
             )}
           </div>
-          <Presets items={["OZON", "Новатэк"]} wide="Яндекс" onPick={(v) => commitTicker(exactHit(v) || v)}>
-            <Annunciator label="Акции" count={data?.kinds?.stock ?? 0} on={kind === "stock"} onClick={() => toggleKind("stock")} />
-            {kind && kind !== "stock" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => setKind("")} />}
+          <Presets items={["OZON", "Новатэк"]} wide="Яндекс" selected={ticker} onPick={(v) => commitTicker(exactHit(v) || v)}>
+            {ticker ? <Annunciator label={ticker} count={data?.ideas.length ?? 0} on onClick={() => commitTicker("")} /> : <Annunciator label="Акции" count={data?.kinds?.stock ?? 0} on={kind === "stock"} onClick={() => toggleKind("stock")} />}
+            {!ticker && kind && kind !== "stock" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => setKind("")} />}
           </Presets>
         </label>
        </div>
@@ -352,17 +352,21 @@ function Annunciator({ label, count, on, onClick, mouseDown }: { label: string; 
   );
 }
 
-function Presets({ items, wide, onPick, children }: { items: string[]; wide?: string; onPick: (v: string) => void; children?: React.ReactNode }) {
+function Presets({ items, wide, selected = "", onPick, children }: { items: string[]; wide?: string; selected?: string; onPick: (v: string) => void; children?: React.ReactNode }) {
+  // a selected name is never truncated: the longer it is, the fewer hints stay beside it
+  const len = selected.length;
+  const hide = len > 22 ? "hidden" : len > 12 ? "hidden md:inline-flex" : "";
+  const same = (v: string) => !!selected && v.toLowerCase() === selected.toLowerCase();
   const chip = "min-h-9 rounded-full border bg-card px-3.5 py-2 text-sm md:min-h-0 md:px-3 md:py-1.5 md:text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground";
   return (
     <div className="flex flex-wrap items-center gap-2 md:gap-1.5">
       {children}
-      {children && <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />}
-      {items.map((v) => (
-        <button key={v} type="button" onClick={() => onPick(v)} className={chip}>{v}</button>
+      {children && <span className={`${len > 22 ? "hidden" : ""} mx-0.5 h-4 w-px bg-border`} aria-hidden="true" />}
+      {items.filter((v) => !same(v)).map((v) => (
+        <button key={v} type="button" onClick={() => onPick(v)} className={`${hide} ${chip}`}>{v}</button>
       ))}
-      {/* third hint only where there is room for it */}
-      {wide && <button type="button" onClick={() => onPick(wide)} className={`hidden md:inline-flex xl:hidden min-[1500px]:inline-flex ${chip}`}>{wide}</button>}
+      {/* third hint only where there is room for it, and only beside a short selection */}
+      {wide && !same(wide) && len <= 12 && <button type="button" onClick={() => onPick(wide)} className={`hidden md:inline-flex xl:hidden min-[1500px]:inline-flex ${chip}`}>{wide}</button>}
     </div>
   );
 }
