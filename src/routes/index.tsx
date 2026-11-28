@@ -54,25 +54,26 @@ function UpsidePicker({ value, counts, onChange }: { value: number; counts: numb
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" aria-label="Фильтр по апсайду" className={`inline-flex h-4 items-center gap-1 rounded-full border px-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${value ? "border-foreground/60 bg-linear-to-b from-zinc-200 to-zinc-400 text-zinc-900" : "text-muted-foreground hover:text-foreground"}`}>
-          Апсайд {value ? `от ${value}%` : "любой"}
+        <button type="button" aria-label="Фильтр по апсайду" className={`inline-flex h-4 items-center gap-1 rounded-full border px-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${value ? "border-primary bg-primary text-primary-foreground" : "text-muted-foreground hover:border-primary/60 hover:text-foreground"}`}>
+          Апсайд {value ? `от ${label(value)}` : "любой"}
+          {value ? <span className="opacity-70">· {counts[idx] ?? 0}</span> : null}
           <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 p-4">
         <div className="mb-3 flex items-baseline justify-between font-mono text-[11px] uppercase tracking-wider">
           <span className="text-muted-foreground">Апсайд от</span>
-          <span><span className="font-semibold text-foreground">{value ? `${value}%` : "любой"}</span> <span className="text-muted-foreground">· {counts[idx] ?? 0} идей</span></span>
+          <span><span className="font-semibold text-primary">{value ? label(value) : "любой"}</span> <span className="text-muted-foreground">· {counts[idx] ?? 0} идей</span></span>
         </div>
         <div role="radiogroup" aria-label="Минимальный апсайд" className="relative px-2">
           <div className="absolute left-2 right-2 top-[8px] h-1 rounded-full bg-zinc-600" />
-          <div className="absolute left-2 top-[8px] h-1 rounded-full bg-zinc-200 transition-all" style={{ width: `calc((100% - 1rem) * ${idx / (UPSIDE_STEPS.length - 1)})` }} />
+          <div className="absolute left-2 top-[8px] h-1 rounded-full bg-primary transition-all" style={{ width: `calc((100% - 1rem) * ${idx / (UPSIDE_STEPS.length - 1)})` }} />
           <div className="relative flex justify-between">
             {UPSIDE_STEPS.map((s, k) => (
               <button key={s} type="button" role="radio" aria-checked={k === idx} aria-label={`Апсайд от ${label(s)}`} onClick={() => onChange(s)}
                 className="-mx-2 flex w-8 flex-col items-center gap-1.5 focus-visible:outline-2">
-                <span className="flex h-5 w-5 items-center justify-center"><span className={`block rounded-full transition-all ${k === idx ? "h-5 w-5 border-2 border-background bg-zinc-100 shadow-[0_0_0_3px_rgba(212,212,216,0.35)]" : k < idx ? "h-2.5 w-2.5 bg-zinc-200" : "h-2.5 w-2.5 border-2 border-zinc-400 bg-zinc-800"}`} /></span>
-                <span className={`font-mono text-[10px] ${k === idx ? "text-foreground" : "text-muted-foreground"}`}>{label(s)}</span>
+                <span className="flex h-5 w-5 items-center justify-center"><span className={`block rounded-full transition-all ${k === idx ? "h-5 w-5 border-2 border-background bg-primary shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_35%,transparent)]" : k < idx ? "h-2.5 w-2.5 bg-primary" : "h-2.5 w-2.5 border-2 border-zinc-400 bg-zinc-800"}`} /></span>
+                <span className={`font-mono text-[10px] ${k === idx ? "text-primary" : "text-muted-foreground"}`}>{label(s)}</span>
               </button>
             ))}
           </div>
