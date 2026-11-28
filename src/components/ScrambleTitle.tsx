@@ -2,26 +2,47 @@ import { useEffect, useRef, useState } from "react";
 
 const GLYPHS = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЭЮЯ0123456789#%*+=-/<>";
 
-/** Board-style decode of a title: plays once when it first scrolls into view and again whenever `replay` changes. */
+/** Board-style decode of a title: plays when it first scrolls into view, whenever `replay` changes,
+ *  on mouse hover over its heading, and at random 15–30 s intervals while visible on an active tab. */
 export function ScrambleTitle({ text, replay }: { text: string; replay?: unknown }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [cells, setCells] = useState<{ ch: string; done: boolean }[] | null>(null);
   const [run, setRun] = useState(0);
   const seen = useRef(false);
+  const visible = useRef(false);
   const first = useRef(true);
 
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver((es) => {
-      if (es.some((e) => e.isIntersecting) && !seen.current) {
+      const e = es[es.length - 1];
+      visible.current = !!e?.isIntersecting;
+      if (visible.current && !seen.current) {
         seen.current = true;
         setRun((r) => r + 1);
-        io.disconnect();
       }
-    }, { threshold: 0.6 });
+    }, { threshold: 0.2 });
     io.observe(el);
-    return () => io.disconnect();
+    let timer = 0;
+    const schedule = () => {
+      timer = window.setTimeout(() => {
+        if (visible.current && document.visibilityState === "visible") setRun((r) => r + 1);
+        schedule();
+      }, 15000 + Math.random() * 15000);
+    };
+    schedule();
+    const host = el.closest("button, h2") ?? el;
+    let lastHover = 0;
+    const onEnter = (ev: Event) => {
+      if ((ev as PointerEvent).pointerType !== "mouse") return;
+      const now = performance.now();
+      if (now - lastHover < 1200) return;
+      lastHover = now;
+      setRun((r) => r + 1);
+    };
+    host.addEventListener("pointerenter", onEnter);
+    return () => { io.disconnect(); clearTimeout(timer); host.removeEventListener("pointerenter", onEnter); };
   }, []);
 
   useEffect(() => {
