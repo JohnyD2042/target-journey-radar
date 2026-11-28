@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChartNoAxesColumn, ChevronRight } from "lucide-react";
+import { ChartNoAxesColumn, ChevronLeft, ChevronRight } from "lucide-react";
 import { BOARD_ICONS, IDEA_ICON } from "@/components/board-icons";
 import type { Idea, Period } from "@/lib/ideas";
 import type { FeedEvent } from "@/lib/feed";
@@ -11,10 +11,11 @@ export function NewsTicker({ events, onIdea, onTicker, onAnalyst, onWeek }: { ev
   const dragged = useRef(false);
   const strip = useRef<HTMLDivElement>(null);
   const [more, setMore] = useState(false);
+  const [less, setLess] = useState(false);
   useEffect(() => {
     const el = strip.current;
     if (!el) return;
-    const update = () => setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    const update = () => { setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 4); setLess(el.scrollLeft > 4); };
     update();
     el.addEventListener("scroll", update, { passive: true });
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : undefined;
@@ -82,6 +83,18 @@ export function NewsTicker({ events, onIdea, onTicker, onAnalyst, onWeek }: { ev
         );
       })}
     </div>
+    {less && (
+      <div className="pointer-events-none absolute inset-y-0 left-0 flex w-14 items-center justify-start bg-linear-to-r from-background via-background/80 to-transparent">
+        <button
+          type="button"
+          aria-label="Прокрутить новости влево"
+          onClick={() => strip.current?.scrollBy({ left: -300, behavior: "smooth" })}
+          className="pointer-events-auto grid size-7 place-items-center rounded-full border bg-card text-muted-foreground hover:border-primary hover:text-foreground"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+      </div>
+    )}
     {more && (
       <div className="pointer-events-none absolute inset-y-0 right-0 flex w-14 items-center justify-end bg-linear-to-l from-background via-background/80 to-transparent">
         <button

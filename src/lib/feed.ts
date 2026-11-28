@@ -90,12 +90,12 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 25): FeedEvent[] {
   group(raw.filter((i) => i.status === "active" && recent(i.opened, 1)).sort(byDate)
     .map((i) => {
       const initial = (i as Raw & { upsidePct?: number }).upsidePct;
-      return event(i, "open", "новая идея за сутки", !i.noTarget && initial != null && Number.isFinite(initial) ? `апсайд ${pct(initial)}` : upsideValue(i));
+      return event(i, "open", "новая идея", !i.noTarget && initial != null && Number.isFinite(initial) ? `апсайд ${pct(initial)}` : upsideValue(i));
     }));
   group(raw.filter((i) => i.status === "closed" && recent(i.closed, 1) && i.stage !== "landed").sort(byDate)
-    .map((i) => event(i, "close", "закрытие за сутки", `результат ${pct(i.yieldPct)}`)));
+    .map((i) => event(i, "close", age(i.closed, now) === 0 ? "закрытие сегодня" : "закрытие вчера", `результат ${pct(i.yieldPct)}`)));
   group(raw.filter((i) => i.status === "closed" && recent(i.closed, 1) && i.stage === "landed").sort(byDate)
-    .map((i) => event(i, "target", "цель достигнута за сутки", `результат ${pct(i.yieldPct)}`)));
+    .map((i) => event(i, "target", age(i.closed, now) === 0 ? "цель достигнута сегодня" : "цель достигнута вчера", `результат ${pct(i.yieldPct)}`)));
   group(active.filter((i) => i.stage === "approach").sort(byYield)
     .map((i) => event(i, "approach", "заход на посадку", yieldValue(i))));
   group(topUpside(ideas, 10).map((i) => event(i, "upside", "максимальный апсайд", upsideValue(i)?.replace(/^апсайд /, ""))));
@@ -111,8 +111,6 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 25): FeedEvent[] {
   const weekClosed = raw.filter((i) => i.status === "closed" && recent(i.closed, 7));
   group(weekClosed.filter((i) => i.yieldPct > 0).sort(byYield)
     .map((i) => event(i, "weekly-win", "успешное закрытие недели", `результат ${pct(i.yieldPct)}`)));
-  group(weekClosed.filter((i) => i.yieldPct < 0).sort((a, b) => a.yieldPct - b.yieldPct)
-    .map((i) => event(i, "weekly-loss", "убыточное закрытие недели", `результат ${pct(i.yieldPct)}`)));
   const arrivals = topArrivals(ideas, asOf, ideas.length);
   group(arrivals.filter((a) => a.reason === "expiring").map((a) => event(a.idea, "expiring", `срок истекает через ${a.days ?? 0} дн.`, yieldValue(a.idea))));
   group(arrivals.filter((a) => a.reason === "upside").map((a) => event(a.idea, "near-target", "до цели меньше 3%", upsideValue(a.idea))));
