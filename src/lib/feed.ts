@@ -98,7 +98,7 @@ export function buildFeed(ideas: Idea[], asOf: string, n = 25): FeedEvent[] {
     .map((i) => event(i, "target", "цель достигнута за сутки", `результат ${pct(i.yieldPct)}`)));
   group(active.filter((i) => i.stage === "approach").sort(byYield)
     .map((i) => event(i, "approach", "заход на посадку", yieldValue(i))));
-  group(topUpside(ideas, 10).map((i) => event(i, "upside", "максимальный апсайд", upsideValue(i))));
+  group(topUpside(ideas, 10).map((i) => event(i, "upside", "максимальный апсайд", upsideValue(i)?.replace(/^апсайд /, ""))));
   group(topClimbers(ideas, asOf, 10).map((c) => event(c.idea, "start", "бодрый старт", `темп ${pct(c.perDay)}/день`)));
   group([...active].filter((i) => i.yieldPct >= 30).sort(byYield)
     .map((i) => event(i, "win", "рекорд в воздухе", yieldValue(i))));
