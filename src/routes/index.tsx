@@ -61,6 +61,11 @@ function Index() {
   const [mapVisit, setMapVisit] = useState(0);
   // clicking empty map space closes the card after a short beat; picking a plane cancels the pending close
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearPicked = () => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+    setSel(null);
+    setBoardPick(null);
+  };
   const pickIdea = (i: Idea) => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } setSel(i); };
   const pickBoardIdea = (i: Idea) => {
     setPeriod("all");
@@ -71,6 +76,7 @@ function Index() {
     setQ("");
     setKind("");
     setAtype("");
+    setSide(null);
     setFocus(false);
     setTFocus(false);
     pickIdea(i);
@@ -79,15 +85,15 @@ function Index() {
     setMapVisit((v) => v + 1);
     mapStart.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   };
-  const scheduleClose = () => { if (closeTimer.current) clearTimeout(closeTimer.current); closeTimer.current = setTimeout(() => { closeTimer.current = null; setSel(null); }, 500); };
+  const scheduleClose = () => { if (closeTimer.current) clearTimeout(closeTimer.current); closeTimer.current = setTimeout(() => { closeTimer.current = null; setSel(null); setBoardPick(null); }, 500); };
 
   // the API is asked only after an exact instrument is chosen: list click, Enter, or an exactly typed ticker/name
   const [ticker, setTicker] = useState("");
   const [kind, setKind] = useState<Kind | "">("");
-  const toggleKind = (k: Kind) => setKind(kind === k ? "" : k);
+  const toggleKind = (k: Kind) => { clearPicked(); setKind(kind === k ? "" : k); };
   // analyst kind: institutional -> Профучастники, finfluencer -> Финфлюенсеры
   const [atype, setAtype] = useState<AnalystType | "">("");
-  const toggleAtype = (t: AnalystType) => setAtype(atype === t ? "" : t);
+  const toggleAtype = (t: AnalystType) => { clearPicked(); setAtype(atype === t ? "" : t); };
   const pickBoardAnalyst = (name: string, scope: Period = "all") => {
     if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
     setSel(null);
@@ -98,6 +104,7 @@ function Index() {
     setTq("");
     setKind("");
     setAtype("");
+    setSide(null);
     setAnalyst(name);
     setQ("");
     setFocus(false);
@@ -108,7 +115,10 @@ function Index() {
   };
   // any header filter change drops the secondary zone highlight: the whole map shows again
   useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind, atype]);
-  const commitTicker = (v: string) => { setTq(v); setTicker(v.trim()); };
+  const commitTicker = (v: string) => { clearPicked(); setTq(v); setTicker(v.trim()); };
+  const changePeriod = (v: Period) => { clearPicked(); setPeriod(v); };
+  const changeBook = (v: Book) => { clearPicked(); setBook(v); };
+  const selectAnalyst = (name: string | null) => { clearPicked(); setAnalyst(name); setQ(""); };
   // after any dropdown pick: hide the list and release DOM focus so the next click reopens it
   const blurActive = () => (document.activeElement as HTMLElement | null)?.blur?.();
   const pickBoardTicker = (value: string, status: Book, scope: Period = "all") => {
@@ -121,6 +131,7 @@ function Index() {
     setQ("");
     setKind("");
     setAtype("");
+    setSide(null);
     commitTicker(value);
     setFocus(false);
     setTFocus(false);
@@ -188,11 +199,11 @@ function Index() {
        <div className="contents">
         <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Дата старта идей</span>
-          <Seg items={PERIODS} value={period} onChange={setPeriod} counts={data?.periods} />
+          <Seg items={PERIODS} value={period} onChange={changePeriod} counts={data?.periods} />
         </div>
         <div className="flex flex-col gap-1">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Статус</span>
-          <Seg items={BOOKS} value={book} onChange={setBook} counts={data?.counts} />
+          <Seg items={BOOKS} value={book} onChange={changeBook} counts={data?.counts} />
         </div>
        </div>
        <div className="contents">
@@ -201,14 +212,14 @@ function Index() {
         <div className="relative">
           <input
             value={analyst ?? q}
-            onChange={(e) => { setAnalyst(null); setQ(e.target.value); }}
+            onChange={(e) => { clearPicked(); setAnalyst(null); setQ(e.target.value); }}
             onFocus={() => setFocus(true)}
             onBlur={() => setTimeout(() => setFocus(false), 150)}
             placeholder="Все аналитики — поиск…"
             className="w-full rounded-md border bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
           />
           {analyst && (
-            <button onClick={() => { setAnalyst(null); setQ(""); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground">✕</button>
+            <button onClick={() => selectAnalyst(null)} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground">✕</button>
           )}
           {focus && !analyst && (
             <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover text-sm shadow-xl">
@@ -220,9 +231,9 @@ function Index() {
                   ))}
                 </div>
               </div>
-              <button onMouseDown={() => { setAnalyst(null); setQ(""); setFocus(false); blurActive(); }} className="flex w-full justify-between px-3 py-2 text-left text-muted-foreground hover:bg-accent">Все аналитики</button>
+              <button onMouseDown={() => { selectAnalyst(null); setFocus(false); blurActive(); }} className="flex w-full justify-between px-3 py-2 text-left text-muted-foreground hover:bg-accent">Все аналитики</button>
               {analysts.map((a) => (
-                <button key={a.name} onMouseDown={() => { setAnalyst(a.name); setQ(""); setFocus(false); blurActive(); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
+                <button key={a.name} onMouseDown={() => { selectAnalyst(a.name); setFocus(false); blurActive(); }} className="flex w-full justify-between gap-2 px-3 py-2 text-left hover:bg-accent">
                   {a.name} <span className="font-mono text-xs text-muted-foreground">{a.count}</span>
                 </button>
               ))}
@@ -230,9 +241,9 @@ function Index() {
             </div>
           )}
         </div>
-        <Presets items={["СберИнвестиции"]} wide="Финам" selected={analyst ?? ""} onPick={(v) => { setAnalyst(v); setQ(""); }}>
-          {analyst ? <Annunciator label={analyst} count={data?.ideas.length ?? 0} on onClick={() => { setAnalyst(null); setQ(""); }} /> : <Annunciator label="Профучастники" count={data?.atypes?.institutional ?? 0} on={atype === "institutional"} onClick={() => toggleAtype("institutional")} />}
-          {!analyst && atype && atype !== "institutional" && <Annunciator label={ANALYST_TYPES.find(([k]) => k === atype)![1]} count={data?.atypes?.[atype] ?? 0} on onClick={() => setAtype("")} />}
+        <Presets items={["СберИнвестиции"]} wide="Финам" selected={analyst ?? ""} onPick={selectAnalyst}>
+          {analyst ? <Annunciator label={analyst} count={data?.ideas.length ?? 0} on onClick={() => selectAnalyst(null)} /> : <Annunciator label="Профучастники" count={data?.atypes?.institutional ?? 0} on={atype === "institutional"} onClick={() => toggleAtype("institutional")} />}
+          {!analyst && atype && atype !== "institutional" && <Annunciator label={ANALYST_TYPES.find(([k]) => k === atype)![1]} count={data?.atypes?.[atype] ?? 0} on onClick={() => toggleAtype(atype)} />}
         </Presets>
         </div>
         <label className="flex min-w-0 flex-col gap-1">
@@ -242,6 +253,7 @@ function Index() {
               value={tq}
               onChange={(e) => {
                 const v = e.target.value;
+                clearPicked();
                 // editing the committed ticker (or erasing it) releases the ticker filter at once
                 if (ticker && v.trim() !== ticker) setTicker("");
                 setTq(v);
@@ -281,7 +293,7 @@ function Index() {
           </div>
           <Presets items={["OZON", "Новатэк"]} wide="Яндекс" selected={ticker} onPick={(v) => commitTicker(exactHit(v) || v)}>
             {ticker ? <Annunciator label={ticker} count={data?.ideas.length ?? 0} on onClick={() => commitTicker("")} /> : <Annunciator label="Акции" count={data?.kinds?.stock ?? 0} on={kind === "stock"} onClick={() => toggleKind("stock")} />}
-            {!ticker && kind && kind !== "stock" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => setKind("")} />}
+            {!ticker && kind && kind !== "stock" && <Annunciator label={KINDS.find(([k]) => k === kind)![1]} count={data?.kinds?.[kind] ?? 0} on onClick={() => toggleKind(kind)} />}
           </Presets>
         </label>
        </div>
@@ -304,7 +316,7 @@ function Index() {
               onDeselect={scheduleClose}
               selectedId={sel?.id != null ? String(sel.id) : undefined}
               activeZone={zone}
-              onZoneChange={(z) => setZone(zone === z ? null : z)}
+              onZoneChange={(z) => { clearPicked(); setZone(zone === z ? null : z); }}
             />
           ) : (
             <div className="map-bg flex h-full w-full items-center justify-center text-sm text-muted-foreground min-[640px]:rounded-xl min-[640px]:border">
@@ -312,12 +324,12 @@ function Index() {
             </div>
           )}
           {isFetching && data && <div className="pointer-events-none absolute right-6 top-4 font-mono text-[10px] text-muted-foreground">обновление…</div>}
-          {sel && <Card idea={sel} onClose={() => setSel(null)} onOthers={(t) => pickBoardTicker(t, "all")} />}
+          {sel && <Card idea={sel} onClose={clearPicked} onOthers={(t) => pickBoardTicker(t, "all")} />}
           </div>
           <div className="z-10 mt-2 flex flex-wrap gap-2 px-4 font-mono text-xs md:absolute md:-bottom-4 md:left-6 md:mt-0 md:px-0">
             {(["лонг", "шорт"] as const).map((s) => (
               <button key={s} type="button" aria-pressed={side === s} title={side === s ? "Показать все идеи" : `Показать только ${s}`}
-                onClick={() => setSide(side === s ? null : s)}
+                onClick={() => { clearPicked(); setZone(null); setSide(side === s ? null : s); }}
                 className={`inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 font-semibold uppercase ${s === "лонг" ? "text-long" : "text-short"} ${side === s ? (s === "лонг" ? "border-long" : "border-short") : side ? "opacity-50" : ""}`}>
                 <IDEA_ICON size={20} aria-hidden="true" /> {s === "лонг" ? "Long" : "Short"}
               </button>

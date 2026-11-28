@@ -124,14 +124,17 @@ describe("Другие идеи", () => {
     const Component = Route.options.component;
     if (!Component) throw new Error("Missing index component");
     render(<Component />);
-    fireEvent.click(screen.getByRole("button", { name: "Табло аналитик A" }));
-    fireEvent.click(screen.getByRole("button", { name: /^Акции / }));
     fireEvent.click(screen.getByRole("button", { name: /^Профучастники / }));
+    fireEvent.focus(screen.getByPlaceholderText("Все аналитики — поиск…"));
+    fireEvent.mouseDown(screen.getByRole("button", { name: "A 3" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Акции / }));
     fireEvent.click(screen.getByRole("button", { name: /^Неделя / }));
     fireEvent.click(screen.getByRole("button", { name: /^Закрытые / }));
+    fireEvent.click(screen.getByRole("button", { name: "Short" }));
     expect(screen.queryByRole("button", { name: "Самолёт 1" })).toBeNull();
     fireEvent.click(screen.getAllByTestId("news-ticker")[0] ?? failMissingNews());
     expect(screen.getByPlaceholderText("Все аналитики — поиск…")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Short" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: /^Акции / })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: /^Профучастники / })).toHaveAttribute("aria-pressed", "false");
     for (const id of [1, 2, 3]) expect(screen.getByRole("button", { name: `Самолёт ${id}` })).toBeTruthy();
@@ -175,5 +178,46 @@ describe("Другие идеи", () => {
     fireEvent.click(screen.getByRole("button", { name: "Другие идеи" }));
     expect(screen.getByRole("button", { name: "Самолёт 1" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Самолёт 2" })).toBeTruthy();
+  });
+
+  it("closing a pinned card and choosing an analyst removes the unrelated plane", () => {
+    const previous = flight.ideas;
+    flight.ideas = [
+      { ...idea(1, "closed", "BR"), analyst: "Xmayana" },
+      { ...idea(2, "closed", "SBER"), analyst: "СберИнвестиции" },
+      { ...idea(3, "active", "SBER"), analyst: "СберИнвестиции" },
+    ];
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    Element.prototype.scrollIntoView = vi.fn();
+    const Component = Route.options.component;
+    if (!Component) throw new Error("Missing index component");
+    try {
+      render(<Component />);
+      fireEvent.click(screen.getByRole("button", { name: "Табло идея 1" }));
+      expect(screen.getByTestId("map-ideas")).toHaveAttribute("data-selected-id", "1");
+      fireEvent.click(screen.getByRole("button", { name: "Закрыть" }));
+      fireEvent.click(screen.getByRole("button", { name: "СберИнвестиции" }));
+
+      expect(screen.queryByRole("button", { name: "Самолёт 1" })).toBeNull();
+      expect(screen.getByRole("button", { name: "Самолёт 2" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Самолёт 3" })).toBeTruthy();
+    } finally {
+      flight.ideas = previous;
+    }
+  });
+
+  it("changing status while a pinned card is open removes an idea outside the filter", () => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    Element.prototype.scrollIntoView = vi.fn();
+    const Component = Route.options.component;
+    if (!Component) throw new Error("Missing index component");
+    render(<Component />);
+    fireEvent.click(screen.getByRole("button", { name: "Табло идея 2" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Активные / }));
+
+    expect(screen.queryByRole("button", { name: "Самолёт 2" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Закрыть" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Самолёт 1" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Самолёт 3" })).toBeTruthy();
   });
 });
