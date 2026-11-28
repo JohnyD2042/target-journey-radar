@@ -8,8 +8,9 @@ import { Boards } from "@/components/Boards";
 import { NewsTicker } from "@/components/NewsTicker";
 import { IDEA_ICON } from "@/components/board-icons";
 import { buildFeed, type FeedEvent } from "@/lib/feed";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TabloLogo } from "@/components/TabloLogo";
-import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, moscowTime, zoneOf, ANALYST_TYPES, KINDS, type AnalystType, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
+import { ZONES, applyFilters, fetchFlight, ideaTitle, isBasket, isoLabel, moscowTime, byUpside, UPSIDE_STEPS, zoneOf, ANALYST_TYPES, KINDS, type AnalystType, type Kind, type Book, type Idea, type Period, type Zone } from "@/lib/ideas";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -46,9 +47,46 @@ function Seg<T extends string>({ items, value, onChange, counts }: { items: [T, 
   );
 }
 
+/** Compact "Апсайд от X" badge in the Status label row; the discrete slider lives in a popover so filters never shift. */
+function UpsidePicker({ value, counts, onChange }: { value: number; counts: number[]; onChange: (v: number) => void }) {
+  const idx = Math.max(0, UPSIDE_STEPS.indexOf(value as (typeof UPSIDE_STEPS)[number]));
+  const label = (s: number) => (s === 0 ? "0" : s === 100 ? "100%+" : `${s}%`);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" aria-label="Фильтр по апсайду" className={`inline-flex h-4 items-center gap-1 rounded-full border px-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${value ? "border-foreground/60 bg-linear-to-b from-zinc-200 to-zinc-400 text-zinc-900" : "text-muted-foreground hover:text-foreground"}`}>
+          Апсайд {value ? `от ${value}%` : "любой"}
+          <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 p-4">
+        <div className="mb-3 flex items-baseline justify-between font-mono text-[11px] uppercase tracking-wider">
+          <span className="text-muted-foreground">Апсайд от</span>
+          <span><span className="font-semibold text-foreground">{value ? `${value}%` : "любой"}</span> <span className="text-muted-foreground">· {counts[idx] ?? 0} идей</span></span>
+        </div>
+        <div role="radiogroup" aria-label="Минимальный апсайд" className="relative px-2">
+          <div className="absolute left-2 right-2 top-[9px] h-0.5 rounded bg-muted" />
+          <div className="absolute left-2 top-[9px] h-0.5 rounded bg-zinc-300 transition-all" style={{ width: `calc((100% - 1rem) * ${idx / (UPSIDE_STEPS.length - 1)})` }} />
+          <div className="relative flex justify-between">
+            {UPSIDE_STEPS.map((s, k) => (
+              <button key={s} type="button" role="radio" aria-checked={k === idx} aria-label={`Апсайд от ${label(s)}`} onClick={() => onChange(s)}
+                className="-mx-2 flex w-8 flex-col items-center gap-1.5 focus-visible:outline-2">
+                <span className="flex h-5 w-5 items-center justify-center"><span className={`block rounded-full transition-all ${k === idx ? "h-5 w-5 border-2 border-background bg-zinc-100 shadow-[0_0_0_3px_rgba(212,212,216,0.35)]" : k < idx ? "h-2 w-2 bg-zinc-300" : "h-2 w-2 bg-zinc-600"}`} /></span>
+                <span className={`font-mono text-[10px] ${k === idx ? "text-foreground" : "text-muted-foreground"}`}>{label(s)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="mt-3 text-[10px] leading-snug text-muted-foreground">При пороге выше 0 идеи без целевой цены скрываются.</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function Index() {
   const [period, setPeriod] = useState<Period>("all");
   const [book, setBook] = useState<Book>("all");
+  const [minUp, setMinUp] = useState(0);
   const [analyst, setAnalyst] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(false);
@@ -77,6 +115,7 @@ function Index() {
     setKind("");
     setAtype("");
     setSide(null);
+    setMinUp(0);
     setFocus(false);
     setTFocus(false);
     pickIdea(i);
@@ -105,6 +144,7 @@ function Index() {
     setKind("");
     setAtype("");
     setSide(null);
+    setMinUp(0);
     setAnalyst(name);
     setQ("");
     setFocus(false);
@@ -117,7 +157,8 @@ function Index() {
   useEffect(() => { setZone(null); }, [period, book, analyst, ticker, kind, atype]);
   const commitTicker = (v: string) => { clearPicked(); setTq(v); setTicker(v.trim()); };
   const changePeriod = (v: Period) => { clearPicked(); setPeriod(v); };
-  const changeBook = (v: Book) => { clearPicked(); setBook(v); };
+  const changeBook = (v: Book) => { clearPicked(); setBook(v); setMinUp(0); };
+  const changeMinUp = (v: number) => { clearPicked(); setZone(null); setMinUp(v); };
   const selectAnalyst = (name: string | null) => { clearPicked(); setAnalyst(name); setQ(""); };
   // after any dropdown pick: hide the list and release DOM focus so the next click reopens it
   const blurActive = () => (document.activeElement as HTMLElement | null)?.blur?.();
@@ -132,6 +173,7 @@ function Index() {
     setKind("");
     setAtype("");
     setSide(null);
+    setMinUp(0);
     commitTicker(value);
     setFocus(false);
     setTFocus(false);
@@ -161,10 +203,13 @@ function Index() {
 
   const ideas = data?.ideas ?? [];
   const [side, setSide] = useState<"лонг" | "шорт" | null>(null);
+  // upside threshold exists only for active ideas; any other status means "no threshold"
+  const up = book === "active" ? minUp : 0;
+  const upCounts = useMemo(() => UPSIDE_STEPS.map((s) => ideas.filter((i) => byUpside(i, s)).length), [ideas]);
   const shown = useMemo(() => {
-    const filtered = ideas.filter((i) => (!zone || zoneOf(i) === zone) && (!side || i.strategy === side));
+    const filtered = ideas.filter((i) => (!zone || zoneOf(i) === zone) && (!side || i.strategy === side) && byUpside(i, up));
     return boardPick && !filtered.some((i) => i.id === boardPick.id) ? [...filtered, boardPick] : filtered;
-  }, [ideas, zone, side, boardPick]);
+  }, [ideas, zone, side, boardPick, up]);
   const yRange = useMemo(() => fitYRange(shown.map((i) => i.yieldPct), data?.yieldMin ?? 0, data?.yieldMax ?? 0), [shown, data]);
   const analysts = (data?.analysts ?? []).filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   const tqn = tq.trim().toLowerCase();
@@ -202,7 +247,10 @@ function Index() {
           <Seg items={PERIODS} value={period} onChange={changePeriod} counts={data?.periods} />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Статус</span>
+          <span className="flex h-4 items-center justify-between gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Статус</span>
+            {book === "active" && <UpsidePicker value={minUp} counts={upCounts} onChange={changeMinUp} />}
+          </span>
           <Seg items={BOOKS} value={book} onChange={changeBook} counts={data?.counts} />
         </div>
        </div>

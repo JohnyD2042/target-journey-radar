@@ -189,3 +189,8 @@ export function applyFilters(all: FlightResponse, f: Filters): FlightResponse {
     ideas,
   };
 }
+
+/** Upside steps for active ideas: 0 keeps every idea (no-target ones too); above 0 needs a target with at least that remaining upside. */
+export const UPSIDE_STEPS = [0, 20, 50, 100] as const;
+export const byUpside = (i: { toTargetPct: number | null; noTarget: boolean }, min: number) =>
+  min <= 0 || (!i.noTarget && i.toTargetPct != null && i.toTargetPct >= min);
