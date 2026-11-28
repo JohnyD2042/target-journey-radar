@@ -205,7 +205,15 @@ function Index() {
   const [side, setSide] = useState<"лонг" | "шорт" | null>(null);
   // upside threshold exists only for active ideas; any other status means "no threshold"
   const up = book === "active" ? minUp : 0;
-  const upCounts = useMemo(() => UPSIDE_STEPS.map((s) => ideas.filter((i) => byUpside(i, s)).length), [ideas]);
+  const sided = useMemo(() => ideas.filter((i) => !side || i.strategy === side), [ideas, side]);
+  const upCounts = useMemo(() => UPSIDE_STEPS.map((s) => sided.filter((i) => byUpside(i, s)).length), [sided]);
+  // zone counters follow every map filter (side, upside) except the zone itself
+  const zoneCounts = useMemo(() => {
+    if (!data) return undefined;
+    const c = { ...data.counts, cold: 0, liftoff: 0, cruise: 0, approach: 0, landed: 0 };
+    for (const i of sided) if (byUpside(i, up)) c[i.stage]++;
+    return c;
+  }, [data, sided, up]);
   const shown = useMemo(() => {
     const filtered = ideas.filter((i) => (!zone || zoneOf(i) === zone) && (!side || i.strategy === side) && byUpside(i, up));
     return boardPick && !filtered.some((i) => i.id === boardPick.id) ? [...filtered, boardPick] : filtered;
@@ -359,7 +367,7 @@ function Index() {
               ideas={shown}
               yieldMin={yRange.yMin}
               yieldMax={yRange.yMax}
-              zoneCounts={data.counts}
+              zoneCounts={zoneCounts ?? data.counts}
               onSelect={pickIdea}
               onDeselect={scheduleClose}
               selectedId={sel?.id != null ? String(sel.id) : undefined}
